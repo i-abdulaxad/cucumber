@@ -47,4 +47,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'server.address', '127.0.0.1'
 }

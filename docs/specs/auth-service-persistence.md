@@ -1872,7 +1872,7 @@ This single table replaces the phase-1 (`docs/specs/auth-service.md`) and phase-
 
 | ID | Priority / gate | Item | Status | Owner |
 |---|---|---|---|---|
-| FU-1 | P2 | Problems for errors outside Spring MVC (firewall rejections, `TRACE`, direct `/error`), with the gateway's FU-3. Now also includes FU-19. | Open | pm (spec), backend-swe, qa |
+| FU-1 | P2 | Problems for errors outside Spring MVC (firewall rejections, `TRACE`, direct `/error`), with the gateway's FU-3. Now also includes FU-19. | **Closed** 2026-10-29 by `docs/specs/platform-hardening.md` (US-2; Tomcat-level rejections accepted, its D6) | — |
 | FU-2 | P2, phase 3 | NFC normalisation of emails, and NFC for name comparison. Carries FU-17, FU-18 and FU-20. | Open | pm (phase 3 spec) |
 | FU-3 | — | Blank and control characters, lone surrogates, extended to project names | **Closed** in phase 4 (E59, E75; AC-5.1, AC-6.1) | — |
 | FU-4 | — | Injectable `Clock` | **Closed** in phase 4 (E68; AC-4.2, AC-4.3) | — |
@@ -1890,7 +1890,7 @@ This single table replaces the phase-1 (`docs/specs/auth-service.md`) and phase-
 | FU-16 | — | Verify the C5 consumer rules (fail closed, no caching) in the consuming service | **Closed** 2026-10-26 for scenario-service (its X3; AC-7.3 fail closed, AC-7.5 no caching, both pass). Each future C5 consumer verifies the same rules in its own spec (standards §3). The C5 retry is scenario-service's SFU-1. | — |
 | FU-17 | P2, with FU-2 | BUG-3: Unicode 14+ case pairs differ between Java 17 and PostgreSQL (generic 409) | Open, accepted | pm (phase 3), backend-swe |
 | FU-18 | P2, with FU-2 | BUG-4: the 254 limit applies to the stored, lower-cased email (400, not 409) | Open | backend-swe (phase 3) |
-| FU-19 | P2, with FU-1 | BUG-5: pool exhaustion should give a 503 Problem, not 401 or Boot's 500 body | Open | pm (spec FU-1), backend-swe |
+| FU-19 | P2, with FU-1 | BUG-5: pool exhaustion should give a 503 Problem, not 401 or Boot's 500 body | **Closed** 2026-10-29 by `docs/specs/platform-hardening.md` (D7, US-3) | — |
 | FU-20 | P2, with FU-2 | Other invisible code points in names (qa Q1, R3) | Open, accepted until FU-2 | pm (phase 3) |
 | FU-21 | — | Build time back to about 3× H2 | **Closed** 2026-10-15 (4m03s) | — |
 | FU-22 | P2 | `ddl-auto: validate` misses some drift; candidate start-up schema check | Open, accepted | pm |

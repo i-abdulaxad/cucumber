@@ -1,0 +1,14 @@
+spring:
+  config:
+    # DEV ONLY: JWT_SECRET, REPORT_DB_PASSWORD and INTERNAL_SERVICE_KEY come from the gitignored .env in the repository
+    # root (see .env.example), or from the environment. ../.env covers runs from the report-service directory.
+    import: "optional:file:.env[.properties],optional:file:../.env[.properties]"
+  # DEV ONLY: the local development database (database and role report_service in the cucumber-postgres container on
+  # localhost:5432, see the README). The password is REPORT_DB_PASSWORD, read through application.yaml.
+  datasource:
+    url: jdbc:postgresql://localhost:5432/report_service
+    username: report_service
+logging:
+  level:
+    # SQL statements go through the logging system, with request and user ids and ? placeholders only (D14).
+    org.hibernate.SQL: DEBUG

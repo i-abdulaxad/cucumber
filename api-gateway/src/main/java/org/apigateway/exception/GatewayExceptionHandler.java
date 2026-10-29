@@ -32,6 +32,13 @@ public class GatewayExceptionHandler extends ResponseEntityExceptionHandler {
     public static final String GATEWAY_RESPONSE_HEADERS_ATTRIBUTE =
             GatewayExceptionHandler.class.getName() + ".gatewayResponseHeaders";
 
+    /**
+     * Set on a request whose downstream call failed after the response was committed (platform-hardening D11): the
+     * gateway writes nothing more, and {@code CommittedResponseAbortConfiguration}'s valve closes the connection.
+     */
+    public static final String ABORT_CONNECTION_ATTRIBUTE =
+            GatewayExceptionHandler.class.getName() + ".abortConnection";
+
     private static final Logger log = LoggerFactory.getLogger(GatewayExceptionHandler.class);
 
     @ExceptionHandler(AuthenticationException.class)
@@ -41,19 +48,25 @@ public class GatewayExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<ProblemDetail> handleDownstreamFailure(ResourceAccessException ex,
-                                                                 HttpServletRequest request,
-                                                                 HttpServletResponse response) {
+    public @Nullable ResponseEntity<ProblemDetail> handleDownstreamFailure(ResourceAccessException ex,
+                                                                           HttpServletRequest request,
+                                                                           HttpServletResponse response) {
         DownstreamFailure failure = DownstreamFailure.classify(ex);
         log.warn("Downstream call failed: route={} status={} cause={}",
                 request.getAttribute(MvcUtils.GATEWAY_ROUTE_ID_ATTR), failure.status().value(), ioFailureName(ex));
+        if (response.isCommitted()) {
+            // Part of the response already reached the client: write nothing more and abort (D11, E13)
+            request.setAttribute(ABORT_CONNECTION_ATTRIBUTE, Boolean.TRUE);
+            return null;
+        }
         discardDownstreamResponse(request, response);
         return problem(failure.status(), failure.detail(), request);
     }
 
     @ExceptionHandler(ServletException.class)
-    public ResponseEntity<ProblemDetail> handleWrappedFailure(ServletException ex, HttpServletRequest request,
-                                                              HttpServletResponse response) {
+    public @Nullable ResponseEntity<ProblemDetail> handleWrappedFailure(ServletException ex,
+                                                                        HttpServletRequest request,
+                                                                        HttpServletResponse response) {
         if (ex.getCause() instanceof ResourceAccessException downstreamFailure) {
             return handleDownstreamFailure(downstreamFailure, request, response);
         }

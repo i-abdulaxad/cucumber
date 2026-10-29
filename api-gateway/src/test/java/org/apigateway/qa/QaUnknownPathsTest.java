@@ -68,12 +68,13 @@ class QaUnknownPathsTest extends GatewayIntegrationTest {
 
     /**
      * BUG-api-gateway-6 (D6). Health sub-paths are answered by the actuator itself with an empty 404, not the D6 Problem.
+     * Still deferred: platform-hardening Q3 moved the health sub-paths from gateway FU-1 to FU-5 (Helm probes).
      */
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"/actuator/health/liveness", "/actuator/health/readiness", "/actuator/health/ping"})
     @Tag("BUG-api-gateway-6")
     @DisplayName("BUG-api-gateway-6 (D6): health sub-paths with a valid token answer the 404 Problem, not an empty 404")
-    @Disabled("BUG-api-gateway-6 deferred: docs/specs/api-gateway.md FU-1")
+    @Disabled("BUG-api-gateway-6 deferred: docs/specs/api-gateway.md FU-5 (moved from FU-1 by docs/specs/platform-hardening.md Q3)")
     void healthSubPathsAre404Problems(String path) {
         // When
         HttpResponse<String> response = gateway.sendWithValidToken("GET", path);
@@ -84,13 +85,14 @@ class QaUnknownPathsTest extends GatewayIntegrationTest {
     }
 
     /**
-     * BUG-api-gateway-6 (D2, variant of AC-1.5). {@code /error} is Spring Boot's error controller; with a valid token it answers 500 with Boot's
-     * default body ({@code "status":999}) instead of D2's 404 for a path that matches no route.
+     * BUG-api-gateway-6 (D2, variant of AC-1.5). {@code /error} was Spring Boot's error controller; with a valid token it
+     * answered 500 with Boot's default body ({@code "status":999}). Fixed by platform-hardening T5 (D4, AC-5.4; re-enabled
+     * by qa at review point B, 2026-10-29): it is the 404 Problem like any other path that matches no route.
      */
     @Test
     @Tag("BUG-api-gateway-6")
+    @Tag("AC-5.4")
     @DisplayName("BUG-api-gateway-6 (D2, variant of AC-1.5): GET /error with a valid token answers the 404 Problem like any other unrouted path")
-    @Disabled("BUG-api-gateway-6 deferred: docs/specs/api-gateway.md FU-1")
     void theErrorPathIsAnUnroutedPath() {
         // When
         HttpResponse<String> response = gateway.sendWithValidToken("GET", "/error");

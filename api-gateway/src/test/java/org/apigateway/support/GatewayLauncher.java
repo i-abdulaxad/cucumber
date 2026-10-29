@@ -10,6 +10,7 @@ import org.springframework.core.env.SystemEnvironmentPropertySource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,13 @@ import java.util.Map;
  */
 public final class GatewayLauncher {
 
+    /**
+     * Every test server listens on, and every port is checked on, {@code 127.0.0.1} only (platform-hardening T8,
+     * RC-2): on macOS a wildcard listener can share its port with another process's {@code 127.0.0.1} listener, which
+     * then receives the test's calls. A port bound or checked on {@code 127.0.0.1} can't be in use there.
+     */
+    public static final String LOOPBACK = "127.0.0.1";
+
     private GatewayLauncher() {
     }
 
@@ -27,6 +35,7 @@ public final class GatewayLauncher {
     public static Map<String, Object> testEnvironment() {
         return new HashMap<>(Map.of(
                 "SERVER_PORT", "0",
+                "SERVER_ADDRESS", LOOPBACK,
                 "JWT_SECRET", TestTokens.SECRET));
     }
 
@@ -47,7 +56,7 @@ public final class GatewayLauncher {
     }
 
     public static int freePort() {
-        try (ServerSocket socket = new ServerSocket(0)) {
+        try (ServerSocket socket = new ServerSocket(0, 1, InetAddress.getByName(LOOPBACK))) {
             return socket.getLocalPort();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);

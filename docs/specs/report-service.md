@@ -1,7 +1,7 @@
 # report-service phase 1: test runs and results
 
-Status: **Ready** (approved by the user on 2026-10-26: Q1–Q10 as recommended). **Gate:** Batch A starts only after the platform-hardening batch is accepted, including gateway FU-4.
-Last updated: 2026-10-26 (user approval recorded; T11's FU-4 fallback removed). Earlier the same day: first draft.
+Status: **Ready** (approved by the user on 2026-10-26: Q1–Q10 as recommended). **Gate:** Batch A starts only after the platform-hardening batch is accepted, including gateway FU-4. **Gate met 2026-10-29:** platform-hardening accepted with follow-ups, FU-4's abort part included (per-route timeouts stay with this spec, user 2026-10-26).
+Last updated: 2026-10-29 (Batch A: T1, T2, T4 done; RE6–RE7 approved by the user; AC-8.3 row 2 amended; build decisions recorded below). 2026-10-26: user approval recorded; T11's FU-4 fallback removed; first draft.
 
 **Resolved questions (user, 2026-10-26, all as recommended):**
 - Q1: scope (D1).
@@ -805,13 +805,11 @@ Scenario Outline: Without the right key there is no answer
     | the right key, but auth-service runs with INTERNAL_SERVICE_KEY unset |
 
 @US-8 @AC-8.3 @P1
-Scenario Outline: Unknown and malformed project ids
-  When a service with the key sends "GET /internal/service/projects/<id>"
-  Then the response is a Problem <status> / <code>
-  Examples:
-    | id                                   | status | code              |
-    | 00000000-0000-4000-8000-000000000000 | 404    | NOT_FOUND         |
-    | {checkout in upper case}             | 400    | MALFORMED_REQUEST |
+Scenario: Unknown and upper-case project ids
+  When a service with the key sends "GET /internal/service/projects/00000000-0000-4000-8000-000000000000"
+  Then the response is a Problem 404 / NOT_FOUND
+  And "GET /internal/service/projects/{checkout in upper case}" is accepted and identifies the same project: 200 with "projectId" "{checkout}" in lower case
+  # Amended 2026-10-29 (pm, BD-1): was 400 / MALFORMED_REQUEST, which contradicted auth-service contract 1.3.0.
 
 @US-8 @AC-8.4 @P0
 Scenario: Nothing else in auth-service changes
@@ -833,11 +831,13 @@ Prefixes: RE (report-service), AE (auth-service), GW (gateway).
 | RE2 | `build.gradle`: add exactly scenario-service's lines for `starter-webmvc`, `starter-restclient`, `starter-flyway`, `starter-aspectj`, jjwt 0.12.5 (api, impl, jackson), runtimeOnly `postgresql` and `flyway-database-postgresql`; test lines `starter-webmvc-test`, `starter-restclient-test`, `spring-boot-testcontainers`, `testcontainers-postgresql`. Versions only for jjwt; verify against the Boot 4.1 BOM; no devtools. | same | D14, D15, D17 | Low | — | T2 |
 | RE3 | Replace `application.properties` with `application.yaml` (name, port 8083, the D5, D6, D14, D15 and D17 settings) and a new `application-dev.yaml` (`.env` import, dev URL and username, `# DEV ONLY`, no secret) | `report-service/src/main/resources/*` | One format; no committed secret | Low | — | T2 |
 | RE4 | `ReportServiceApplicationTests`: annotations only (the shared test meta-annotation) | `report-service/src/test/java/org/reportservice/ReportServiceApplicationTests.java` | Fails today: no datasource | Low | RE2 | T2 |
+| RE6 | `ReportServiceApplication`: set `jdk.httpclient.redirects.retrylimit=1` at start-up (a copy of platform-hardening E7). Approved by the user 2026-10-29. | `report-service/src/main/java/org/reportservice/ReportServiceApplication.java` | JDK 17 HttpClient retries a GET once, with no per-client switch; C5, C7 and the scenario-service client don't follow redirects | Low | — | T3 |
+| RE7 | `build.gradle`: one test-task `systemProperty 'jdk.httpclient.redirects.retrylimit', '1'` line (a copy of platform-hardening E8). Approved by the user 2026-10-29. | `report-service/build.gradle` | Tests run with the same JVM setting as RE6 | Low | RE6 | T3 |
 | RE5 | Repository-root `.env.example` (the user's file): name report-service in the header lines; add commented `REPORT_DB_PASSWORD=` and `INTERNAL_SERVICE_KEY=` (hint: `openssl rand -base64 32`), no values | `.env.example` | D15 | Low | — | T2 |
 | AE1 | `SecurityConfig.java`: add one `@Bean @Order(1)` `SecurityFilterChain` with `securityMatcher("/internal/service/**")`: stateless, CSRF off, the service-key filter, `anyRequest().authenticated()`, the existing entry point. The existing chain's body is unchanged. | `auth-service/.../configuration/SecurityConfig.java` | D5 | **Medium** | — | T4 |
 | AE2 | `application.yaml`: `app.internal-service-key: ${INTERNAL_SERVICE_KEY:}` (empty disables C7) | `auth-service/src/main/resources/application.yaml` | D5 | Low | — | T4 |
 | AE3 | New auth-service files: a properties record and check (unset = disabled; when set: Base64 of at least 32 bytes, no `${`), a service-key filter (constant-time comparison), `InternalProjectStatusController`, a service method, a response record, and new tests (not under `qa/`). If records need registering, name the one existing registration line. | new files under `auth-service/src/{main,test}/java/com/example/authservice/**` | D5 | Medium | AE1, AE2 | T4 |
-| AE4 | auth-service contract 1.4.0: C7 and a `serviceKey` security scheme (additive) | `docs/api/auth-service.openapi.yaml` | Contract first | Low | — | T1 |
+| AE4 | auth-service contract **1.5.0** (1.4.0 is platform-hardening's; BD-4): C7 and a `serviceKey` security scheme (additive) | `docs/api/auth-service.openapi.yaml` | Contract first | Low | — | T1 |
 | AE5 | auth-service README "Settings": `INTERNAL_SERVICE_KEY` | `auth-service/README.md` | Operators | Low | — | T4 |
 | GW1 | Route `reports`: `Path=/api/reports/**,/api/projects/*/runs,/api/projects/*/runs/**,/api/projects/*/upload-tokens,/api/projects/*/upload-tokens/**,/api/ci/runs`, and update its comment | `api-gateway/src/main/resources/application.yaml` (45–49) | D3 | Low–medium | Batch B | T11 |
 | GW2 | Same file: public operation `POST /api/ci/runs` | same (91–99) | D3, D5 | **Medium** (new public path) | GW1 | T11 |
@@ -846,7 +846,7 @@ Prefixes: RE (report-service), AE (auth-service), GW (gateway).
 | GW5 | Gateway contract 0.2.4: route table, `x-routes` `reports`, public operations | `docs/api/api-gateway.openapi.yaml` | Docs | Low | — | T11 |
 
 **Will not be touched:**
-- **report-service:** `ReportServiceApplication.java`, `settings.gradle`, the wrapper, `gradlew*`, `.gitignore`, `.gitattributes`, `bin/`, and every build line not named in RE1 or RE2.
+- **report-service:** `ReportServiceApplication.java` beyond RE6, `settings.gradle`, the wrapper, `gradlew*`, `.gitignore`, `.gitattributes`, `bin/`, and every build line not named in RE1, RE2 or RE7.
 - **scenario-service:** all of it, and its contract.
 - **auth-service:** everything outside AE1–AE3 and AE5, including C5, `JwtAuthenticationFilter`, the entities, the migrations and every existing test.
 - **api-gateway:** everything outside GW1–GW4.
@@ -887,11 +887,11 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 - **Stop if:** jsonb, Flyway or any RE2 artifact differs from scenario-service's verified setup; or generated protobuf sources are still referenced.
 
 **T3. Security, errors, input, logging, C5.**
-- **Allowed files:** new `security/*`, `exception/*`, `aop/*`; configuration (security chain with two authentication paths, strict JSON, binder advice, MDC filters, `RestClient` beans); tests.
-- **Must not:** cache or retry C5; call it inside a transaction.
+- **Allowed files:** new `security/*`, `exception/*`, `aop/*`; configuration (security chain with two authentication paths, strict JSON, binder advice, MDC filters, `RestClient` beans); tests; RE6 and RE7 (user 2026-10-29).
+- **Must not:** cache or retry C5; call it inside a transaction; change anything in `ReportServiceApplication.java` or `build.gradle` beyond RE6 and RE7.
 - **ACs:** AC-2.5, AC-6.3 to AC-6.5, AC-7.2 (partly).
 - **Test first:** the C5 failure matrix.
-- **Stop if:** separating `/api/ci/**` from the JWT paths changes the Problem entry points.
+- **Stop if:** separating `/api/ci/**` from the JWT paths changes the Problem entry points; or any report-service HTTP client (C5, C7, scenario-service) would need to follow redirects.
 
 **T4. auth-service C7.**
 - **Allowed files:** exactly AE1–AE3 and AE5.
@@ -968,7 +968,7 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 4. **C4:** C5 (auth-service 1.3.0), with scenario-service D4's consumer rules.
 5. **C5:** gateway headers (gateway C3).
 6. **C6:** scenario-service 1.0.4, unchanged: the feature list and test cases (D6).
-7. **C7:** new, auth-service 1.4.0: `GET /internal/service/projects/{projectId}` with `X-Service-Key`, answering 200 `{projectId, orgId, archived}`, 400, 401 or 404.
+7. **C7:** new, auth-service 1.5.0 (BD-4): `GET /internal/service/projects/{projectId}` with `X-Service-Key`, answering 200 `{projectId, orgId, archived}`, 400, 401 or 404.
 8. **C8:** the Cucumber JSON subset (D9), documented in C1.
 
 ## Cross-service dependencies
@@ -991,8 +991,24 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 - A3. Validation (400) runs before the access check.
 - A4. At most 5,000 results per run, so no streaming is needed.
 
+## Build decisions (pm, 2026-10-29)
+- **BD-1. AC-8.3 row 2 amended:** an upper-case id is accepted and identifies the same project (auth-service contract 1.3.0, auth-service AC-7.2; C7 answers 200 today). report-service's own strict ids (AC-6.5) are unchanged.
+- **BD-2. T1 contract choices accepted**, all as written in C1 1.0.0:
+  - only lower-case ids are emitted, `featureIds` included;
+  - pages: runs default 20, max 100; results default 100, max 500;
+  - upload 400 order: `VALIDATION_FAILED` (query) before `MALFORMED_REQUEST` (JSON), both still after 415 and 413 (D13 unchanged);
+  - `METHOD_NOT_ALLOWED` and `NOT_ACCEPTABLE` in `ErrorCode`, as copied from scenario-service;
+  - a Cucumber step requires `keyword`, `name` and `result`; a hook requires only `result`;
+  - the run's summary is nested in the run; list items carry `total`, `counts` and `passRate` at the top level (D12).
+- **BD-3. ERD edited as-built by backend-swe** (standards §1): accepted.
+- **BD-4. C7 in auth-service contract 1.5.0**, since 1.4.0 belongs to platform-hardening: accepted; AE4 and C7 updated.
+- **BD-5. Settings records for T3, T7 and T8 created early in T2:** accepted; those tasks own their behaviour and tests.
+
 ## Follow-ups and refactoring candidates
-None yet.
+| ID | Item | Owner | Priority |
+|---|---|---|---|
+| RC-1 | auth-service README still says the access check is "Not yet available"; stale, outside AE5. Needs a user-approved E-item. | pm (E-item), backend-swe | P2 |
+| RC-2 | A C7 401 carries `WWW-Authenticate: Bearer` and the bearer detail text, from the shared entry point; a service-key path should not advertise Bearer. Changing it needs a user-approved AE-item and a contract note. | pm (E-item), backend-swe | P2 |
 
 ## Acceptance
 Pending.

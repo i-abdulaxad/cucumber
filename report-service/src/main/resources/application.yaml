@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: report-service
+  mvc:
+    log-resolved-exception: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        # Inserts of one write are sent as JDBC batches (D14); ids are assigned by the application
+        jdbc:
+          batch_size: 500
+  datasource:
+    url: ${REPORT_DB_URL}
+    username: ${REPORT_DB_USERNAME}
+    password: ${REPORT_DB_PASSWORD}
+    hikari:
+      data-source-properties:
+        # Every connection waits at most 5 s for a lock (PostgreSQL lock_timeout), the project advisory lock included.
+        options: "-c lock_timeout=5s"
+        # Keeps PostgreSQL's error DETAIL, which can contain stored values, out of exception messages.
+        logServerErrorDetail: false
+        # The driver sends each batch of inserts as multi-row INSERT statements (D14).
+        reWriteBatchedInserts: true
+
+server:
+  port: 8083
+
+logging:
+  pattern:
+    correlation: "[requestId=%X{requestId:--} userId=%X{userId:--} tokenId=%X{tokenId:--}] "
+  level:
+    org.hibernate.orm.jdbc.error: ERROR
+
+app:
+  jwtSecret: ${JWT_SECRET}
+  # The key that authenticates report-service at auth-service's C7 (D5): standard Base64 of at least 32 bytes.
+  internal-service-key: ${INTERNAL_SERVICE_KEY}
+  # auth-service, called directly (never through the gateway) for C5 and C7 (D5): no retry, no cache.
+  auth-service:
+    base-url: ${AUTH_SERVICE_URL:http://localhost:8081}
+    connect-timeout: 1s
+    read-timeout: 2s
+  # scenario-service, called directly for manual-run planning (D6): no retry.
+  scenario-service:
+    base-url: ${SCENARIO_SERVICE_URL:http://localhost:8082}
+    connect-timeout: 1s
+    read-timeout: 5s
+  logging:
+    enabled: true
+    slow-call-threshold: 500ms

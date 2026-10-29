@@ -56,7 +56,7 @@ Acceptance criteria are Gherkin, tagged `@US-n @AC-n.m @P0|@P1|@P2`. Tests carry
   - HS512 JWTs with the shared `JWT_SECRET`; the `Bearer` scheme is case-insensitive;
   - every service validates the JWT itself;
   - project access from another service goes through auth-service's C5 access check: no cache, fail closed (503), no retries.
-  - scenario-service sets `jdk.httpclient.redirects.retrylimit=1` JVM-wide (JDK 17 has no per-client retry switch; platform-hardening SFU-1, user decision 2026-10-26). Any future HTTP client there must not rely on following redirects, or must use a dedicated mechanism.
+  - scenario-service and report-service set `jdk.httpclient.redirects.retrylimit=1` JVM-wide (JDK 17 has no per-client retry switch; platform-hardening SFU-1, user decision 2026-10-26; report-service RE6–RE7, user decision 2026-10-29). Any future HTTP client there must not rely on following redirects, or must use a dedicated mechanism.
 - **Logging:**
   - the AOP aspect around services logs one outcome line per call;
   - MDC carries `requestId` and `userId`;

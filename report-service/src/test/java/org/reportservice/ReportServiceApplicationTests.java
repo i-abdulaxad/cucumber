@@ -1,9 +1,9 @@
 package org.reportservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.reportservice.support.ReportServiceIntegrationTest;
 
-@SpringBootTest
+@ReportServiceIntegrationTest
 class ReportServiceApplicationTests {
 
     @Test

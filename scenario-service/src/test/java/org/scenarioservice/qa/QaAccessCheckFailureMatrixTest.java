@@ -161,12 +161,18 @@ class QaAccessCheckFailureMatrixTest {
 
     @ParameterizedTest(name = "auth-service {0}: 503 within 3 s, nothing stored")
     @ValueSource(strings = {"closes the connection at once", "answers garbage", "stalls after sending part of the head",
-            "stalls in the body after a complete head", "accepts but never answers"})
+            "stalls in the body after a complete head", "accepts but never answers", "resets before reading the request"})
     @Tag("AC-7.3")
+    @Tag("AC-1.1")
     void transportFailuresFailClosed(String behaviour) throws Exception {
         AtomicInteger connections = new AtomicInteger();
         try (RawServer server = RawServer.takeOverStubPort(stub, socket -> {
             connections.incrementAndGet();
+            if (behaviour.equals("resets before reading the request")) {
+                socket.setSoLinger(true, 0);
+                socket.close();
+                return;
+            }
             readRequestHead(socket.getInputStream());
             OutputStream out = socket.getOutputStream();
             switch (behaviour) {
@@ -192,11 +198,10 @@ class QaAccessCheckFailureMatrixTest {
         })) {
             assertFailsClosed();
         }
-        if (!behaviour.equals("closes the connection at once")) {
-            // A connection closed before any answer is retried once by the JDK HTTP client: see the QA report's
-            // bug list (D4 "no retries"); the 503 and its time bound still hold for that row.
-            assertThat(connections.get()).as("no retry").isEqualTo(1);
-        }
+        // Every row, including "closes the connection at once": restored by qa at platform-hardening review point B
+        // (2026-10-29). That row was exempt while the JDK HTTP client retried it (scenario-service BUG-4, SFU-1); T3 limits
+        // every access check to one attempt (D2, AC-1.1).
+        assertThat(connections.get()).as("no retry").isEqualTo(1);
     }
 
     private void assertFailsClosed() throws Exception {

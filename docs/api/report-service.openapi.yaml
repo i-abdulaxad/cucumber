@@ -1,0 +1,2253 @@
+openapi: 3.1.0
+info:
+  title: report-service API
+  version: 1.0.0
+  summary: Test runs and results per project, from CI uploads of Cucumber JSON and from manual runs, with summaries.
+  description: |
+    Contract C1 of `docs/specs/report-service.md` (phase 1). It documents every operation of decision D3, the upload
+    tokens (D4), the CI upload and the Cucumber JSON subset it reads (D5, D9, contract C8), manual run planning and
+    recording (D8, D10), environments and builds (D11), the run summary (D12), the error format and order (D13), and
+    both credentials: user JWTs and upload tokens (D5, contract C2). The paths, status codes, `code` values and the
+    Problem members `errors` (with `field` or `pointer`) and `featureIds` come from the spec's acceptance criteria
+    (AC-x.y) and are binding. The wording of `detail` and of `message` texts is not part of the contract.
+
+    ## Implementation status (1.0.0, review point A, 2026-10-29)
+
+    No operation is served yet (tasks T5 to T10). Implemented and tested (T3) for every path: both credentials and
+    their 401s (`UNAUTHENTICATED` on user paths, `UPLOAD_TOKEN_INVALID` on `/api/ci/**`), lower-case path ids,
+    strict JSON, the Problem format with `requestId`, the error dispatch, and the access check with its failure
+    mapping (C5, one attempt per call, no cache). Reviewed by pm (BD-2).
+
+    ## Which error wins (D13)
+
+    **User paths** (everything except `POST /api/ci/runs`), first failure wins:
+    1. 401 `UNAUTHENTICATED`: no valid JWT (AC-6.4). An upload token is not a JWT (AC-2.5).
+    2. 400 `MALFORMED_REQUEST` (a path id that isn't a lower-case canonical UUID, unreadable JSON, a JSON number or
+       boolean where a string belongs) or `VALIDATION_FAILED` (a body field or query parameter breaks a rule). No
+       access check is made (A3, AC-6.5).
+    3. The access check (auth-service C5): 503 `ACCESS_CHECK_UNAVAILABLE`, 401 `UNAUTHENTICATED`, 403 `FORBIDDEN`
+       (no access, a role below the operation's minimum, or an unknown project) (AC-6.1, AC-6.3).
+    4. 409 `PROJECT_ARCHIVED` for writes in an archived project (D7, AC-6.2). Token list and revoke are allowed.
+    5. 404 `RUN_NOT_FOUND`, `RESULT_NOT_FOUND`, `UPLOAD_TOKEN_NOT_FOUND`. A run, result or token of another project is
+       a 404 (AC-1.8, AC-4.7).
+    6. Business rules: 409 `RUN_NOT_MANUAL`, `RUN_CLOSED`, `UPLOAD_TOKEN_LIMIT`; 422 `FEATURE_NOT_PLANNABLE`,
+       `RUN_EMPTY`, `RUN_TOO_LARGE`.
+    7. Planning only, calls to scenario-service: 503 `SCENARIO_SERVICE_UNAVAILABLE`, 401 `UNAUTHENTICATED`, 409
+       `FEATURE_CHANGED`.
+
+    **The CI upload** (`POST /api/ci/runs`): 401 `UPLOAD_TOKEN_INVALID` → 415 `UNSUPPORTED_MEDIA_TYPE` → 413
+    `UPLOAD_TOO_LARGE` → 400 (`VALIDATION_FAILED` for query parameters, then `MALFORMED_REQUEST` for JSON that
+    doesn't parse) → 422 (`CUCUMBER_JSON_INVALID`, `UPLOAD_EMPTY`, `UPLOAD_TOO_MANY_TEST_CASES`) → the project check
+    (503 `PROJECT_CHECK_UNAVAILABLE`) → 409 `PROJECT_ARCHIVED` → write. Nothing is stored unless the answer is 201.
+
+    Notes:
+    - Every 401 carries `WWW-Authenticate: Bearer`.
+    - Unknown paths (404 `NOT_FOUND`) and unsupported methods on known paths (405 `METHOD_NOT_ALLOWED`) apply to every
+      path and are not repeated per operation. Like every user path, they need a valid JWT first.
+    - Any operation that writes can answer 409 `CONFLICT` when the project's write lock isn't free within 5 s. The
+      request changed nothing, and clients may retry.
+    - A 406 Problem is written as `application/problem+json` only when the request's `Accept` header allows it.
+
+    ## Requests rejected before the application
+
+    As in auth-service and scenario-service (platform-hardening D6): Tomcat rejects some requests before any
+    application code runs (an encoded slash or `%00` in the path, raw characters such as `{` or `|`, `CONNECT`, a
+    malformed request line, oversized URI or headers) with its own status and minimal body: no Problem, no `code`.
+    Paths the security firewall rejects (for example containing `;` or encoded `..`) are 400 `MALFORMED_REQUEST`, and
+    `TRACE` is 405 `METHOD_NOT_ALLOWED`, as Problems. A direct `/error` is an unrouted path. None of them calls the
+    access check or the project check.
+
+    ## Headers and other rules
+
+    - `Location` headers are relative (`/api/projects/{projectId}/runs/{runId}`), with lower-case ids.
+    - report-service never emits CORS headers or an `X-Request-Id` response header. The gateway is the CORS authority.
+    - Identity comes only from the JWT (user paths) or the upload token (the CI upload). An `X-User-Id` header is
+      ignored.
+    - Timestamps are UTC instants with a `Z` offset and at most microsecond precision, from the service clock.
+    - All statuses are UPPER_CASE (D8).
+    - Lengths count Unicode code points. Text that must have "no control character" rejects U+0000–U+001F and
+      U+007F–U+009F; text must not contain a lone surrogate. "Not blank" means not only whitespace or invisible
+      format characters.
+    - `createdBy`, `revokedBy` and `executedBy` are auth-service user ids. report-service stores no names or emails.
+    - Operational logs (D17) never change a response. Every line of a request carries its request ID (the valid
+      `X-Request-Id`, otherwise a generated UUID), the user id on user paths and the token id on uploads. No line
+      contains a token, a token prefix, the service key, an `Authorization` value, Cucumber JSON content, step texts,
+      error messages, comments or query values (AC-1.10, AC-7.2).
+    - There is no hard delete in phase 1: tokens are revoked, runs are cancelled.
+
+    ## Calls report-service makes (informational)
+
+    - **auth-service C5** (`GET /internal/projects/{projectId}/access`), for every user path after validation: the
+      caller's `Authorization` and `X-Request-Id` forwarded unchanged; no cache, no retry, connect 1 s, read 2 s;
+      fails closed with 503 `ACCESS_CHECK_UNAVAILABLE` (AC-6.3).
+    - **auth-service C7** (`GET /internal/service/projects/{projectId}`, auth-service 1.5.0), for the CI upload, with
+      `X-Service-Key`: no cache, no retry, connect 1 s, read 2 s. A timeout, 5xx, 401, 404, unreadable body or another
+      `projectId` is 503 `PROJECT_CHECK_UNAVAILABLE` (AC-2.7).
+    - **scenario-service 1.0.4** (contract C6), for planning only: the feature list, each selected feature's test
+      cases, and the list again (exactly 3 + n − 1 requests for n features), with the caller's `Authorization` and
+      `X-Request-Id`; connect 1 s, read 5 s, no retry (D6, AC-3.8).
+  x-spec: docs/specs/report-service.md
+servers:
+  - url: http://localhost:8080
+    description: Through the API gateway (normal use), once the gateway routes of spec GW1 and GW2 (task T11) are in place.
+  - url: http://localhost:8083
+    description: Direct to report-service (local development and tests).
+security:
+  - bearerAuth: []
+tags:
+  - name: Upload tokens
+    description: Create, list and revoke a project's CI upload tokens (US-1). Project `ADMIN` only.
+  - name: CI upload
+    description: Upload Cucumber JSON with an upload token; creates an automated run (US-2).
+  - name: Runs
+    description: Plan, complete, cancel, list and view runs (US-3, US-4, US-5).
+  - name: Results
+    description: Record and read test case results (US-4, US-5).
+paths:
+  /api/projects/{projectId}/upload-tokens:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/XRequestId'
+    post:
+      tags:
+        - Upload tokens
+      operationId: createUploadToken
+      summary: Create an upload token; the token is shown only here
+      description: |
+        Effective project role `ADMIN` (AC-1.6). Not allowed on an archived project: 409 `PROJECT_ARCHIVED` (AC-1.7).
+
+        The answer is the only place the token appears: `rct_` followed by 43 base64url characters (32 random bytes,
+        47 characters). report-service stores only its lower-case SHA-256 hex, and lists show `tokenPrefix`, its first
+        12 characters (AC-1.1, D4). A project has at most 10 active tokens (not revoked, and `expiresAt` null or in
+        the future); creating an 11th is 409 `UPLOAD_TOKEN_LIMIT`, also when two creates race (AC-1.5, AC-1.9).
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 409 `PROJECT_ARCHIVED`; 409
+        `UPLOAD_TOKEN_LIMIT`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUploadTokenRequest'
+            example:
+              name: GitHub Actions
+      responses:
+        '201':
+          description: The new token, with its secret `token`. Store it now; it is never shown again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedUploadToken'
+              example:
+                id: 6d1f3a5c-7e9b-4d2f-8a4c-6e8a0c2e4f60
+                name: GitHub Actions
+                token: rct_Q2hlY2tvdXQgdG9rZW4gZXhhbXBsZSBvbmx5IDMyYnl0
+                tokenPrefix: rct_Q2hlY2tv
+                createdBy: 5a2d8c1e-9f4b-4e7a-b3c6-0d1f2e3a4b5c
+                createdAt: '2026-10-29T09:30:00.123456Z'
+                expiresAt: null
+                lastUsedAt: null
+                revokedAt: null
+                revokedBy: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          description: |
+            `PROJECT_ARCHIVED` (AC-1.7); `UPLOAD_TOKEN_LIMIT`: the project already has 10 active tokens (AC-1.5,
+            AC-1.9); `CONFLICT`: the project's write lock wasn't free in time. Nothing was stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                projectArchived:
+                  $ref: '#/components/examples/ProjectArchived'
+                uploadTokenLimit:
+                  value:
+                    type: about:blank
+                    title: Conflict
+                    status: 409
+                    detail: The project already has 10 active upload tokens. Revoke one first.
+                    instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/upload-tokens
+                    code: UPLOAD_TOKEN_LIMIT
+                    requestId: rid-123
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+    get:
+      tags:
+        - Upload tokens
+      operationId: listUploadTokens
+      summary: List the project's upload tokens, newest first, without secrets
+      description: |
+        Effective project role `ADMIN` (AC-1.6). Also allowed on an archived project (AC-1.7). Every token of the
+        project, revoked and expired ones included, newest first (`createdAt` descending, then `id`). No item has a
+        `token` or a hash member (AC-1.2). Not paginated: a project has few tokens.
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403).
+      responses:
+        '200':
+          description: The tokens, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UploadToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/projects/{projectId}/upload-tokens/{tokenId}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/TokenId'
+      - $ref: '#/components/parameters/XRequestId'
+    post:
+      tags:
+        - Upload tokens
+      operationId: revokeUploadToken
+      summary: Revoke an upload token (final and idempotent)
+      description: |
+        Effective project role `ADMIN` (AC-1.6). Also allowed on an archived project (AC-1.7). No request body.
+
+        Revoking is final: the token never authenticates an upload again (AC-1.3). Revoking a revoked token is 200 with
+        the same `revokedAt` and `revokedBy` (AC-1.3). An upload racing a revoke is either stored before `revokedAt`
+        or refused with 401 (AC-2.14). A token of another project, or an unknown id, is 404 `UPLOAD_TOKEN_NOT_FOUND`
+        (AC-1.8).
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 404 `UPLOAD_TOKEN_NOT_FOUND`.
+      responses:
+        '200':
+          description: The revoked token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          description: '`UPLOAD_TOKEN_NOT_FOUND`: no token with this id in this project (AC-1.8).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: The upload token does not exist in this project.
+                instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/upload-tokens/00000000-0000-4000-8000-000000000000/revoke
+                code: UPLOAD_TOKEN_NOT_FOUND
+                requestId: rid-123
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/LockConflict'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/ci/runs:
+    post:
+      tags:
+        - CI upload
+      operationId: uploadCucumberJson
+      summary: Upload Cucumber JSON and create a completed automated run
+      description: |
+        **Public at the gateway, authenticated here by an upload token** (D3, D5). The token names the project, so
+        the path has no project id. `Authorization: Bearer <upload token>` (scheme `uploadToken`) is the only
+        credential: a missing header, another scheme, an unknown, malformed, revoked or expired token, and a user's
+        JWT all get the same 401 `UPLOAD_TOKEN_INVALID` (AC-2.4). Nothing is stored unless the answer is 201.
+
+        **Body:** Cucumber's `json` formatter output (Cucumber-JVM 7, Cucumber-JS), `Content-Type: application/json`
+        (otherwise 415), at most 20 MiB = 20,971,520 bytes, with or without `Content-Length` (otherwise 413; reading
+        stops at the limit) (AC-2.9). Only the subset in schema `CucumberJson` is read; unknown fields are ignored
+        (D9's named deviation, AC-2.12). What is read is strict: a wrong type, a missing required field, an unknown
+        status, a negative duration, or U+0000 or a lone surrogate in a read string is 422 `CUCUMBER_JSON_INVALID`
+        with up to 20 `errors` entries `{pointer, message}`, where `pointer` is a JSONPath such as
+        `$[0].elements[3].steps[1].result.status` (AC-2.8). JSON that doesn't parse is 400 `MALFORMED_REQUEST`. No
+        scenario element is 422 `UPLOAD_EMPTY`; more than 5,000 test cases is 422 `UPLOAD_TOO_MANY_TEST_CASES`.
+
+        **Mapping (D9):**
+        - each `scenario` element (also `scenario_outline`) is one test case, in the order of features, then
+          elements (`position` 1..n); two elements with the same id are two results, each with `attempt` 1;
+        - a `background` element's steps are put before the next scenario element of the same feature;
+        - rows of a test case: element `before` hooks (`BEFORE_HOOK`), then each step with its step-level `before`
+          and `after` hooks directly around it, then element `after` hooks (`AFTER_HOOK`);
+        - `tags`: the feature's, then the element's, each once at its first position (AC-2.13);
+        - status: the worst row by Cucumber precedence FAILED > AMBIGUOUS > UNDEFINED > PENDING > SKIPPED > PASSED; no
+          rows is UNKNOWN (AC-2.3);
+        - durations: per row floor(ns / 1,000,000) ms; per test case floor(sum of the row ns / 1,000,000) ms, or null
+          when no row has a duration;
+        - `error_message` is stored truncated to its first 65,536 code points; `embeddings` are not stored (AC-2.12);
+        - results are unlinked snapshots: `featureId`, `featureVersion`, `scenarioId` and `exampleRowId` are null,
+          `featurePath` is the `uri` (D6, AC-2.2).
+
+        **The run (D8, D11):** `source` `AUTOMATED`, `status` `COMPLETED`, `createdBy` and `startedAt` null,
+        `finishedAt` = `createdAt` = the upload time. `environment` and `build` are matched by exact, case-sensitive
+        name and created on first use; a build keeps the `branch`, `commit` and `ciUrl` of the run that created it,
+        and later values are ignored (AC-2.11). The token's `lastUsedAt` is set to the run's `createdAt` (AC-2.1).
+
+        **Project check:** after the body is read and before anything is stored, report-service asks auth-service
+        (C7) whether the token's project is archived: archived is 409 `PROJECT_ARCHIVED` (AC-2.6); a failed check is
+        503 `PROJECT_CHECK_UNAVAILABLE` (AC-2.7).
+
+        **Which error wins:** see "Which error wins (D13)", the CI upload.
+      security:
+        - uploadToken: []
+      parameters:
+        - $ref: '#/components/parameters/XRequestId'
+        - name: name
+          in: query
+          required: false
+          description: |
+            The run's name: 1–255 code points, not blank, no control character. Default `CI upload <createdAt>`
+            (for example `CI upload 2026-10-29T09:30:00.123456Z`). Invalid: 400 `VALIDATION_FAILED`, `errors` entry
+            `name` (AC-2.10).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          example: Nightly
+        - name: environment
+          in: query
+          required: false
+          description: |
+            The environment's name: 1–100 code points, not blank, no control character; matched exactly. Invalid:
+            400 `VALIDATION_FAILED`, `errors` entry `environment` (AC-2.10).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          example: staging
+        - name: build
+          in: query
+          required: false
+          description: |
+            The build's name: 1–255 code points, not blank, no control character; matched exactly (send `+` as
+            `%2B`). Invalid: 400 `VALIDATION_FAILED`, `errors` entry `build`.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          example: 1.4.2+517
+        - name: branch
+          in: query
+          required: false
+          description: |
+            The build's branch: 1–255 code points, not blank, no control character. Stored only when this run creates
+            the build. Invalid: 400 `VALIDATION_FAILED`, `errors` entry `branch`.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          example: main
+        - name: commit
+          in: query
+          required: false
+          description: |
+            The build's commit: 4–64 hexadecimal characters, either case, stored lower case. Stored only when this run
+            creates the build. Invalid: 400 `VALIDATION_FAILED`, `errors` entry `commit` (AC-2.10).
+          schema:
+            type: string
+            pattern: '^[0-9A-Fa-f]{4,64}$'
+          example: 9FCEB02
+        - name: ciUrl
+          in: query
+          required: false
+          description: |
+            The CI job's URL: an absolute `http` or `https` URL of at most 2,048 characters. Stored only when this run
+            creates the build. Invalid: 400 `VALIDATION_FAILED`, `errors` entry `ciUrl` (AC-2.10).
+          schema:
+            type: string
+            format: uri
+            maxLength: 2048
+          example: https://ci.example.com/jobs/517
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CucumberJson'
+            example:
+              - uri: features/checkout/address.feature
+                name: Address
+                tags: []
+                elements:
+                  - type: scenario
+                    name: Change address
+                    line: 5
+                    tags:
+                      - name: '@address'
+                    steps:
+                      - keyword: 'Given '
+                        name: a saved address
+                        result:
+                          status: pending
+                          duration: 1000000
+      responses:
+        '201':
+          description: The automated run, with its summary.
+          headers:
+            Location:
+              $ref: '#/components/headers/RunLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+              examples:
+                automatedRun:
+                  $ref: '#/components/examples/AutomatedRun'
+        '400':
+          description: |
+            `VALIDATION_FAILED`: a query parameter breaks its rule; `errors` has one `{field, message}` entry per
+            failed parameter (AC-2.10). `MALFORMED_REQUEST`: the body isn't JSON (AC-2.8).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: The request has invalid fields.
+                instance: /api/ci/runs
+                code: VALIDATION_FAILED
+                errors:
+                  - field: commit
+                    message: Commit must be 4 to 64 hexadecimal characters
+                requestId: rid-123
+        '401':
+          description: |
+            `UPLOAD_TOKEN_INVALID`: no `Authorization` header, another scheme, or a token that is unknown, malformed,
+            revoked or expired, or a user's JWT; all get the same answer, with `WWW-Authenticate: Bearer` (AC-2.4,
+            AC-1.3). Nothing was stored.
+          headers:
+            WWW-Authenticate:
+              $ref: '#/components/headers/WWWAuthenticate'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid upload token is required.
+                instance: /api/ci/runs
+                code: UPLOAD_TOKEN_INVALID
+                requestId: rid-123
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          description: |
+            `PROJECT_ARCHIVED`: the token's project is archived (AC-2.6); `CONFLICT`: the project's write lock wasn't
+            free in time. Nothing was stored, and `lastUsedAt` is unchanged.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                projectArchived:
+                  value:
+                    type: about:blank
+                    title: Conflict
+                    status: 409
+                    detail: The project is archived. Its content is read-only.
+                    instance: /api/ci/runs
+                    code: PROJECT_ARCHIVED
+                    requestId: rid-123
+        '413':
+          description: '`UPLOAD_TOO_LARGE`: the body is larger than 20,971,520 bytes, with or without `Content-Length` (AC-2.9).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Content Too Large
+                status: 413
+                detail: The upload is larger than 20 MiB.
+                instance: /api/ci/runs
+                code: UPLOAD_TOO_LARGE
+                requestId: rid-123
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          description: |
+            `CUCUMBER_JSON_INVALID`: what is read breaks the subset's rules; `errors` has 1 to 20 `{pointer, message}`
+            entries in document order (AC-2.8). `UPLOAD_EMPTY`: no scenario element (`[]`, or only backgrounds).
+            `UPLOAD_TOO_MANY_TEST_CASES`: more than 5,000 test cases (AC-2.9). Nothing was stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                cucumberJsonInvalid:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Content
+                    status: 422
+                    detail: The Cucumber JSON is not valid.
+                    instance: /api/ci/runs
+                    code: CUCUMBER_JSON_INVALID
+                    errors:
+                      - pointer: $[0].elements[0].steps[0].result.status
+                        message: Status must be one of passed, failed, skipped, pending, undefined, ambiguous
+                    requestId: rid-123
+                uploadEmpty:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Content
+                    status: 422
+                    detail: The upload has no scenario.
+                    instance: /api/ci/runs
+                    code: UPLOAD_EMPTY
+                    requestId: rid-123
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          description: |
+            `PROJECT_CHECK_UNAVAILABLE`: auth-service's project check (C7) failed: not reachable, too slow, a 5xx, a
+            401 or 404 (misconfiguration), an unreadable body or another project id (AC-2.7). Nothing was stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Service Unavailable
+                status: 503
+                detail: The project could not be checked. Try again later.
+                instance: /api/ci/runs
+                code: PROJECT_CHECK_UNAVAILABLE
+                requestId: rid-123
+  /api/projects/{projectId}/runs:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/XRequestId'
+    post:
+      tags:
+        - Runs
+      operationId: planManualRun
+      summary: Plan a manual run from features
+      description: |
+        Effective project role `MEMBER` or higher (AC-6.1). Not allowed on an archived project: 409
+        `PROJECT_ARCHIVED` (AC-6.2).
+
+        report-service reads the selected features' current test cases from scenario-service (D6): the feature list,
+        each feature's test cases, then the list again. Every feature id must be an active feature of the project,
+        otherwise 422 `FEATURE_NOT_PLANNABLE` with `featureIds` listing every such id in request order (AC-3.4). If a
+        selected feature's `currentVersion` changed between the two lists, the answer is 409 `FEATURE_CHANGED` and
+        nothing is stored (AC-3.6).
+
+        Test cases come in request order, then text order. With `tag`, only test cases whose effective tags contain
+        it exactly (case-sensitive) are kept (AC-3.2). 0 test cases is 422 `RUN_EMPTY`; more than 2,000 is 422
+        `RUN_TOO_LARGE` (AC-3.5). The run starts `PLANNED`, every result and step `UNKNOWN` (AC-3.1). Results store
+        `featureId`, `featureVersion` (the number), `scenarioId`, `exampleRowId` and a snapshot of the test case.
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 409 `PROJECT_ARCHIVED`; scenario-service
+        (503 `SCENARIO_SERVICE_UNAVAILABLE`, 401 `UNAUTHENTICATED`); 422 `FEATURE_NOT_PLANNABLE`; 422 `RUN_EMPTY`,
+        `RUN_TOO_LARGE`; 409 `FEATURE_CHANGED`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRunRequest'
+            example:
+              name: Release 1.4 regression
+              featureIds:
+                - 7c1e9a40-2b5d-4f3a-9e8c-1d6b0a4f2e57
+                - 1b3d5f7a-9c0e-4a2b-8d4f-6a8c0e2b4d61
+              environment: staging
+      responses:
+        '201':
+          description: The planned run, with its summary (every result `UNKNOWN`).
+          headers:
+            Location:
+              $ref: '#/components/headers/RunLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          description: |
+            `PROJECT_ARCHIVED` (AC-6.2); `FEATURE_CHANGED`: a selected feature was saved while the run was planned
+            (AC-3.6); `CONFLICT`: the project's write lock wasn't free in time. Nothing was stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                projectArchived:
+                  $ref: '#/components/examples/ProjectArchived'
+                featureChanged:
+                  value:
+                    type: about:blank
+                    title: Conflict
+                    status: 409
+                    detail: A selected feature changed while the run was planned. Plan it again.
+                    instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+                    code: FEATURE_CHANGED
+                    requestId: rid-123
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          description: |
+            `FEATURE_NOT_PLANNABLE`: a feature id isn't an active feature of the project; `featureIds` lists every
+            such id (AC-3.4). `RUN_EMPTY`: no test case is left (AC-3.5). `RUN_TOO_LARGE`: more than 2,000 test cases
+            (AC-3.5). Nothing was stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                featureNotPlannable:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Content
+                    status: 422
+                    detail: Some features can't be planned.
+                    instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+                    code: FEATURE_NOT_PLANNABLE
+                    featureIds:
+                      - 2c4e6a8c-0d1f-4b3e-9a5c-8f0b2d4e6a77
+                      - 00000000-0000-4000-8000-000000000000
+                    requestId: rid-123
+                runEmpty:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Content
+                    status: 422
+                    detail: No test case matches the selection.
+                    instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+                    code: RUN_EMPTY
+                    requestId: rid-123
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          description: |
+            `ACCESS_CHECK_UNAVAILABLE` (see the shared response), or `SCENARIO_SERVICE_UNAVAILABLE`: scenario-service
+            wasn't reachable, was too slow, answered a 5xx, 403, 404, an unexpected status or an unreadable body
+            (AC-3.7). Nothing was stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Service Unavailable
+                status: 503
+                detail: The features could not be read. Try again later.
+                instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+                code: SCENARIO_SERVICE_UNAVAILABLE
+                requestId: rid-123
+    get:
+      tags:
+        - Runs
+      operationId: listRuns
+      summary: List the project's runs, newest first, with their counts
+      description: |
+        Effective project role `READER` or higher (AC-6.1). Also allowed on an archived project. Runs come newest first
+        (`createdAt` descending, then `id`), each with `total`, `counts` and `passRate` (D12, AC-5.1).
+
+        **Which error wins:** 401; 400 `VALIDATION_FAILED` (`page`, `size`); the access check (503, 401, 403).
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - name: size
+          in: query
+          required: false
+          description: Page size, 1–100 (default 20). Otherwise 400 `VALIDATION_FAILED`, `errors` entry `size` (AC-5.4).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: One page of runs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/projects/{projectId}/runs/{runId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/RunId'
+      - $ref: '#/components/parameters/XRequestId'
+    get:
+      tags:
+        - Runs
+      operationId: getRun
+      summary: View a run with its summary
+      description: |
+        Effective project role `READER` or higher (AC-6.1). Also allowed on an archived project (AC-6.2). The summary is
+        computed on every read (D12, AC-5.2).
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 404 `RUN_NOT_FOUND`.
+      responses:
+        '200':
+          description: The run.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+              examples:
+                automatedRun:
+                  $ref: '#/components/examples/AutomatedRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          $ref: '#/components/responses/RunNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/projects/{projectId}/runs/{runId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/RunId'
+      - $ref: '#/components/parameters/XRequestId'
+    post:
+      tags:
+        - Runs
+      operationId: completeRun
+      summary: Complete a manual run
+      description: |
+        Effective project role `TESTER` or higher (AC-6.1). Not allowed on an archived project: 409
+        `PROJECT_ARCHIVED` (AC-6.2). No request body.
+
+        From `PLANNED` or `IN_PROGRESS` to `COMPLETED`, with `finishedAt` set; unrecorded results stay `UNKNOWN`.
+        Completing a `COMPLETED` run is 200, unchanged (same `finishedAt`) (AC-4.4). A `CANCELLED` run is 409
+        `RUN_CLOSED` (AC-4.5). An automated run is 409 `RUN_NOT_MANUAL` (AC-4.6).
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 409 `PROJECT_ARCHIVED`; 404
+        `RUN_NOT_FOUND`; 409 `RUN_NOT_MANUAL`; 409 `RUN_CLOSED`.
+      responses:
+        '200':
+          $ref: '#/components/responses/RunChanged'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          $ref: '#/components/responses/RunNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/RunConflict'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/projects/{projectId}/runs/{runId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/RunId'
+      - $ref: '#/components/parameters/XRequestId'
+    post:
+      tags:
+        - Runs
+      operationId: cancelRun
+      summary: Cancel a manual run
+      description: |
+        Effective project role `MEMBER` or higher (AC-6.1). Not allowed on an archived project: 409
+        `PROJECT_ARCHIVED` (AC-6.2). No request body.
+
+        From `PLANNED` or `IN_PROGRESS` to `CANCELLED`, with `finishedAt` set. Cancelling a `CANCELLED` run is 200,
+        unchanged (AC-4.5). A `COMPLETED` run is 409 `RUN_CLOSED` (AC-4.4). An automated run is 409 `RUN_NOT_MANUAL`
+        (AC-4.6).
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 409 `PROJECT_ARCHIVED`; 404
+        `RUN_NOT_FOUND`; 409 `RUN_NOT_MANUAL`; 409 `RUN_CLOSED`.
+      responses:
+        '200':
+          $ref: '#/components/responses/RunChanged'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          $ref: '#/components/responses/RunNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/RunConflict'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/projects/{projectId}/runs/{runId}/results:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/RunId'
+      - $ref: '#/components/parameters/XRequestId'
+    get:
+      tags:
+        - Results
+      operationId: listResults
+      summary: List a run's results by position
+      description: |
+        Effective project role `READER` or higher (AC-6.1). Also allowed on an archived project. Results come by
+        `position` (AC-2.2), optionally only those with one `status` (AC-5.3). Items have no steps; see
+        `getResult`.
+
+        **Which error wins:** 401; 400 `VALIDATION_FAILED` (`status`, `page`, `size`); the access check (503, 401,
+        403); 404 `RUN_NOT_FOUND`.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Only results with this status. Otherwise 400 `VALIDATION_FAILED`, `errors` entry `status` (AC-5.4).
+          schema:
+            $ref: '#/components/schemas/ExecutionStatus'
+        - $ref: '#/components/parameters/Page'
+        - name: size
+          in: query
+          required: false
+          description: Page size, 1–500 (default 100). Otherwise 400 `VALIDATION_FAILED`, `errors` entry `size` (AC-5.4).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: One page of results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          $ref: '#/components/responses/RunNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+  /api/projects/{projectId}/runs/{runId}/results/{resultId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/RunId'
+      - $ref: '#/components/parameters/ResultId'
+      - $ref: '#/components/parameters/XRequestId'
+    get:
+      tags:
+        - Results
+      operationId: getResult
+      summary: View a result with its steps and hooks
+      description: |
+        Effective project role `READER` or higher (AC-6.1). Also allowed on an archived project.
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 404 `RUN_NOT_FOUND`; 404
+        `RESULT_NOT_FOUND`.
+      responses:
+        '200':
+          description: The result, with `steps` in execution order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCaseResultDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          $ref: '#/components/responses/RunOrResultNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+    put:
+      tags:
+        - Results
+      operationId: recordResult
+      summary: Record a manual result's status and comment
+      description: |
+        Effective project role `TESTER` or higher (AC-6.1). Not allowed on an archived project: 409
+        `PROJECT_ARCHIVED` (AC-6.2).
+
+        Sets `status` and `comment` (null or absent clears it), `executedBy` (the caller) and `finishedAt`; the last
+        write wins. `UNKNOWN` resets the result (AC-4.2). The first recording on a `PLANNED` run moves it to
+        `IN_PROGRESS` and sets its `startedAt` (AC-4.1). A `COMPLETED` or `CANCELLED` run is 409 `RUN_CLOSED`
+        (AC-4.4); an automated run is 409 `RUN_NOT_MANUAL` (AC-4.6). Step results are not recorded by hand in phase 1.
+
+        **Which error wins:** 401; 400; the access check (503, 401, 403); 409 `PROJECT_ARCHIVED`; 404
+        `RUN_NOT_FOUND`; 404 `RESULT_NOT_FOUND`; 409 `RUN_NOT_MANUAL`; 409 `RUN_CLOSED`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordResultRequest'
+            example:
+              status: FAILED
+              comment: Voucher accepted
+      responses:
+        '200':
+          description: The recorded result (without steps).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCaseResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ProjectForbidden'
+        '404':
+          $ref: '#/components/responses/RunOrResultNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/RunConflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/AccessCheckUnavailable'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Every path except `POST /api/ci/runs`. The JWT that auth-service issues at `POST /api/auth/login`, contract C2.
+        report-service validates it itself, with scenario-service's rules (D5):
+
+        - Header: `Authorization: Bearer <jwt>`; the scheme is matched case-insensitively.
+        - Algorithm: HS512 only, with the shared secret `JWT_SECRET` (standard Base64 of at least 64 bytes); `exp`
+          required and in the future; `sub` required and a lower-case canonical UUID (AC-6.4).
+        - An upload token here is not a JWT: 401 `UNAUTHENTICATED` (AC-2.5).
+        - Missing or invalid credentials: 401 `UNAUTHENTICATED` with `WWW-Authenticate: Bearer`, and no access check
+          is made (AC-6.4). Tokens are never logged.
+    uploadToken:
+      type: http
+      scheme: bearer
+      bearerFormat: rct_ upload token
+      description: |
+        `POST /api/ci/runs` only (D4, D5). A project's upload token from `createUploadToken`: `rct_` plus 43
+        base64url characters (47 characters). report-service looks it up by the SHA-256 of its full text; it must
+        exist, not be revoked, and have `expiresAt` null or in the future. The token names the project.
+
+        - Header: `Authorization: Bearer <token>`; the scheme is matched case-insensitively.
+        - Anything else, a user's JWT included, is 401 `UPLOAD_TOKEN_INVALID` with `WWW-Authenticate: Bearer`
+          (AC-2.4). An upload token is no credential on any other path (AC-2.5).
+        - Tokens, their prefixes and hashes are never logged (AC-1.10).
+  parameters:
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: |
+        Optional request ID (the gateway always sends one). When it matches the pattern, Problem bodies echo it in
+        `requestId`, every log line of the request carries it, and it is forwarded to auth-service and
+        scenario-service (AC-3.8, AC-7.2). Otherwise it is ignored and a generated UUID is used in the logs. Never
+        rejected and never returned as a response header.
+      schema:
+        type: string
+      example: rid-123
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      description: |
+        The project's id (an auth-service project): a canonical UUID in lower case, matched exactly as received.
+        Upper-case digits, whitespace (for example `%20`) or anything else is 400 `MALFORMED_REQUEST`, and no access
+        check is made (AC-6.5). An unknown project is 403 `FORBIDDEN`, the same as no access.
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    RunId:
+      name: runId
+      in: path
+      required: true
+      description: |
+        The run's id: a canonical UUID in lower case, matched exactly as received; anything else is 400
+        `MALFORMED_REQUEST` (AC-6.5). A run of another project is 404 `RUN_NOT_FOUND`.
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    ResultId:
+      name: resultId
+      in: path
+      required: true
+      description: |
+        The result's id: a canonical UUID in lower case, matched exactly as received; anything else is 400
+        `MALFORMED_REQUEST`. A result of another run is 404 `RESULT_NOT_FOUND` (AC-4.7).
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    TokenId:
+      name: tokenId
+      in: path
+      required: true
+      description: |
+        The upload token's id: a canonical UUID in lower case, matched exactly as received; anything else is 400
+        `MALFORMED_REQUEST`. A token of another project is 404 `UPLOAD_TOKEN_NOT_FOUND` (AC-1.8).
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Zero-based page number, 0 or more (default 0). Otherwise 400 `VALIDATION_FAILED`, `errors` entry `page` (AC-5.4).
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+  headers:
+    WWWAuthenticate:
+      description: Bearer authentication challenge, on every 401.
+      schema:
+        type: string
+        pattern: '^Bearer'
+      example: Bearer
+    RunLocation:
+      description: The new run's path, relative, with lower-case ids (AC-2.1).
+      schema:
+        type: string
+        pattern: '^/api/projects/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/runs/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      example: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs/9e1c3a5b-7d9f-4b1d-8f3a-5c7e9a1b3d50
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      description: A canonical UUID in lower case (8-4-4-4-12 hexadecimal digits).
+      example: 3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13
+    Timestamp:
+      type: string
+      format: date-time
+      pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$'
+      description: |
+        A UTC instant in ISO-8601 with a `Z` offset and at most microsecond precision, for example
+        `2026-10-29T09:30:00.123456Z`. Clients must accept 0 to 6 fraction digits and compare instants, not strings.
+    ExecutionStatus:
+      type: string
+      description: |
+        A test case or step status (D8, D9): Cucumber's statuses in upper case. `UNKNOWN` is not executed yet (a
+        planned manual test case), or an uploaded test case without steps or hooks.
+      enum:
+        - PASSED
+        - FAILED
+        - SKIPPED
+        - PENDING
+        - UNDEFINED
+        - AMBIGUOUS
+        - UNKNOWN
+    RecordableStatus:
+      type: string
+      description: The statuses a tester can record (D8). `UNKNOWN` resets the result (AC-4.2); others are 400 `VALIDATION_FAILED` (AC-4.3).
+      enum:
+        - PASSED
+        - FAILED
+        - SKIPPED
+        - UNKNOWN
+    TestRunSource:
+      type: string
+      enum:
+        - MANUAL
+        - AUTOMATED
+    TestRunStatus:
+      type: string
+      description: |
+        MANUAL: `PLANNED` → `IN_PROGRESS` (first recording) → `COMPLETED` or `CANCELLED`. AUTOMATED: always
+        `COMPLETED` (D8).
+      enum:
+        - PLANNED
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+    StepResultKind:
+      type: string
+      enum:
+        - STEP
+        - BEFORE_HOOK
+        - AFTER_HOOK
+    CreateUploadTokenRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: |
+            1–100 code points, not blank, no control character (AC-1.4). Names need not be unique. A JSON number or
+            boolean is 400 `MALFORMED_REQUEST`; other violations are 400 `VALIDATION_FAILED` with an `errors` entry
+            `name`.
+          example: GitHub Actions
+        expiresAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+          description: Optional. Must be in the future, otherwise 400 `VALIDATION_FAILED`, `errors` entry `expiresAt` (AC-1.4).
+    UploadToken:
+      type: object
+      description: An upload token without its secret (AC-1.2). There is never a `token` or hash member here.
+      required:
+        - id
+        - name
+        - tokenPrefix
+        - createdBy
+        - createdAt
+        - expiresAt
+        - lastUsedAt
+        - revokedAt
+        - revokedBy
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+        tokenPrefix:
+          type: string
+          minLength: 12
+          maxLength: 12
+          description: The token's first 12 characters (`rct_` plus 8), to tell tokens apart.
+          example: rct_Q2hlY2tv
+        createdBy:
+          $ref: '#/components/schemas/Uuid'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        lastUsedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+          description: The `createdAt` of the last run this token uploaded (AC-2.1).
+        revokedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        revokedBy:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+      additionalProperties: false
+    CreatedUploadToken:
+      description: The created token, the only answer that carries `token` (AC-1.1).
+      allOf:
+        - $ref: '#/components/schemas/UploadToken'
+        - type: object
+          required:
+            - token
+          properties:
+            token:
+              type: string
+              pattern: '^rct_[A-Za-z0-9_-]{43}$'
+              description: The upload token (47 characters). Shown once; report-service keeps only its SHA-256 hash.
+    CucumberJson:
+      type: array
+      minItems: 1
+      description: |
+        Contract C8: the subset of Cucumber's `json` formatter output (Cucumber-JVM 7, Cucumber-JS) that
+        report-service reads (D9). **Unknown members are ignored** at every level (for example `id`, `match`,
+        `comments`, `keyword` of a feature, `start_timestamp`, `embeddings`); that is D9's named deviation from
+        strict input, because Cucumber versions add fields. What is read is strict: a wrong type, a missing required
+        member, a status outside the list, a negative duration, or U+0000 or a lone surrogate in a read string is
+        422 `CUCUMBER_JSON_INVALID`, with `errors[].pointer` naming the member as JSONPath (AC-2.8). `[]` is 422
+        `UPLOAD_EMPTY`. A body that isn't JSON is 400 `MALFORMED_REQUEST`.
+      items:
+        $ref: '#/components/schemas/CucumberFeature'
+    CucumberFeature:
+      type: object
+      required:
+        - uri
+      properties:
+        uri:
+          type: string
+          minLength: 1
+          description: The feature file's path, 1–4,096 code points; stored as the results' `featurePath`.
+        name:
+          type: string
+          default: ''
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/CucumberTag'
+        elements:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/CucumberElement'
+    CucumberTag:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: '@smoke'
+    CucumberElement:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - background
+            - scenario
+            - scenario_outline
+          description: '`scenario_outline` is read as `scenario`. Anything else is 422 `CUCUMBER_JSON_INVALID`.'
+        name:
+          type: string
+          default: ''
+        line:
+          type: integer
+          minimum: 1
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/CucumberTag'
+        before:
+          type: array
+          description: Element `before` hooks, recorded as `BEFORE_HOOK` rows before the steps.
+          items:
+            $ref: '#/components/schemas/CucumberHook'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/CucumberStep'
+        after:
+          type: array
+          description: Element `after` hooks, recorded as `AFTER_HOOK` rows after the steps.
+          items:
+            $ref: '#/components/schemas/CucumberHook'
+    CucumberStep:
+      type: object
+      required:
+        - keyword
+        - name
+        - result
+      properties:
+        keyword:
+          type: string
+          description: Trailing whitespace is trimmed (`'Given '` is stored as `Given`).
+        name:
+          type: string
+        doc_string:
+          type: object
+          properties:
+            value:
+              type: string
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              cells:
+                type: array
+                items:
+                  type: string
+        result:
+          $ref: '#/components/schemas/CucumberResult'
+        before:
+          type: array
+          description: Step-level hooks, recorded as `BEFORE_HOOK` rows directly before the step.
+          items:
+            $ref: '#/components/schemas/CucumberHook'
+        after:
+          type: array
+          description: Step-level hooks, recorded as `AFTER_HOOK` rows directly after the step.
+          items:
+            $ref: '#/components/schemas/CucumberHook'
+    CucumberHook:
+      type: object
+      required:
+        - result
+      properties:
+        result:
+          $ref: '#/components/schemas/CucumberResult'
+    CucumberResult:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - passed
+            - failed
+            - skipped
+            - pending
+            - undefined
+            - ambiguous
+          description: Exactly one of these, in lower case (`Passed` is 422 `CUCUMBER_JSON_INVALID`, AC-2.8).
+        duration:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Nanoseconds, optional.
+        error_message:
+          type: string
+          description: Optional. Stored truncated to its first 65,536 code points (AC-2.12).
+    PlanRunRequest:
+      type: object
+      required:
+        - name
+        - featureIds
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 1–255 code points, not blank, no control character (D10, AC-3.3).
+          example: Release 1.4 regression
+        featureIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          description: |
+            1–20 distinct scenario-service feature ids, each a lower-case canonical UUID exactly as sent (no
+            whitespace). Otherwise 400 `VALIDATION_FAILED` with an `errors` entry `featureIds` (AC-3.3).
+          items:
+            $ref: '#/components/schemas/Uuid'
+        tag:
+          oneOf:
+            - type: string
+              minLength: 2
+              maxLength: 1000
+              pattern: '^@[^\s\u0000-\u001F\u007F-\u009F]+$'
+            - type: 'null'
+          description: |
+            Optional single tag: `@` followed by at least one character, no whitespace or control character, at most
+            1,000 code points; matched exactly and case-sensitively (D10, AC-3.2). Otherwise 400 `VALIDATION_FAILED`,
+            `errors` entry `tag` (AC-3.3). Stored as the run's `tagExpression`.
+        environment:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 100
+            - type: 'null'
+          description: Optional environment name, as the upload's `environment` query parameter (D9, D11).
+        build:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 255
+            - type: 'null'
+          description: Optional build name, as the upload's `build` query parameter (D9, D11).
+    RecordResultRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/RecordableStatus'
+        comment:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: 'null'
+          description: |
+            Optional: at most 2,000 code points; no control character except LF and TAB (AC-4.3). Null or absent
+            clears the comment.
+    Environment:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          example: staging
+    Build:
+      type: object
+      required:
+        - id
+        - name
+        - branch
+        - commitSha
+        - ciUrl
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          example: 1.4.2+517
+        branch:
+          type:
+            - string
+            - 'null'
+          example: main
+        commitSha:
+          type:
+            - string
+            - 'null'
+          description: Lower case.
+          example: 9fceb02
+        ciUrl:
+          type:
+            - string
+            - 'null'
+    StatusCounts:
+      type: object
+      description: The number of results per status; all 7 statuses, zeros included (D12).
+      required:
+        - PASSED
+        - FAILED
+        - SKIPPED
+        - PENDING
+        - UNDEFINED
+        - AMBIGUOUS
+        - UNKNOWN
+      properties:
+        PASSED:
+          type: integer
+        FAILED:
+          type: integer
+        SKIPPED:
+          type: integer
+        PENDING:
+          type: integer
+        UNDEFINED:
+          type: integer
+        AMBIGUOUS:
+          type: integer
+        UNKNOWN:
+          type: integer
+      additionalProperties: false
+    PassRate:
+      type:
+        - number
+        - 'null'
+      description: |
+        PASSED / executed × 100, rounded half-up to one decimal (66.7, 50.0); null when `executed` is 0 (D12,
+        AC-5.5).
+      example: 50.0
+    RunSummary:
+      type: object
+      description: Computed on every read (D12).
+      required:
+        - total
+        - counts
+        - executed
+        - passRate
+        - durationMs
+        - byFeature
+      properties:
+        total:
+          type: integer
+        counts:
+          $ref: '#/components/schemas/StatusCounts'
+        executed:
+          type: integer
+          description: '`total` minus `UNKNOWN`.'
+        passRate:
+          $ref: '#/components/schemas/PassRate'
+        durationMs:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: The sum of the results' non-null `durationMs`, or null when every one is null (AC-5.2).
+        byFeature:
+          type: array
+          description: One entry per `featurePath`, in order of first appearance (AC-5.2).
+          items:
+            type: object
+            required:
+              - featurePath
+              - featureName
+              - total
+              - counts
+            properties:
+              featurePath:
+                type: string
+              featureName:
+                type: string
+              total:
+                type: integer
+              counts:
+                $ref: '#/components/schemas/StatusCounts'
+    TestRunFields:
+      type: object
+      required:
+        - id
+        - projectId
+        - name
+        - source
+        - status
+        - environment
+        - build
+        - tagExpression
+        - createdBy
+        - startedAt
+        - finishedAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        projectId:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+        source:
+          $ref: '#/components/schemas/TestRunSource'
+        status:
+          $ref: '#/components/schemas/TestRunStatus'
+        environment:
+          oneOf:
+            - $ref: '#/components/schemas/Environment'
+            - type: 'null'
+        build:
+          oneOf:
+            - $ref: '#/components/schemas/Build'
+            - type: 'null'
+        tagExpression:
+          type:
+            - string
+            - 'null'
+          description: The planning `tag` of a manual run (AC-3.2); null otherwise.
+        createdBy:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+          description: The planner of a manual run; null for an upload (AC-2.1).
+        startedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+          description: MANUAL, the first recording (AC-4.1); AUTOMATED, null.
+        finishedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+          description: MANUAL, complete or cancel; AUTOMATED, the upload time (equal to `createdAt`, AC-2.1).
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+    TestRun:
+      description: A run with its summary (run view, plan, upload, complete, cancel).
+      allOf:
+        - $ref: '#/components/schemas/TestRunFields'
+        - type: object
+          required:
+            - summary
+          properties:
+            summary:
+              $ref: '#/components/schemas/RunSummary'
+    TestRunListItem:
+      description: A run in the list, with `total`, `counts` and `passRate` (D12, AC-5.1).
+      allOf:
+        - $ref: '#/components/schemas/TestRunFields'
+        - type: object
+          required:
+            - total
+            - counts
+            - passRate
+          properties:
+            total:
+              type: integer
+            counts:
+              $ref: '#/components/schemas/StatusCounts'
+            passRate:
+              $ref: '#/components/schemas/PassRate'
+    RunPage:
+      type: object
+      required:
+        - items
+        - page
+        - size
+        - totalItems
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestRunListItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalItems:
+          type: integer
+          format: int64
+    TestCaseResult:
+      type: object
+      required:
+        - id
+        - testRunId
+        - position
+        - featureId
+        - featureVersion
+        - scenarioId
+        - exampleRowId
+        - featurePath
+        - featureName
+        - name
+        - tags
+        - line
+        - status
+        - attempt
+        - executedBy
+        - comment
+        - finishedAt
+        - durationMs
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        testRunId:
+          $ref: '#/components/schemas/Uuid'
+        position:
+          type: integer
+          minimum: 1
+          description: Order in the run, from 1.
+        featureId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+          description: The scenario-service feature of a manual result; null for uploads in phase 1 (D6, AC-2.2).
+        featureVersion:
+          type:
+            - integer
+            - 'null'
+          description: The feature's version number when the run was planned; null for uploads in phase 1.
+        scenarioId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+          description: The scenario (or outline) of a manual result; null for uploads in phase 1.
+        exampleRowId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+          description: The example row of an outline's test case; null otherwise and for uploads.
+        featurePath:
+          type: string
+          description: Snapshot; the scenario-service path, or the uploaded `uri`.
+        featureName:
+          type: string
+          description: Snapshot; may be empty.
+        name:
+          type: string
+          description: Snapshot of the test case name (outline placeholders filled in).
+        tags:
+          type: array
+          description: Effective tags, each once at its first position (AC-2.13).
+          items:
+            type: string
+        line:
+          type:
+            - integer
+            - 'null'
+        status:
+          $ref: '#/components/schemas/ExecutionStatus'
+        attempt:
+          type: integer
+          description: Always 1 in phase 1.
+        executedBy:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+          description: The tester of a manual result's last recording; null otherwise.
+        comment:
+          type:
+            - string
+            - 'null'
+        finishedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+          description: When a manual result was last recorded (AC-4.1); null for uploads.
+        durationMs:
+          type:
+            - integer
+            - 'null'
+          format: int64
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+    TestCaseResultDetail:
+      allOf:
+        - $ref: '#/components/schemas/TestCaseResult'
+        - type: object
+          required:
+            - steps
+          properties:
+            steps:
+              type: array
+              description: Steps and hooks in execution order (D9); manual results have their planned steps, all `UNKNOWN`.
+              items:
+                $ref: '#/components/schemas/StepResult'
+    StepResult:
+      type: object
+      required:
+        - position
+        - kind
+        - keyword
+        - text
+        - dataTable
+        - docString
+        - status
+        - durationMs
+        - errorMessage
+      properties:
+        position:
+          type: integer
+          minimum: 1
+        kind:
+          $ref: '#/components/schemas/StepResultKind'
+        keyword:
+          type:
+            - string
+            - 'null'
+          description: The step keyword as written (`Given`); null for hooks.
+        text:
+          type:
+            - string
+            - 'null'
+          description: The step text; null for hooks.
+        dataTable:
+          type:
+            - array
+            - 'null'
+          items:
+            type: array
+            items:
+              type: string
+        docString:
+          type:
+            - string
+            - 'null'
+        status:
+          $ref: '#/components/schemas/ExecutionStatus'
+        durationMs:
+          type:
+            - integer
+            - 'null'
+          format: int64
+        errorMessage:
+          type:
+            - string
+            - 'null'
+          description: Cucumber's `error_message`, at most 65,536 code points.
+    ResultPage:
+      type: object
+      required:
+        - items
+        - page
+        - size
+        - totalItems
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestCaseResult'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalItems:
+          type: integer
+          format: int64
+    ErrorCode:
+      type: string
+      description: The stable machine-readable error code (D13). New codes need a spec change.
+      enum:
+        - VALIDATION_FAILED
+        - MALFORMED_REQUEST
+        - UNAUTHENTICATED
+        - UPLOAD_TOKEN_INVALID
+        - FORBIDDEN
+        - NOT_FOUND
+        - UPLOAD_TOKEN_NOT_FOUND
+        - RUN_NOT_FOUND
+        - RESULT_NOT_FOUND
+        - METHOD_NOT_ALLOWED
+        - NOT_ACCEPTABLE
+        - PROJECT_ARCHIVED
+        - UPLOAD_TOKEN_LIMIT
+        - RUN_CLOSED
+        - RUN_NOT_MANUAL
+        - FEATURE_CHANGED
+        - CONFLICT
+        - UPLOAD_TOO_LARGE
+        - UNSUPPORTED_MEDIA_TYPE
+        - CUCUMBER_JSON_INVALID
+        - UPLOAD_EMPTY
+        - UPLOAD_TOO_MANY_TEST_CASES
+        - FEATURE_NOT_PLANNABLE
+        - RUN_EMPTY
+        - RUN_TOO_LARGE
+        - INTERNAL_ERROR
+        - ACCESS_CHECK_UNAVAILABLE
+        - PROJECT_CHECK_UNAVAILABLE
+        - SCENARIO_SERVICE_UNAVAILABLE
+    Problem:
+      type: object
+      description: |
+        RFC 9457 Problem Details (`application/problem+json`), the same shape as scenario-service's (contract C3),
+        plus the member `featureIds`. `requestId` is present when the request carried a valid `X-Request-Id`. Never
+        contains stack traces, exception class names, SQL, hosts, ports, tokens or submitted values.
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+        - code
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+          description: Always `about:blank`.
+        title:
+          type: string
+          description: The HTTP reason phrase for `status`.
+        status:
+          type: integer
+          format: int32
+          description: The HTTP status code, equal to the response status.
+        detail:
+          type: string
+          minLength: 1
+          description: Human-readable explanation. Always non-empty; the wording is not part of the contract.
+        instance:
+          type: string
+          description: The request path, without the query string.
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        errors:
+          type: array
+          description: |
+            On `VALIDATION_FAILED`: one `{field, message}` entry per failed body field or query parameter, sorted by
+            `field`. On `CUCUMBER_JSON_INVALID`: 1 to 20 `{pointer, message}` entries in document order (AC-2.8).
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/InvalidField'
+              - $ref: '#/components/schemas/InvalidJsonMember'
+        featureIds:
+          type: array
+          minItems: 1
+          description: Only on `FEATURE_NOT_PLANNABLE`. Every requested id that isn't plannable, in request order (AC-3.4).
+          items:
+            $ref: '#/components/schemas/Uuid'
+        requestId:
+          type: string
+          pattern: '^[A-Za-z0-9._-]{1,128}$'
+          description: The request's `X-Request-Id`, when it was present and valid.
+      allOf:
+        - if:
+            required:
+              - code
+            properties:
+              code:
+                enum:
+                  - VALIDATION_FAILED
+                  - CUCUMBER_JSON_INVALID
+          then:
+            required:
+              - errors
+        - if:
+            required:
+              - code
+            properties:
+              code:
+                const: FEATURE_NOT_PLANNABLE
+          then:
+            required:
+              - featureIds
+    InvalidField:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          description: The body field or query parameter, for example `name`, `featureIds`, `commit` or `size`.
+          example: name
+        message:
+          type: string
+          description: Human-readable reason; the wording is not part of the contract. Never contains the value.
+      additionalProperties: false
+    InvalidJsonMember:
+      type: object
+      required:
+        - pointer
+        - message
+      properties:
+        pointer:
+          type: string
+          description: JSONPath of the offending member, from `$` (the whole body), for example `$[0].uri`.
+          example: $[0].elements[0].steps[0].result.status
+        message:
+          type: string
+          description: Human-readable reason; the wording is not part of the contract. Never contains the value.
+      additionalProperties: false
+  responses:
+    BadRequest:
+      description: |
+        `VALIDATION_FAILED` (a body field or query parameter breaks a rule; the body has `errors` with `field`), or
+        `MALFORMED_REQUEST` (unreadable JSON; a JSON number or boolean where a string belongs; a path id that isn't a
+        lower-case canonical UUID, matched exactly as received). No access check is made.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            validationFailed:
+              value:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: The request has invalid fields.
+                instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/upload-tokens
+                code: VALIDATION_FAILED
+                errors:
+                  - field: name
+                    message: Name must not be blank
+                requestId: rid-123
+            malformedRequest:
+              value:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: The request could not be read.
+                instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs/123
+                code: MALFORMED_REQUEST
+                requestId: rid-123
+    Unauthenticated:
+      description: |
+        `UNAUTHENTICATED`: no `Authorization` header, another scheme, a JWT that isn't valid, or an upload token, in
+        which case no access check is made (AC-6.4, AC-2.5); or the access check or scenario-service answered 401
+        (AC-6.3, AC-3.7). Through the gateway, the gateway answers the first kind itself, without `code`.
+      headers:
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWWAuthenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            detail: A valid bearer token is required.
+            instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+            code: UNAUTHENTICATED
+    ProjectForbidden:
+      description: |
+        `FORBIDDEN`: no access to the project, an effective role below the operation's minimum, or an unknown
+        project. Every case gets the same answer, so project ids can't be probed (D7, AC-6.1).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            detail: You are not allowed to perform this operation.
+            instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+            code: FORBIDDEN
+            requestId: rid-123
+    RunNotFound:
+      description: '`RUN_NOT_FOUND`: no run with this id in this project (AC-4.7).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: The run does not exist in this project.
+            instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs/00000000-0000-4000-8000-000000000000
+            code: RUN_NOT_FOUND
+            requestId: rid-123
+    RunOrResultNotFound:
+      description: |
+        `RUN_NOT_FOUND`: no run with this id in this project. `RESULT_NOT_FOUND`: the run has no result with this id
+        (AC-4.7).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: The result does not exist in this run.
+            instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs/9e1c3a5b-7d9f-4b1d-8f3a-5c7e9a1b3d50/results/00000000-0000-4000-8000-000000000000
+            code: RESULT_NOT_FOUND
+            requestId: rid-123
+    RunChanged:
+      description: The run after the change (or unchanged, when it was already in the target state).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TestRun'
+    RunConflict:
+      description: |
+        `PROJECT_ARCHIVED` (AC-6.2); `RUN_NOT_MANUAL`: the run is automated (AC-4.6); `RUN_CLOSED`: the run is
+        completed or cancelled and the change isn't allowed (AC-4.4, AC-4.5, AC-4.8); `CONFLICT`: the project's write
+        lock wasn't free in time. Nothing changed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            projectArchived:
+              $ref: '#/components/examples/ProjectArchived'
+            runClosed:
+              value:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: The run is closed.
+                instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs/9e1c3a5b-7d9f-4b1d-8f3a-5c7e9a1b3d50/cancel
+                code: RUN_CLOSED
+                requestId: rid-123
+            runNotManual:
+              value:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: Automated runs can't be changed by hand.
+                instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs/9e1c3a5b-7d9f-4b1d-8f3a-5c7e9a1b3d50/complete
+                code: RUN_NOT_MANUAL
+                requestId: rid-123
+    LockConflict:
+      description: '`CONFLICT`: the project''s write lock wasn''t free in time. Nothing changed; clients may retry.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    AccessCheckUnavailable:
+      description: |
+        `ACCESS_CHECK_UNAVAILABLE`: auth-service's access check couldn't be completed: unreachable, too slow, a 5xx,
+        an unexpected status, an unreadable body, an unknown role or another project id (AC-6.3). The service fails
+        closed: nothing changed and no data is returned. The answer is never cached.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Service Unavailable
+            status: 503
+            detail: Access to the project could not be checked. Try again later.
+            instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+            code: ACCESS_CHECK_UNAVAILABLE
+            requestId: rid-123
+    NotAcceptable:
+      description: |
+        `NOT_ACCEPTABLE`: the `Accept` header excludes every media type this operation can return. The Problem body is
+        written only when `Accept` allows `application/problem+json`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: '`UNSUPPORTED_MEDIA_TYPE`: the request body isn''t `application/json` (AC-2.9).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Unsupported Media Type
+            status: 415
+            detail: Content-Type 'text/plain' is not supported.
+            instance: /api/ci/runs
+            code: UNSUPPORTED_MEDIA_TYPE
+            requestId: rid-123
+    OtherClientError:
+      description: |
+        Any other 4xx raised by Spring MVC itself that no explicit response covers (for example a missing required
+        header). The status is Spring's own; the `code` is `MALFORMED_REQUEST`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalError:
+      description: '`INTERNAL_ERROR`: an unexpected failure. The `detail` is fixed and reveals nothing internal.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred.
+            instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+            code: INTERNAL_ERROR
+            requestId: rid-123
+  examples:
+    ProjectArchived:
+      value:
+        type: about:blank
+        title: Conflict
+        status: 409
+        detail: The project is archived. Its content is read-only.
+        instance: /api/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13/runs
+        code: PROJECT_ARCHIVED
+        requestId: rid-123
+    AutomatedRun:
+      summary: The run of AC-2.1 (the CI sample)
+      value:
+        id: 9e1c3a5b-7d9f-4b1d-8f3a-5c7e9a1b3d50
+        projectId: 3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13
+        name: Nightly
+        source: AUTOMATED
+        status: COMPLETED
+        environment:
+          id: 4a6c8e0a-2b3d-4f5a-9c7e-1d3f5b7a9c20
+          name: staging
+        build:
+          id: 5b7d9f1b-3c4e-4a6b-8d8f-2e4a6c8e0b30
+          name: 1.4.2+517
+          branch: main
+          commitSha: 9fceb02
+          ciUrl: null
+        tagExpression: null
+        createdBy: null
+        startedAt: null
+        finishedAt: '2026-10-29T09:30:00.123456Z'
+        createdAt: '2026-10-29T09:30:00.123456Z'
+        updatedAt: '2026-10-29T09:30:00.123456Z'
+        summary:
+          total: 4
+          counts:
+            PASSED: 2
+            FAILED: 1
+            SKIPPED: 0
+            PENDING: 1
+            UNDEFINED: 0
+            AMBIGUOUS: 0
+            UNKNOWN: 0
+          executed: 4
+          passRate: 50.0
+          durationMs: 13
+          byFeature:
+            - featurePath: features/checkout/payment.feature
+              featureName: Payment
+              total: 3
+              counts:
+                PASSED: 2
+                FAILED: 1
+                SKIPPED: 0
+                PENDING: 0
+                UNDEFINED: 0
+                AMBIGUOUS: 0
+                UNKNOWN: 0
+            - featurePath: features/checkout/address.feature
+              featureName: ''
+              total: 1
+              counts:
+                PASSED: 0
+                FAILED: 0
+                SKIPPED: 0
+                PENDING: 1
+                UNDEFINED: 0
+                AMBIGUOUS: 0
+                UNKNOWN: 0

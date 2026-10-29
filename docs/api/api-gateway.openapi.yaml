@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: API gateway edge contract
-  version: 0.2.3
+  version: 0.3.2
   summary: Conventions every client and downstream service relies on when calling the platform through the API gateway.
   description: |
     The API gateway (`api-gateway`) is the single entry point for every API call (spec: `docs/specs/api-gateway.md`).
@@ -9,6 +9,40 @@ info:
     This file documents **edge conventions only** (D9). Downstream operations are not copied here; each service
     documents its own operations in `docs/api/<service>.openapi.yaml`. External paths equal downstream paths: the
     gateway does no prefix stripping, no path rewriting and no API versioning (D2).
+
+    ## Changes in 0.3.2 (qa BUG-PH-1, 2026-10-29)
+
+    - Wording only: the `X-Request-Id` response header is on every response except the `TRACE` 405 and the
+      container-level rejections (D6), as built; the 0.3.0 and 0.3.1 changes are verified by qa.
+
+    ## Changes in 0.3.1 (`docs/specs/platform-hardening.md` D11, task T7, 2026-10-29)
+
+    - **A failure after the response is committed aborts the connection** (D11): once part of the response has
+      reached the client, a downstream failure or response timeout no longer appends a Problem. The gateway writes
+      nothing more and closes the connection abnormally, so the client sees a truncated response. See "Errors (D6)".
+      This replaces the 0.3.0 known-deviation note.
+
+    ## Implementation status (0.3.1, 2026-10-29)
+
+    The D11 abort rule is implemented (platform-hardening T7), verified by qa 2026-10-29.
+
+    ## Changes in 0.3.0 (`docs/specs/platform-hardening.md`, 2026-10-29)
+
+    Additive (new `status` values); no route, header or success response changes.
+    - **400 and 405 are Problems** (FU-3; D3, D5): a path the request firewall rejects (for example `/api/auth/./login`,
+      `/api/orgs//x` or a `;` path parameter) is 400 "The request URL was rejected.", and a method a gateway endpoint
+      or path doesn't support (for example `POST /actuator/health`, or `TRACE`) is 405 "This method is not supported
+      for this path.", both in the `Problem` format below, never forwarded.
+    - **A direct `/error` is an unrouted path** (FU-1; D4): 401 without a valid token, the 404 Problem with one.
+    - `requestId` is present whenever the response has an `X-Request-Id` header, which is every gateway Problem except
+      the `TRACE` 405 (Tomcat rejects `TRACE` before the gateway assigns a request ID).
+    - The phase-1 deviations FU-3 and FU-1 (`/error`) are removed. Requests the container rejects before any gateway
+      code runs are documented under "Requests rejected before the gateway" (D6); the health sub-paths stay open
+      (FU-5).
+
+    ## Implementation status (0.3.0, 2026-10-29)
+
+    The 0.3.0 changes are implemented (platform-hardening T5), verified by qa 2026-10-29.
 
     ## Routes (D2)
 
@@ -82,7 +116,7 @@ info:
     |---|---|---|
     | `X-Request-Id` | client → gateway (optional) | Kept if it matches `^[A-Za-z0-9._-]{1,128}$`; otherwise (including empty) replaced by a generated UUID. A malformed value is replaced, never rejected. |
     | `X-Request-Id` | gateway → service | Always present: the kept or generated value. |
-    | `X-Request-Id` | gateway → client | Exactly one header on every response, including gateway-generated errors, with the gateway's value. Equals `requestId` in Problem bodies. Any `X-Request-Id` a service sets on its response (in any letter case) is dropped, so services must not rely on setting it. |
+    | `X-Request-Id` | gateway → client | Exactly one header on every response, including gateway-generated errors, with the gateway's value, except the `TRACE` 405 and the container-level rejections (see "Requests rejected before the gateway"), which have none. Equals `requestId` in Problem bodies. Any `X-Request-Id` a service sets on its response (in any letter case) is dropped, so services must not rely on setting it. |
     | `X-User-Id` | client → gateway | Not accepted. Every client-supplied `X-User-Id` header is removed, in any letter case, on public and protected requests. |
     | `X-User-Id` | gateway → service | Set to the token's `sub` on protected requests only. Informational (logging and attribution): services must not authorize on it; authorization still uses the validated JWT. |
     | `Authorization` | gateway → service | Forwarded unchanged on every forwarded request. |
@@ -100,8 +134,10 @@ info:
 
     | Situation | Status | `title` | Suggested `detail` |
     |---|---|---|---|
+    | A path the request firewall rejects (non-canonical, `//`, `/./`, encoded `..`, or a `;` path parameter) | 400 | Bad Request | The request URL was rejected. |
     | Protected path with a missing, invalid or expired token | 401 | Unauthorized | A valid bearer token is required. |
-    | Valid token, but no route matches the path | 404 | Not Found | No API route matches this path. |
+    | Valid token, but no route matches the path (including a direct `/error`) | 404 | Not Found | No API route matches this path. |
+    | A method the gateway endpoint or path doesn't support (for example `POST /actuator/health`, or `TRACE` on any path) | 405 | Method Not Allowed | This method is not supported for this path. |
     | Couldn't connect to the downstream service (connection refused, unknown host, connect timeout) | 503 | Service Unavailable | The service handling this request is unavailable. Try again later. |
     | Connected, but the response (status line, headers and the whole body) wasn't complete within the response timeout | 504 | Gateway Timeout | The service handling this request did not respond in time. |
     | The connection dropped before the response was complete, or the response was invalid: a malformed status line, a status code outside 100–599, or a body shorter than its declared length | 502 | Bad Gateway | The service handling this request returned an invalid response. |
@@ -111,8 +147,15 @@ info:
     - Timeouts: 2 s to connect (`GATEWAY_CONNECT_TIMEOUT`) and 10 s for the response (`GATEWAY_RESPONSE_TIMEOUT`).
       The response timeout covers the whole downstream exchange, from sending the request to receiving the last
       byte of the response body. When it runs out, the client gets 504.
-    - A failure after the response headers arrive is still 502 or 504 according to the table, never 500. 500 is
-      reserved for unexpected failures inside the gateway.
+    - A failure after the response headers arrive, but before any part of the response has reached the client, is
+      still 502 or 504 according to the table, never 500. 500 is reserved for unexpected failures inside the gateway.
+    - **Failure after the response is committed (D11):** once part of the response has reached the client (more
+      than Tomcat's 8 KB response buffer, or a streamed body), a downstream failure or response timeout can't change
+      the status any more. The gateway then writes nothing more (no Problem, no terminating chunk) and closes the
+      client connection abnormally, so the truncation is detectable: a chunked body ends without its last chunk, a
+      `Content-Length` body ends short, and clients see a connection error (for example curl exit code 18). Clients
+      must treat such a response as failed, whatever its status (200 in the usual case). The failure is logged once
+      at WARN, and the access log records the status the client received.
     - Replays:
       - the gateway never replays a timed-out request;
       - it never replays a request whose method isn't GET or HEAD;
@@ -121,6 +164,14 @@ info:
 
       Retrying a connection that was never established is not a replay.
     - Problem bodies never contain stack traces, exception class names, or downstream URLs, hosts or ports.
+
+    ## Requests rejected before the gateway (platform-hardening D6)
+
+    The servlet container (Tomcat) rejects some requests before any gateway code runs: an encoded slash (`%2F`) or
+    `%00` in the path, raw characters such as `{` or `|`, the `CONNECT` method (501), a malformed request line, and an
+    oversized URI or headers. These keep Tomcat's status (400, or 501 for `CONNECT`) with Tomcat's minimal body: no
+    Problem, no `X-Request-Id` header, nothing internal, and they never reach a service. This is permanent: decoding
+    `%2F` would weaken the path checks, and a container-level error page can't carry the request ID.
 
     ## CORS (D5)
 
@@ -222,8 +273,9 @@ components:
     XRequestId:
       description: |
         Request ID: the client's value if it was well-formed, otherwise a UUID generated by the gateway. Exactly one
-        on every response, including gateway-generated errors, and forwarded to the downstream service. A downstream
-        `X-Request-Id` response header is dropped.
+        on every response, including gateway-generated errors, except the `TRACE` 405 and the container-level
+        rejections (D6), which have none; forwarded to the downstream service. A downstream `X-Request-Id` response
+        header is dropped.
       schema:
         type: string
         pattern: '^[A-Za-z0-9._-]{1,128}$'
@@ -246,7 +298,6 @@ components:
         - status
         - detail
         - instance
-        - requestId
       properties:
         type:
           type: string
@@ -262,17 +313,14 @@ components:
           type: integer
           format: int32
           description: |
-            The HTTP status code (401, 403, 404, 500, 502, 503 or 504).
+            The HTTP status code (400, 401, 403, 404, 405, 500, 502, 503 or 504).
 
-            Phase-1 deviations, where a gateway response doesn't use this schema yet:
-            - The request firewall's 400 (a non-canonical path such as `/api/auth/./login`) and 405 (a method a
-              gateway endpoint doesn't support, such as `POST /actuator/health`) may carry Spring Boot's default error
-              body instead (follow-up FU-3). They do carry the `X-Request-Id` header.
+            Responses that don't use this schema:
             - Requests the servlet container rejects before any gateway code runs (for example an encoded slash or
-              `%00` in the path, or the `TRACE` and `CONNECT` methods) get a container-generated response with no
-              `X-Request-Id` header. They never reach a service.
-            - With a valid token, `GET /error` and `/actuator/health/{liveness,readiness,ping}` don't answer the 404
-              Problem yet (follow-up FU-1). Without a token they answer 401 like any other unrouted path.
+              `%00` in the path, or the `CONNECT` method) get a container-generated response with no `X-Request-Id`
+              header. They never reach a service (see "Requests rejected before the gateway").
+            - With a valid token, `/actuator/health/{liveness,readiness,ping}` don't answer the 404 Problem yet
+              (follow-up FU-5). Without a token they answer 401 like any other unrouted path.
           example: 401
         detail:
           type: string
@@ -281,12 +329,16 @@ components:
           example: A valid bearer token is required.
         instance:
           type: string
-          description: The request path, without the query string.
+          description: |
+            The request path as sent, without the query string. For a request the firewall rejected, it is the
+            original path (never `/error`).
           example: /api/orgs
         requestId:
           type: string
           pattern: '^[A-Za-z0-9._-]{1,128}$'
-          description: Equal to the `X-Request-Id` response header.
+          description: |
+            Equal to the `X-Request-Id` response header, present whenever that header is. The only gateway Problem
+            without it is the `TRACE` 405: Tomcat rejects `TRACE` before the gateway assigns a request ID.
           example: 3f2b8c1e-5d4a-4e7b-9c2d-1a0b9e8f7c6d
     Health:
       type: object

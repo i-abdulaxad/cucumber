@@ -1,6 +1,6 @@
 # Platform hardening: one C5 request, and Problems for requests rejected before Spring MVC
-Status: Ready (user decisions of 2026-10-26: Q1–Q4 as recommended, E1–E13 approved, gateway FU-4 abort added)
-Last updated: 2026-10-26
+Status: Accepted with follow-ups (pm, 2026-10-29; see "Acceptance")
+Last updated: 2026-10-29 (acceptance; E16)
 
 Binding rules: `docs/engineering/standards.md` (referenced as "standards §n"). This spec lists only feature-specific rules. It has **no named deviation** from the standards.
 
@@ -88,7 +88,7 @@ Rejected alternatives for the last row: `encodedSolidusHandling=decode` turns `%
 **D8. Contracts (backend-swe, T6).** Additive, non-breaking (no client is built yet; frontend-swe informed through the handoff):
 - auth-service `1.3.0 → 1.4.0`: `SERVICE_UNAVAILABLE` in the code list, 503 on login and on authenticated operations, the phase-1 note replaced by the D6 note.
 - scenario-service `1.0.4 → 1.0.5`: the D6 note, and direct `/error` (D4).
-- api-gateway `0.2.3 → 0.3.0`: 400 and 405 in `Problem.status`, the FU-3 and FU-1 `/error` deviations removed, the D6 note kept (with `TRACE` moved out of the container list); the BUG-14 committed-response deviation replaced by the D11 abort rule.
+- api-gateway `0.2.3 → 0.3.0`: 400 and 405 in `Problem.status`, the FU-3 and FU-1 `/error` deviations removed, the D6 note kept (with `TRACE` moved out of the container list). Then `0.3.0 → 0.3.1` when T7 lands: the BUG-14 committed-response deviation replaced by the D11 abort rule (user, 2026-10-29).
 
 *Reason:* new status and code values are minor bumps; notes only are patch.
 
@@ -356,7 +356,10 @@ Scenario: An uncommitted failure is still the D6 502 Problem
 | E10 | scenario | `exception/ApiExceptionHandler.java` | As E2 | D3, D5 | L | RP-A | T4 |
 | E11 | gateway | `exception/GatewayExceptionHandler.java` | Render the error controller's typed exception and MVC's 405 in D6 (`type`, `requestId`) | D3, D5 | M (edge) | RP-A | T5 |
 | E12 | gateway | `exception/GatewayProblems.java` | The two D5 detail texts | D5 | L | — | T5 |
-| E13 | gateway | `exception/GatewayExceptionHandler.java` (committed branch of the downstream-failure handling); `filter/AccessLogFilter.java` (status recorded when the response was already committed) | D11: abort instead of appending; log status as received. Approved by the user 2026-10-26 | D11 | M (edge, response integrity) | T5 (same file) | T7 |
+| E13 | gateway | `exception/GatewayExceptionHandler.java` (committed branch of the downstream-failure handling); `filter/AccessLogFilter.java` (status recorded when the response was already committed) | D11: abort instead of appending; log status as received. Approved by the user 2026-10-26. With E14 (2026-10-29) the handler's committed branch keeps the one WARN, sets the abort flag and writes nothing; `AccessLogFilter` is expected to need no change | D11 | M (edge, response integrity) | T5 (same file) | T7 |
+| E14 | gateway | new class in `configuration/` | Registers a Tomcat context valve: after the application returns, if the handler flagged an abort, it closes the connection with `ActionCode.CLOSE_NOW`. **Why:** Tomcat 11.0.22 includes `/error` into a committed body (`StandardHostValve` 353–369) and logs ERROR (`StandardWrapperValve` 183–213); E13's files alone can't prevent either. Approved by the user 2026-10-29 (T7 option A) | D11 | M (container hook) | E13 | T7 |
+| E15 | gateway (+ auth, scenario if affected) | test support only: gateway `support/GatewayLauncher.java` (`freePort()` binds the wildcard address), and any other `support/*` server or port helper in the three services that has the same pattern | Test servers bind to `127.0.0.1` on a port verified free on that address (fixes RC-2: a user JVM on `127.0.0.1` caused 23 false gateway failures). qa's shared base only as a named F1 item (exact lines). Approved by the user 2026-10-29 | RC-2 | L (tests only) | — | T8 |
+| E16 | auth | `auth-service/build.gradle` (test task) | One line: `systemProperty 'server.address', '127.0.0.1'`, so test servers bind loopback (RC-2). Approved by the user 2026-10-29 | RC-2 | L (tests only) | E15 | T8 |
 
 **Will not be touched:** controllers' handlers, services, repositories, entities, migrations and the ERD; auth-service's C5 endpoint and `ProblemAuthenticationEntryPoint`; scenario-service's `AccessCheckClient`, `ProjectAccessChecker` and C5 mapping; scenario-service and gateway JWT filters; gateway routes, CORS, the request-id filter, the access log's format and masking, `SecurityConfiguration`, `DownstreamResponseFailureConfiguration`; any `application*.yaml`; every `.../qa/**` file (qa's, standards §2); report-service; any `.env`.
 
@@ -398,7 +401,7 @@ Common to every task: standards §2, §5, §6, §7 apply. New tests are not unde
 - **AC-3.2 (pm, 2026-10-26):** the aspect's "Slow call" WARN at login and register when the pool times out is acceptable. It is the aspect's standard outcome line, not a second failure log, and it carries no request data. AC-3.2 is reworded accordingly.
 - New follow-up PH-FU-3 and refactoring candidates RC-1 and RC-2 (below).
 
-### Batch B: copy the pattern, gateway FU-4 abort, then contracts (order: T4, T5, T7, T6)
+### Batch B: copy the pattern, gateway FU-4 abort, then contracts (order: T4, T5, T6, T7; T8 any time before qa)
 
 **T4. scenario-service SFU-2 (E9, E10)**
 - **Allowed files:** E9, E10; new `controller/ProblemErrorController.java` and at most one typed exception in `exception/`; new test classes as in T3.
@@ -414,19 +417,26 @@ Common to every task: standards §2, §5, §6, §7 apply. New tests are not unde
 - **Test first:** AC-5.1 → red: Boot JSON. AC-5.2 → red: no `type` or `requestId` (re-check first; record if already green). AC-5.3 → red: Boot JSON. AC-5.4 valid-token row → red: 500. AC-5.5 → green guard.
 - **Done when / stop if:** as T1; also stop if any downstream failure Problem (D6 502/503/504) changes.
 
-**T7. api-gateway FU-4 abort (E13; after T5, same file)**
+**T7. api-gateway FU-4 abort (E13, E14; after T5, same file; option A, user 2026-10-29)**
 - **Step 0 (qa):** qa writes AC-6.1 to AC-6.3 under `api-gateway/src/test/java/org/apigateway/qa/` and shows them red (AC-6.3 green), in the same change set as the fix; never committed red or disabled (gateway D10).
-- **Allowed files:** E13's two files; new test classes under `api-gateway/src/test/java/org/apigateway/` (outside `qa/`), including any new stub class they need. Existing `support/*` files stay unchanged (no E-item for them).
-- **Must not:** change D6 for uncommitted responses; add retries or buffering of whole bodies; add per-route timeouts; change the access log format or masking; touch `DownstreamResponseFailureConfiguration`.
+- **Allowed files:** E13's two files (`AccessLogFilter` expected unchanged); the one new E14 class in `org/apigateway/configuration/`; `docs/api/api-gateway.openapi.yaml` (the 0.3.1 note only); new test classes under `api-gateway/src/test/java/org/apigateway/` (outside `qa/`), including any new stub class they need. Existing `support/*` files change only under T8.
+- **Must not:** change D6 for uncommitted responses; add retries or buffering of whole bodies; add per-route timeouts; change the access log format or masking; touch `DownstreamResponseFailureConfiguration`; let the valve act on any request the handler didn't flag; add a dependency.
+- **Contract:** add the D11 abort rule to `docs/api/api-gateway.openapi.yaml` and bump it `0.3.0 → 0.3.1` (D8).
 - **ACs:** AC-6.1 to AC-6.3; regression AC-4.6, AC-4.7 and the T5 ACs.
 - **Test first:** chunked row → red: Problem appended, clean end. Length and stream rows → red: access `status=500` and ERROR entries. AC-6.3 → green guard.
 - **Done when:** green 3 times in a row (timing); full `clean build` green.
-- **Stop if:** aborting needs a file outside E13; a committed response can't be aborted without Tomcat- or gateway-library internals (report the options); any uncommitted 502/504 changes.
+- **Stop if:** aborting needs a file outside E13 and E14; `ActionCode.CLOSE_NOW` doesn't reach the connection from the valve on Tomcat 11.0.22 (report the evidence); the `/error` include or the ERROR log still happens; any uncommitted 502/504 changes.
 
-**T6. Contracts (docs, backend-swe; D8; after T4, T5, T7)**
+**T8. Test servers don't collide with local listeners (E15; any time in batch B, before qa)**
+- **Allowed files:** the E15 test-support files, each named in the handoff with the reason it's affected; qa's shared base only as an F1 item with exact lines, approved before the edit.
+- **Must not:** touch `src/main`, any test's assertions, or qa's tests beyond the F1 lines; use fixed ports.
+- **Done when:** every test server binds `127.0.0.1` on a port verified free there; with a foreign listener on `127.0.0.1:<port>` the affected gateway tests still pass (show the 23 earlier false failures now green); full `clean build` green in each changed service.
+- **Stop if:** a fix needs a `src/main` change or a file outside test support.
+
+**T6. Contracts (docs, backend-swe; D8; after T4, T5; the gateway's 0.3.1 note comes with T7)**
 - **Allowed files:** `docs/api/auth-service.openapi.yaml`, `docs/api/scenario-service.openapi.yaml`, `docs/api/api-gateway.openapi.yaml`.
 - **Must not:** touch code, config, tests or `docs/specs/`.
-- **Task:** the D8 edits and version bumps, describing behaviour as built in T1–T5 and T7.
+- **Task:** the D8 edits and version bumps, describing behaviour as built in T1–T5.
 - **Done when:** each file parses as OpenAPI 3.1; versions `1.4.0`, `1.0.5`, `0.3.0`.
 
 **Review point B.** Then qa verifies every AC, restores the `QaAccessCheckFailureMatrixTest` connection-count assertion, re-enables `QaUnknownPathsTest#theErrorPathIsAnUnroutedPath`, re-points `#healthSubPathsAre404Problems` to FU-5 (Q3), and updates its own tests that pinned the old behaviour (with the reason).
@@ -439,7 +449,7 @@ Common to every task: standards §2, §5, §6, §7 apply. New tests are not unde
 | PH-FU-2 | P2 | scenario-service: connection unavailable → 503 Problem (copy D7) | pm |
 | PH-FU-3 | P2 | auth-service has 12 cached test contexts against the standards §5 limit of 10 (pre-existing); bring it to ≤ 10 | backend-swe, qa |
 
-**Refactoring candidates (not approved; recorded only):** RC-1: the unused `userDetailsService` field in auth-service `SecurityConfig`. RC-2: `localhost` test servers can collide with local listeners on the same port; pick ports collision-safe.
+**Refactoring candidates (not approved; recorded only):** RC-1: the unused `userDetailsService` field in auth-service `SecurityConfig`. RC-2: `localhost` test servers can collide with local listeners on the same port; pick ports collision-safe. **RC-2 promoted to E15 / T8 by the user on 2026-10-29.**
 
 ## Resolved questions (user, 2026-10-26, relayed by the main session)
 
@@ -450,7 +460,20 @@ Common to every task: standards §2, §5, §6, §7 apply. New tests are not unde
 - **E13 scope** (confirmed 2026-10-26): covers both `GatewayExceptionHandler.java` and `AccessLogFilter.java`.
 - **FU-4 scope** (confirmed 2026-10-26): abort part only; per-route timeouts stay in gateway FU-4 for report-service.
 
+## Acceptance
+
+**2026-10-29: Accepted with follow-ups (pm).** Based on qa's report `docs/qa/platform-hardening-report.md` ("Signed off with known issues").
+- **ACs:** 22/22 pass (P0 13/13, P1 9/9). Builds: auth-service 2061/0 failed/0 skipped, scenario-service 899/0/1, gateway 475/0/3. Mutation 25/25 killed. Manual run passed.
+- **Bugs:** no S1, S2 or S3. BUG-PH-1 (S4, gateway contract 0.3.1 contradicts itself on `X-Request-Id` for TRACE) is fixed by backend-swe's docs-only contract 0.3.2, **pending the main session's verification**.
+- **qa decision 3 / testability finding 2 (pm, confirmed):** the D7 time bound applies to each request, including the "database refuses the connection" case, at AC-3.1's 2 s with the 500 ms connection-timeout.
+- **qa finding 1:** E16 recorded (user-approved 2026-10-29).
+- **Closed:** SFU-1 (BUG-4), SFU-2 (BUG-5), auth-service FU-1 (firewall, `TRACE`, direct `/error`; Tomcat-level rejections accepted by D6), FU-19, gateway FU-3, gateway FU-1's `/error` part, gateway FU-4's abort part (BUG-14), RC-2 (E15, E16).
+- **Still open:** BUG-PH-1 until verified; PH-FU-1, PH-FU-2, PH-FU-3; RC-1; gateway FU-5 (now with the health sub-paths), gateway FU-4's per-route timeouts (with report-service). Observations OBS-1 (one slow stall row under parallel load) and OBS-2 (HikariCP's own WARNs on a database restart) need no action unless they recur. auth-service's RC-3 and RC-4 are unrelated and stay open in that spec.
+- **Gate:** report-service's gate (this batch accepted, including FU-4's abort part) is met.
+
 ## Changelog
+- 2026-10-29: accepted with follow-ups; E16 recorded; D7 per-request bound confirmed; backlogs updated in the three source specs.
 - 2026-10-26: created by pm (Draft).
+- 2026-10-29: user decisions: E14 (T7 option A, Tomcat valve), E15 / T8 (RC-2 fix), gateway contract 0.3.0 now and 0.3.1 with T7. Status stays Ready.
 - 2026-10-26: review point A passed (E5, E7, E8 applied; AC-3.2 reworded; PH-FU-3, RC-1, RC-2; standards §3 note).
 - 2026-10-26: user decisions recorded; FU-4 abort added (D11, US-6, E13, T7); T3 Allowed files and stop conditions updated for Q1; Status Ready.

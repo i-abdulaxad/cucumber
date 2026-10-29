@@ -1,14 +1,31 @@
 openapi: 3.1.0
 info:
   title: auth-service API
-  version: 1.4.0
-  summary: Accounts, login, organizations, invitations, members, projects and the project access check.
+  version: 1.5.0
+  summary: Accounts, login, organizations, invitations, members, projects, the project access check and project status for services.
   description: |
     Contract C1 of `docs/specs/auth-service.md` (phase 1) and contracts C1 and C5 of
     `docs/specs/auth-service-projects.md` (phase 2). It documents every operation, the error format (D2) and the token
     rules (C2). The paths, status codes and `code` values here come from the specs' acceptance criteria (AC-x.y) and
     are binding. Wording of `detail` and validation `message` texts is not part of the contract. Where an AC is cited
     without a spec, phase-1 operations refer to the phase-1 spec and project operations to the phase-2 spec.
+
+    ## Changes in 1.5.0 (`docs/specs/report-service.md`, contract C7, 2026-10-29)
+
+    Additive: no existing path, success response or `code` value changes.
+    - **Project status for services**, `GET /internal/service/projects/{projectId}` (C7, report-service spec D5,
+      US-8): 200 with exactly `projectId`, `orgId` and `archived`; 400, 401 or 404. It is authenticated by the new
+      `serviceKey` scheme (`X-Service-Key`), never by a user's token, and like every `/internal/**` path it is never
+      routed by the gateway.
+    - New setting `INTERNAL_SERVICE_KEY` (`app.internal-service-key`, optional). Unset or empty: every
+      `/internal/service/**` request is 401 `UNAUTHENTICATED`. Set: standard Base64 of at least 32 bytes, otherwise
+      auth-service doesn't start.
+    - New schema `ProjectStatus`, response `ProjectNotFound` and tag `Project status for services`.
+    - The access check (C5) is unchanged: `X-Service-Key` is no credential there (AC-8.4).
+
+    ## Implementation status (1.5.0, report-service review point A, 2026-10-29)
+
+    C7 is implemented as described (report-service T4), pending qa verification.
 
     ## Changes in 1.4.0 (`docs/specs/platform-hardening.md`, 2026-10-26)
 
@@ -309,6 +326,10 @@ tags:
     description: |
       Service-to-service (phase-2 US-7, contract C5). Called by other services directly on auth-service's base URL,
       never through the gateway.
+  - name: Project status for services
+    description: |
+      Service-to-service without a user (report-service spec D5, contract C7). Authenticated by `X-Service-Key`;
+      called directly on auth-service's base URL, never through the gateway.
   - name: Tooling
     description: Development tooling on the service port only.
 paths:
@@ -1733,6 +1754,87 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /internal/service/projects/{projectId}:
+    get:
+      tags:
+        - Project status for services
+      operationId: getProjectStatus
+      summary: A project's organization and archived state (service-to-service, no user)
+      x-internal: true
+      description: |
+        **Service-to-service without a user (contract C7, report-service spec D5).** report-service calls it for a CI
+        upload, which has no user token, to learn whether the upload token's project is archived. It says nothing
+        about any user's access: C5 stays the only source of a user's role. Call it directly on auth-service's base
+        URL (`AUTH_SERVICE_URL`; `http://localhost:8081` locally); the gateway never routes `/internal/**`.
+
+        **Request:** `X-Service-Key: <INTERNAL_SERVICE_KEY>` (scheme `serviceKey`). A missing or wrong key, a user's
+        `Authorization: Bearer <jwt>` alone, or any request while auth-service runs without `INTERNAL_SERVICE_KEY` is
+        401 `UNAUTHENTICATED` (AC-8.2). The key is compared in constant time and never logged (AC-8.5).
+
+        **Answer:** 200 with exactly `projectId`, `orgId` and `archived`, read from the database on every request
+        (AC-8.1). An unknown project id is 404 `NOT_FOUND` (AC-8.3). An id that isn't a canonical UUID is 400
+        `MALFORMED_REQUEST`, like every auth-service path id; upper-case digits identify the same project, and the
+        answer's `projectId` is in lower case (see 1.3.0; AC-8.3 as amended by report-service BD-1).
+
+        **Which error wins:** 401 `UNAUTHENTICATED`; 400 `MALFORMED_REQUEST`; 404 `NOT_FOUND`.
+
+        **Consumer rules (report-service D5):** no cache, no retry, connect timeout 1 s, read timeout 2 s; a timeout,
+        5xx, 401, 404, unreadable body or another `projectId` fails closed (the consumer answers 503).
+
+        **Stability:** fields are only ever added; a breaking change needs a new path.
+      security:
+        - serviceKey: []
+      servers:
+        - url: http://localhost:8081
+          description: Direct to auth-service. Not routed by the gateway.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: The project's id. A value that isn't a canonical UUID is 400 `MALFORMED_REQUEST`.
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XRequestId'
+      responses:
+        '200':
+          description: The project exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectStatus'
+              example:
+                projectId: 3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13
+                orgId: 0b8e4a52-6c1f-4f0e-8d3a-7a2b9c1d5e60
+                archived: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: |
+            `UNAUTHENTICATED`: no `X-Service-Key`, a wrong key, only a user's bearer token, or auth-service runs
+            without `INTERNAL_SERVICE_KEY` (AC-8.2). The answer carries `WWW-Authenticate: Bearer` and the same
+            `detail` as every other 401; neither is part of this operation's contract.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: A valid bearer token is required.
+                instance: /internal/service/projects/3f9b2d6e-1c4a-4b7e-8f0d-5a2c4e6b8d13
+                code: UNAUTHENTICATED
+        '404':
+          $ref: '#/components/responses/ProjectNotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        4XX:
+          $ref: '#/components/responses/OtherClientError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v3/api-docs:
     get:
       tags:
@@ -1774,6 +1876,15 @@ components:
         - Lifetime: 24 hours (`exp` − `iat` = 86400 s). There is no refresh or logout in phase 1.
         - The user must still exist and must not be `SUSPENDED` (AC-3.4, AC-3.5).
         - Missing or invalid credentials: 401 `UNAUTHENTICATED` with `WWW-Authenticate: Bearer`.
+    serviceKey:
+      type: apiKey
+      in: header
+      name: X-Service-Key
+      description: |
+        Service credential for `/internal/service/**` only (contract C7, report-service spec D5): the exact value of
+        auth-service's `INTERNAL_SERVICE_KEY` (standard Base64 of at least 32 bytes), shared with the calling service.
+        Compared in constant time and never logged. Unset in auth-service: every `/internal/service/**` request is
+        401. It is no credential anywhere else, and a bearer token is no credential on `/internal/service/**`.
   parameters:
     XRequestId:
       name: X-Request-Id
@@ -2163,6 +2274,23 @@ components:
         archived:
           type: boolean
           description: When `true`, consumers must refuse content writes.
+    ProjectStatus:
+      type: object
+      description: The project status for services (contract C7). Fields are only ever added.
+      required:
+        - projectId
+        - orgId
+        - archived
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        archived:
+          type: boolean
+          description: When `true`, the project is read-only; consumers refuse writes (report-service D5).
     CreateProjectRequest:
       type: object
       required:
@@ -2406,6 +2534,19 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+    ProjectNotFound:
+      description: '`NOT_FOUND`: no project has this id (C7, AC-8.3).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: No project has this id.
+            instance: /internal/service/projects/00000000-0000-4000-8000-000000000000
+            code: NOT_FOUND
     ProjectForbidden:
       description: |
         `FORBIDDEN`: the caller has no access to the project or their effective project role is too low; or the

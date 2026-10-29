@@ -39,6 +39,8 @@ logging:
 
 app:
   jwtSecret: ${JWT_SECRET}
+  # Key of other services for /internal/service/** (C7, report-service spec D5); empty disables those paths (401).
+  internal-service-key: ${INTERNAL_SERVICE_KEY:}
   jwtExpirationInMs: 86400000
   orgs:
     free-seat-limit: 5

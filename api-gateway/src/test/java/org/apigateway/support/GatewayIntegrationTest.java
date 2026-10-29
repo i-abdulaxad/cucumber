@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Spring context. Each test starts with fresh stubs that answer status 200 with body {@code {}}.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "jwt.secret=" + TestTokens.SECRET)
+        properties = {"jwt.secret=" + TestTokens.SECRET, "server.address=" + GatewayLauncher.LOOPBACK})
 public abstract class GatewayIntegrationTest {
 
     protected static final StubServer AUTH_SERVICE = StubServer.start("auth-service");

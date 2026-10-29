@@ -199,7 +199,8 @@ class QaStrictInputTest {
 
         MvcResult result = perform(mockMvc, GUS, get(URI.create(url)));
 
-        // Spring Security's firewall answers before Spring MVC; the body isn't a Problem (QA report, bug list)
+        // Spring Security's firewall answers before Spring MVC. MockMvc has no error dispatch, so the body is only checked
+        // on a real server: the 400 MALFORMED_REQUEST Problem of platform-hardening AC-4.1 (BUG-5 / SFU-2 fixed by T4)
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
         assertThat(stub.received()).isEmpty();
     }

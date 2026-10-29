@@ -43,6 +43,7 @@ AUTH_DB_URL='jdbc:postgresql://localhost:5432/auth_service' AUTH_DB_USERNAME='au
 | `spring.datasource.url` (`AUTH_DB_URL`) | none (the `dev` profile sets one) | JDBC URL of the auth_service database, without credentials |
 | `spring.datasource.username` (`AUTH_DB_USERNAME`) | none (the `dev` profile sets one) | Database role |
 | `spring.datasource.password` (`AUTH_DB_PASSWORD`) | none (`.env` with the `dev` profile) | Database password; never logged |
+| `app.internal-service-key` (`INTERNAL_SERVICE_KEY`) | empty (disabled) | Key other services send as `X-Service-Key` to `GET /internal/service/projects/{projectId}` (C7, report-service spec D5). Empty: every `/internal/service/**` request is 401. When set: standard Base64 of at least 32 bytes, else start-up fails naming the variable; compared in constant time; never logged |
 
 A missing or blank `AUTH_DB_*` value stops start-up with a message that names the variable and never shows a value.
 

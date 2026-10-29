@@ -5,6 +5,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({JwtProperties.class, OrganizationProperties.class, LoggingProperties.class,
-        DatabaseProperties.class})
+        DatabaseProperties.class, InternalServiceProperties.class})
 public class PropertiesConfiguration {
 }

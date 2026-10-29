@@ -1515,10 +1515,10 @@ None.
 
   | ID | Priority | Summary | Owner |
   |---|---|---|---|
-  | FU-4 | **P1** | Abort committed responses (BUG-14), per-route timeouts. Must land before any routed service can return bodies over 8 KB or stream; at the latest before report-service downloads or uploads. | pm (spec), backend-swe, qa |
-  | FU-1 | P2 | `/error` and health sub-paths answer the 404 Problem (BUG-6) | pm, backend-swe, qa |
+  | FU-4 | **P1** | Abort committed responses (BUG-14), per-route timeouts. Must land before any routed service can return bodies over 8 KB or stream; at the latest before report-service downloads or uploads. **2026-10-29: abort part closed by `docs/specs/platform-hardening.md` (US-6); per-route timeouts stay open, with report-service.** | pm (spec), backend-swe, qa |
+  | FU-1 | P2 | `/error` and health sub-paths answer the 404 Problem (BUG-6). **2026-10-29: `/error` part closed by `docs/specs/platform-hardening.md` (AC-5.4); health sub-paths moved to FU-5.** | pm, backend-swe, qa |
   | FU-2 | P2 | Byte-exact forwarding (BUG-8). Before signed URLs or a non-Spring service. | pm, backend-swe, qa |
-  | FU-3 | P2 | Problem body for the firewall's 400 and for 405 (BUG-9) | pm, backend-swe, qa |
+  | FU-3 | P2 | Problem body for the firewall's 400 and for 405 (BUG-9). **Closed 2026-10-29 by `docs/specs/platform-hardening.md` (US-5).** | pm, backend-swe, qa |
   | FU-5 | P2 | Kubernetes probe groups, with the Helm wiring | pm, backend-swe |
   | FU-6 | P2 | AC-4.9 (gateway errors carry only the gateway's headers, each once), BUG-16, `RawSocketStub` sends `Connection: close` | pm, backend-swe, qa |
   | FU-7 | P2 | Docs only, can be done now: README startup markers (TF-14); contract notes for the D6 header rule and the BUG-14 deviation; contract 0.2.1 | backend-swe |

@@ -381,14 +381,16 @@ TableGroup scenario_service {
 }
 
 // =====================================================================
-// PROPOSED: report-service (test runs and results) -- owner is decision ERD-D2
+// AS-BUILT (schema): report-service (test runs and results), Flyway V1__create_report_service_schema.sql (spec T2,
+// 2026-10-29) -- owner is decision ERD-D2. The six phase-1 tables below are exactly V1 on PostgreSQL 17 (database
+// report_service, builtin C.UTF-8), with JPA entities in org.reportservice.model. attachments stays PROPOSED (not in V1).
 // Refined by "proposed (report-service)" = docs/specs/report-service.md phase 1 (Ready, approved by the user on 2026-10-26).
 // Phase 1 storage per ERD-D12: every enum column is varchar(32) + CHECK ck_<table>_<column>_values; the DBML Enums stay
 // for readability. proposed (report-service): no column has a database default; the application sets every value.
 // =====================================================================
 
 Enum execution_status {
-  PASSED [note: 'proposed — approved design (2026-10-12), not yet implemented (whole enum). Cucumber statuses, stored upper case.']
+  PASSED [note: 'as-built (V1, whole enum): varchar(32) + CHECK, Java enum org.reportservice.enums.ExecutionStatus. Cucumber statuses, stored upper case.']
   FAILED
   SKIPPED
   PENDING
@@ -398,24 +400,24 @@ Enum execution_status {
 }
 
 Enum test_run_source {
-  MANUAL [note: 'proposed — approved design (2026-10-12), not yet implemented (whole enum). Testers record results by hand.']
+  MANUAL [note: 'as-built (V1, whole enum): varchar(32) + CHECK, Java enum org.reportservice.enums.TestRunSource. Testers record results by hand.']
   AUTOMATED [note: 'results uploaded from a Cucumber run, e.g. by CI']
 }
 
 Enum test_run_status {
-  PLANNED [note: 'proposed — approved design (2026-10-12), not yet implemented (whole enum)']
+  PLANNED [note: 'as-built (V1, whole enum): varchar(32) + CHECK, Java enum org.reportservice.enums.TestRunStatus']
   IN_PROGRESS
   COMPLETED
   CANCELLED
 }
 
 Enum step_result_kind {
-  STEP [note: 'proposed — approved design (2026-10-12), not yet implemented (whole enum)']
+  STEP [note: 'as-built (V1, whole enum): varchar(32) + CHECK, Java enum org.reportservice.enums.StepResultKind']
   BEFORE_HOOK
   AFTER_HOOK
 }
 
-Table environments [headercolor: #D9822B] {
+Table environments [headercolor: #2D6A9F] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
   name varchar(100) [not null, note: 'e.g. staging, production, Chrome 129. proposed (report-service): exact, case-sensitive match; created on first use by a run or an upload (spec D11).']
@@ -426,10 +428,10 @@ Table environments [headercolor: #D9822B] {
   indexes {
     (project_id, name) [unique, name: 'uk_environments_project_id_name', note: 'proposed (report-service): named; also serves project_id lookups']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. Where a test run executed. Later: key/value attributes (browser, OS) as a json column. proposed (report-service): find-or-create under the project advisory lock (spec D11).'
+  Note: 'as-built (V1, report-service T2, 2026-10-29). Where a test run executed. Later: key/value attributes (browser, OS) as a json column. proposed (report-service): find-or-create under the project advisory lock (spec D11).'
 }
 
-Table builds [headercolor: #D9822B] {
+Table builds [headercolor: #2D6A9F] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
   name varchar(255) [not null, note: 'build or version label, e.g. 1.4.2+517. proposed (report-service): exact, case-sensitive match (spec D11).']
@@ -442,10 +444,10 @@ Table builds [headercolor: #D9822B] {
   indexes {
     (project_id, name) [unique, name: 'uk_builds_project_id_name', note: 'proposed (report-service): named']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. The software build under test. Several runs (environments) can share one build. proposed (report-service): created on first use; branch, commit_sha and ci_url are taken from the first run that names the build and never changed later (spec D11).'
+  Note: 'as-built (V1, report-service T2, 2026-10-29). The software build under test. Several runs (environments) can share one build. proposed (report-service): created on first use; branch, commit_sha and ci_url are taken from the first run that names the build and never changed later (spec D11).'
 }
 
-Table upload_tokens [headercolor: #D9822B] {
+Table upload_tokens [headercolor: #2D6A9F] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
   name varchar(100) [not null, note: 'label chosen by the project ADMIN, e.g. GitHub Actions main; 1-100 code points, not blank, no control character']
@@ -463,10 +465,10 @@ Table upload_tokens [headercolor: #D9822B] {
     token_hash [unique, name: 'uk_upload_tokens_token_hash']
     project_id [name: 'ix_upload_tokens_project_id']
   }
-  Note: 'proposed (report-service): new table (spec D4, D5). A per-project CI upload token: 32 random bytes, shown once, stored only as a hash, several per project (at most 10 active), revocable, optional expiry. No hard delete. Replaces the removed auth_service projects.secret_token.'
+  Note: 'as-built (V1, report-service T2, 2026-10-29). proposed (report-service): new table (spec D4, D5). A per-project CI upload token: 32 random bytes, shown once, stored only as a hash, several per project (at most 10 active), revocable, optional expiry. No hard delete. Replaces the removed auth_service projects.secret_token.'
 }
 
-Table test_runs [headercolor: #D9822B] {
+Table test_runs [headercolor: #2D6A9F] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
   name varchar(255) [not null, note: 'proposed (report-service): 1-255 code points, not blank, no control character']
@@ -489,13 +491,13 @@ Table test_runs [headercolor: #D9822B] {
     upload_token_id [name: 'ix_test_runs_upload_token_id', note: 'proposed (report-service): foreign-key index']
   }
   Note: '''
-  proposed — approved design (2026-10-12), not yet implemented.
+  as-built (V1, report-service T2, 2026-10-29).
   One execution of a set of test cases. MANUAL runs are created with one test_case_results row per selected test case in status UNKNOWN; AUTOMATED runs are created from an uploaded result file.
   Reports (pass rate, trends, per tag) are computed from runs and results; no report table in the MVP. Later: denormalised status counters on this table if queries get slow, and saved report filters.
   '''
 }
 
-Table test_case_results [headercolor: #D9822B] {
+Table test_case_results [headercolor: #2D6A9F] {
   id uuid [pk, not null]
   test_run_id uuid [not null]
   position int [not null, note: 'order in the run']
@@ -522,10 +524,10 @@ Table test_case_results [headercolor: #D9822B] {
     (test_run_id, position) [unique, name: 'uk_test_case_results_test_run_id_position', note: 'proposed (report-service): unique and named; also indexes the test_run_id foreign key']
     scenario_id [name: 'ix_test_case_results_scenario_id', note: 'proposed (report-service): named; for the later "latest result per scenario"']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. The result of one test case (a scenario, or one example row of an outline) in one run. proposed (report-service): AUTOMATED results are unlinked snapshots in phase 1 (feature_id, feature_version, scenario_id, example_row_id null); linking is a later phase (spec D6).'
+  Note: 'as-built (V1, report-service T2, 2026-10-29). The result of one test case (a scenario, or one example row of an outline) in one run. proposed (report-service): AUTOMATED results are unlinked snapshots in phase 1 (feature_id, feature_version, scenario_id, example_row_id null); linking is a later phase (spec D6).'
 }
 
-Table step_results [headercolor: #D9822B] {
+Table step_results [headercolor: #2D6A9F] {
   id uuid [pk, not null]
   test_case_result_id uuid [not null]
   position int [not null, note: 'order of execution, including background steps and hooks']
@@ -544,7 +546,7 @@ Table step_results [headercolor: #D9822B] {
   indexes {
     (test_case_result_id, position) [unique, name: 'uk_step_results_test_case_result_id_position', note: 'proposed (report-service): unique and named; also indexes the foreign key']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. Per-step status. Background steps appear here as ordinary steps of each test case, as in Cucumber output. proposed (report-service): written once (manual step snapshots, or uploaded steps and hooks) and not changed in phase 1.'
+  Note: 'as-built (V1, report-service T2, 2026-10-29). Per-step status. Background steps appear here as ordinary steps of each test case, as in Cucumber output. proposed (report-service): written once (manual step snapshots, or uploaded steps and hooks) and not changed in phase 1.'
 }
 
 Table attachments [headercolor: #D9822B] {

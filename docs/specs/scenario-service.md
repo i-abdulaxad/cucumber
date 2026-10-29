@@ -2382,3 +2382,4 @@ Based on qa's "Re-verification (fix round 2), 2026-10-26" in `docs/qa/scenario-s
 - **Bimodal timing finding (qa, environmental, no bug):** the occasional 3.6–5.1 s tagged save in `QaFeatureSizeTest` came from stale planner statistics left by the test resets (`FeatureData.reset()` empties the tables, autovacuum records them as empty, pooled connections keep empty-table FK plans), not from production code. qa's test now runs `ANALYZE tags, tag_assignments, features` before timing; the 3 s bound and the 1 s concurrent-create assertion are unchanged, and the G1 mutant (original BUG-6) is still caught. The residual cold-start risk is SFU-7.
 - **X3 done:** FU-16 closed in `docs/specs/auth-service-persistence.md`.
 - **Open follow-ups:** SFU-1 to SFU-7 (all P2), under "QA verification and fix round 1".
+- **2026-10-29:** SFU-1 (BUG-4) and SFU-2 (BUG-5) **closed** by `docs/specs/platform-hardening.md` (US-1, US-4). SFU-3 to SFU-7 stay open.
