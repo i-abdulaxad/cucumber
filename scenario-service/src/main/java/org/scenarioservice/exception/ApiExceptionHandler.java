@@ -30,6 +30,8 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -141,6 +143,28 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(ErrorCode.INTERNAL_ERROR, INTERNAL_ERROR_DETAIL, request);
     }
 
+    /**
+     * Everything that reached the error dispatch (platform-hardening D3, D5): the status is kept, the code comes from
+     * the status table, and {@code instance} is the original path, omitted when it isn't a valid URI reference.
+     */
+    @ExceptionHandler(ErrorDispatchException.class)
+    public ResponseEntity<ProblemDetail> handleErrorDispatch(ErrorDispatchException ex, HttpServletRequest request) {
+        HttpStatusCode status = HttpStatusCode.valueOf(ex.status());
+        ErrorCode code = codeFor(ex, status);
+        String detail = switch (code) {
+            case MALFORMED_REQUEST -> MALFORMED_REQUEST_DETAIL;
+            case NOT_FOUND -> NOT_FOUND_DETAIL;
+            case INTERNAL_ERROR -> {
+                log.error("Unexpected error while handling a {} request", request.getMethod(), ex.getCause());
+                yield INTERNAL_ERROR_DETAIL;
+            }
+            default -> HttpStatus.valueOf(status.value()).getReasonPhrase();
+        };
+        ProblemDetail problem = Problems.completed(ProblemDetail.forStatusAndDetail(status, detail), code, request);
+        problem.setInstance(uriReference(ex.originalPath()));
+        return ResponseEntity.status(status).body(problem);
+    }
+
     @Override
     protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex, HttpHeaders headers,
                                                                     HttpStatusCode status, WebRequest request) {
@@ -230,6 +254,17 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         HttpServletRequest servletRequest = ((ServletWebRequest) request).getRequest();
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Problems.of(ErrorCode.NOT_FOUND, NOT_FOUND_DETAIL, servletRequest));
+    }
+
+    private static URI uriReference(String path) {
+        if (path == null) {
+            return null;
+        }
+        try {
+            return new URI(path);
+        } catch (URISyntaxException e) {
+            return null;
+        }
     }
 
     private static ResponseEntity<ProblemDetail> problem(ErrorCode code, String detail, HttpServletRequest request) {

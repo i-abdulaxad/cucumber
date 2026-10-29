@@ -1887,7 +1887,7 @@ This single table replaces the phase-1 (`docs/specs/auth-service.md`) and phase-
 | FU-13 | P2, revisit in `auth-service-audit` | Re-check the actor's role under the organization lock in rename, archive, restore and add | Recorded, not approved | pm |
 | FU-14 | — | Dev SQL through `org.hibernate.SQL` with correlation | **Closed** in phase 4 (E78; AC-8.1, AC-8.2) | — |
 | FU-15 | P2, not approved (G4) | Test hygiene from phase 2 (strict stubs, partial state assertions, AC-7.3 401 body) | Open | backend-swe |
-| FU-16 | **P1, gate: the first C5 consumer** | Verify the C5 consumer rules (fail closed, no caching) in the consuming service | Open; scenario-service plans to close it for itself (its X3) | pm (consumer spec), qa |
+| FU-16 | — | Verify the C5 consumer rules (fail closed, no caching) in the consuming service | **Closed** 2026-10-26 for scenario-service (its X3; AC-7.3 fail closed, AC-7.5 no caching, both pass). Each future C5 consumer verifies the same rules in its own spec (standards §3). The C5 retry is scenario-service's SFU-1. | — |
 | FU-17 | P2, with FU-2 | BUG-3: Unicode 14+ case pairs differ between Java 17 and PostgreSQL (generic 409) | Open, accepted | pm (phase 3), backend-swe |
 | FU-18 | P2, with FU-2 | BUG-4: the 254 limit applies to the stored, lower-cased email (400, not 409) | Open | backend-swe (phase 3) |
 | FU-19 | P2, with FU-1 | BUG-5: pool exhaustion should give a 503 Problem, not 401 or Boot's 500 body | Open | pm (spec FU-1), backend-swe |

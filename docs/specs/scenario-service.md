@@ -1,6 +1,7 @@
 # scenario-service phase 1: Gherkin features, versions, scenarios, test cases and tags
-Status: Ready (approved by the user on 2026-10-14: Q1 to Q10 as recommended, SE1–SE8, GE1–GE3, X1). **Gate:** the original gate (auth-service phase 4 past review point E) is passed: phase 4 was accepted on 2026-10-15. **Re-aligned on 2026-10-18 (D20)** with what phase 4 proved and with the user's `.env` convention (commit `7be734a`). The user approved Q11–Q13 (SE6a, SE9, G10a) on 2026-10-18. **Order:** auth-service's E85 fix (FR2 in `auth-service-persistence`), then T1c (contract 1.0.2, docs only), then T2 onward.
-Last updated: 2026-10-19 (qa signed off with known issues; fix round 1: D21, AC-1.19, AC-1.20, AC-3.15, T15, T15c, SFU-1 to SFU-6). Earlier, 2026-10-18 (later the same day: `md5`-hashed path and tag unique indexes after T2's B-tree stop; AC-1.17 row 4; AC-8.12 row 4 aligned with auth-service; T2 owns the ERD as-built update and the stub port) (D20: alignment with `auth-service-persistence` as accepted; dev secrets from `.env`; 8 new ACs; T1c added; T2, T3, T4, T7, T8, T9, T14 changed)
+Status: **Accepted with follow-ups** (pm, 2026-10-26; SFU-1 to SFU-7; see Acceptance). Before that: Ready (approved by the user on 2026-10-14: Q1 to Q10 as recommended, SE1–SE8, GE1–GE3, X1). **Gate:** the original gate (auth-service phase 4 past review point E) is passed: phase 4 was accepted on 2026-10-15. **Re-aligned on 2026-10-18 (D20)** with what phase 4 proved and with the user's `.env` convention (commit `7be734a`). The user approved Q11–Q13 (SE6a, SE9, G10a) on 2026-10-18. **Order:** auth-service's E85 fix (FR2 in `auth-service-persistence`), then T1c (contract 1.0.2, docs only), then T2 onward.
+Last updated: 2026-10-26 (final acceptance; fix rounds 1 and 2 done; SFU-7; X3 done). Earlier, 2026-10-19 (qa signed off with known issues; fix round 1: D21, AC-1.19, AC-1.20, AC-3.15, T15, T15c, SFU-1 to SFU-6). Earlier, 2026-10-18 (later the same day: `md5`-hashed path and tag unique indexes after T2's B-tree stop; AC-1.17 row 4; AC-8.12 row 4 aligned with auth-service; T2 owns the ERD as-built update and the stub port) (D20: alignment with `auth-service-persistence` as accepted; dev secrets from `.env`; 8 new ACs; T1c added; T2, T3, T4, T7, T8, T9, T14 changed)
+**Rulebook:** future work on scenario-service (follow-ups and later phases) follows `docs/engineering/standards.md` (2026-10-26), which is binding; this spec's own rules remain as written for phase 1.
 
 ## Problem and goal
 
@@ -2113,7 +2114,7 @@ Deviations, as decided:
 
 **Review point C.** Then qa verifies.
 
-### QA verification and fix round 1 (2026-10-19)
+### QA verification and fix round 1 (2026-10-19) — done (verified by qa 2026-10-19)
 
 **qa's verdict** (`docs/qa/scenario-service-report.md`, written by the main session from qa's text; test plan `docs/qa/scenario-service-test-plan.md`): **signed off with known issues.**
 - 91/91 ACs pass.
@@ -2204,12 +2205,13 @@ qa may now assert the expected outcomes in its BUG tests.
 | SFU-4 | qa Q5 | P2, with auth-service FU-2 (phase 3) | **No Unicode normalisation or full case folding for paths now**, consistent with auth-service. Revisit with FU-2's NFC decision. | pm |
 | SFU-5 | BUG-2 side effect | P2 | **A client that disconnects before the response** (broken pipe, `HttpMessageNotWritableException`) is logged once at WARN without a stack trace, not at ERROR. **Why:** it isn't a server fault, and the D17 rule is that ERROR means an unexpected failure. | backend-swe |
 | SFU-6 | qa deviation note | P2, refactoring candidate | The test-case service duplicates the id mapping of `FeatureViews`; keep one owner (P14). Not scheduled. | backend-swe |
+| SFU-7 | qa fix-round-2 investigation (2026-10-26) | P2, before production | **Cold-start planner statistics.** In a brand-new database, a burst of very large tagged saves before the first auto-analyze could briefly plan foreign-key checks as for empty tables and hold the project lock for seconds. Not observed in production-like runs (fresh `postgres:17`, no manual `ANALYZE`: 0.86 s). Default: decide during deployment work whether a post-migration `ANALYZE` or autovacuum settings are needed; no code change now. **Why low:** needs an empty, brand-new database plus a burst of maximum-size saves within about a minute. | pm (deployment spec), backend-swe |
 | — | qa Q1 | — | Decided: fix BUG-1 and BUG-2 now (user, 2026-10-19). | — |
 | — | qa Q6, Q7 | — | Done in this fix round (D21 #4, T15c). | — |
 
 The risk qa noted, that Spring Security DEBUG logs request URLs and tag values, is covered by the Q7 README note.
 
-### Fix round 2 (2026-10-19)
+### Fix round 2 (2026-10-19) — done (verified by qa 2026-10-26)
 
 **qa's re-verification of fix round 1** (`docs/qa/scenario-service-report.md`): signed off with known issues.
 - BUG-1, BUG-2 and BUG-3 are fixed, and 94/94 ACs pass.
@@ -2256,7 +2258,7 @@ The risk qa noted, that Spring Security DEBUG logs request URLs and tag values, 
 - **X1. Done (2026-10-14).** `docs/specs/api-gateway.md` D2 route table: the `scenarios` row lists the GE1 patterns. Docs only; that spec's Breakdown row was left unchanged, because the approval covered the table only.
 - **X2. Done (2026-10-14).** D14, D15, D18, SE2, SE6–SE8, G5, G10, G11, T2, T7 and the ERD notes are aligned with "Database pattern for every service" in `docs/specs/auth-service-persistence.md`. Two named deviations remain: `source` and control characters (D8), and cascades in the parsed-structure tables (D14). If phase 4 changes a pattern item before its review point E, pm updates this spec before T2.
 - **X4. Done (2026-10-18).** D20: this spec and the ERD's `scenario_service` group re-aligned with `auth-service-persistence` as accepted (pattern items 4, 10, 12, 14, 16 as refined; E81–E84; W3; FU-17; FU-24; P21a) and with the user's `.env` convention (`7be734a`). The ERD changes are marked `proposed (scenario-service, 2026-10-18)`; the main session validates the DBML.
-- **X3.** At acceptance: mark auth-service follow-up FU-16 as closed for scenario-service (AC-7.3, AC-7.5) in `docs/specs/auth-service-projects.md`.
+- **X3. Done (2026-10-26).** auth-service follow-up FU-16 is closed for scenario-service (AC-7.3, AC-7.5 pass) in the current backlog, `docs/specs/auth-service-persistence.md` (which supersedes the `auth-service-projects.md` list named here originally).
 
 ## Breakdown
 
@@ -2369,3 +2371,14 @@ The original questions are kept below for the record.
 **2026-10-19: pending.** qa signed off with known issues (91/91 ACs, no S1 or S2 bug). The user chose to fix BUG-1 to BUG-3 first (fix round 1: T15, T15c). The decision waits for qa's re-verification of BUG-1 to BUG-3, AC-1.19, AC-1.20 and AC-3.15. Follow-ups SFU-1 to SFU-6 are triaged under "QA verification and fix round 1". X3 (close FU-16) happens at acceptance.
 
 **2026-10-19, after fix round 1:** qa re-verified it and signed off with known issues: 94/94 ACs and 855 tests pass. It found BUG-6 (S3), which the user decided to fix now (fix round 2, T16). Acceptance waits for qa's re-check of T16.
+
+### Decision: Accepted with follow-ups (pm, 2026-10-26)
+
+Based on qa's "Re-verification (fix round 2), 2026-10-26" in `docs/qa/scenario-service-report.md` (verdict: signed off with known issues; tested at `fc178b6`):
+- **Every AC has a result and passes:** 94 of 94 (P0 21/21, P1 49/49, P2 24/24). AC-1.20 passes for every element shape, tags included.
+- **No S1, S2 or S3 bug is open.** BUG-1, BUG-2, BUG-3 (fix round 1) and BUG-6 (fix round 2, T16) are fixed and verified; qa's 4 mutants on T16 were all killed. Open: BUG-4 (S4, SFU-1) and BUG-5 (S4, SFU-2).
+- **Build:** `./gradlew clean build` 863 tests (523 backend-swe, 340 qa), 0 failed, 1 skipped (the accepted measurement test), 3 runs. Concurrency classes green 3 runs. Manual G10a re-check through the gateway 8/8.
+- **Fix rounds 1 and 2 are done.**
+- **Bimodal timing finding (qa, environmental, no bug):** the occasional 3.6–5.1 s tagged save in `QaFeatureSizeTest` came from stale planner statistics left by the test resets (`FeatureData.reset()` empties the tables, autovacuum records them as empty, pooled connections keep empty-table FK plans), not from production code. qa's test now runs `ANALYZE tags, tag_assignments, features` before timing; the 3 s bound and the 1 s concurrent-create assertion are unchanged, and the G1 mutant (original BUG-6) is still caught. The residual cold-start risk is SFU-7.
+- **X3 done:** FU-16 closed in `docs/specs/auth-service-persistence.md`.
+- **Open follow-ups:** SFU-1 to SFU-7 (all P2), under "QA verification and fix round 1".

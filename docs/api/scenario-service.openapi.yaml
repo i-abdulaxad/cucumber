@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: scenario-service API
-  version: 1.0.4
+  version: 1.0.5
   summary: Gherkin features, their versions and parsed structure, derived test cases and tags, per project.
   description: |
     Contract C1 of `docs/specs/scenario-service.md` (phase 1). It documents every operation of decision D2, the
@@ -9,6 +9,24 @@ info:
     paths, status codes, `code` values and the Problem members `parseErrors` and `currentVersion` come from the
     spec's acceptance criteria (AC-x.y) and are binding. The wording of `detail`, of validation `message` texts and of
     parse error `message` texts is not part of the contract.
+
+    ## Changes in 1.0.5 (`docs/specs/platform-hardening.md`, 2026-10-26)
+
+    1.0.5: notes only; no path, schema, status or `code` changes.
+    - Requests rejected before Spring MVC are Problems like every other error (D3, D5): paths the security firewall
+      rejects (for example containing `;`, encoded `..` or `//`) are 400 `MALFORMED_REQUEST`, and `TRACE` is 405
+      `METHOD_NOT_ALLOWED`, with `requestId`. `instance` is the path as sent, omitted when it isn't a valid URI
+      reference. None of them calls the access check.
+    - A direct `/error` is an unrouted path (D4): 401 `UNAUTHENTICATED` without a valid token, 404 `NOT_FOUND` with
+      one. It never calls the access check.
+    - The requests Tomcat rejects before the application are documented under "Requests rejected before the
+      application" (D6).
+    - Each access check is exactly one request on one connection, whatever the transport failure (SFU-1, D2); it
+      still fails closed with 503 `ACCESS_CHECK_UNAVAILABLE`.
+
+    ## Implementation status (1.0.5, 2026-10-26)
+
+    The 1.0.5 behaviour is implemented (platform-hardening T3 and T4), pending qa verification.
 
     ## Changes in 1.0.4 (task T15c, 2026-10-19)
 
@@ -266,6 +284,15 @@ info:
       codes (`FEATURE_PATH_TAKEN`, `VERSION_CONFLICT`), not `CONFLICT` (AC-1.10, AC-3.11).
     - A 406 Problem is written as `application/problem+json` only when the request's `Accept` header allows that
       media type; otherwise the 406 body may be empty.
+
+    ## Requests rejected before the application (platform-hardening D6)
+
+    Tomcat rejects some requests before any application code runs: an encoded slash (`%2F`) or `%00` in the path,
+    raw characters such as `{` or `|`, the `CONNECT` method (501), a malformed request line, and an oversized URI or
+    headers. These keep Tomcat's status (400, or 501 for `CONNECT`) with Tomcat's minimal body: no Problem, no `code`,
+    and nothing internal (no stack trace, no server version). They never reach the access check. This is permanent.
+    Everything that reaches the application, including the security firewall's 400, `TRACE` and a direct `/error`, is
+    a Problem as described above.
 
     ## Headers and other rules
 

@@ -10,7 +10,8 @@ import java.net.http.HttpClient;
 /**
  * The {@code RestClient} for auth-service's access check (D4). Its timeouts live in the request factory: the JDK
  * {@code HttpClient}'s connect timeout and the factory's read timeout (spring-web 7.0, no extra dependency). It
- * follows no redirect and speaks HTTP/1.1.
+ * follows no redirect and speaks HTTP/1.1. Each access check is one attempt on one connection (platform-hardening D2):
+ * the JDK client has no per-client retry switch, so {@code ScenarioServiceApplication} limits it JVM-wide at start-up.
  */
 @Configuration
 public class AuthServiceClientConfiguration {

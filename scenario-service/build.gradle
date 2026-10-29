@@ -50,4 +50,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // One attempt per access check (platform-hardening D2, E8): the value ScenarioServiceApplication sets at start-up.
+    systemProperty 'jdk.httpclient.redirects.retrylimit', '1'
 }

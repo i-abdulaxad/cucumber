@@ -1,5 +1,6 @@
 package org.scenarioservice.configuration;
 
+import jakarta.servlet.DispatcherType;
 import org.scenarioservice.security.JwtAuthenticationFilter;
 import org.scenarioservice.security.JwtTokenValidator;
 import org.scenarioservice.security.ProblemAccessDeniedHandler;
@@ -17,8 +18,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * The security chain (D6, T3): stateless, no CSRF, no CORS (the gateway owns CORS), no session, no form or basic
- * login; every request needs a valid bearer token except Spring's {@code /error}. Project access is checked by each
- * use case through the access checker (D5), not here.
+ * login; every request needs a valid bearer token except the container's error dispatch (platform-hardening D4).
+ * Project access is checked by each use case through the access checker (D5), not here.
  */
 @Configuration
 @EnableWebSecurity
@@ -40,7 +41,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/error").permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(tokenValidator),
                         UsernamePasswordAuthenticationFilter.class);

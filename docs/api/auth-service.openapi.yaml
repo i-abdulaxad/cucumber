@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: auth-service API
-  version: 1.3.0
+  version: 1.4.0
   summary: Accounts, login, organizations, invitations, members, projects and the project access check.
   description: |
     Contract C1 of `docs/specs/auth-service.md` (phase 1) and contracts C1 and C5 of
@@ -9,6 +9,25 @@ info:
     rules (C2). The paths, status codes and `code` values here come from the specs' acceptance criteria (AC-x.y) and
     are binding. Wording of `detail` and validation `message` texts is not part of the contract. Where an AC is cited
     without a spec, phase-1 operations refer to the phase-1 spec and project operations to the phase-2 spec.
+
+    ## Changes in 1.4.0 (`docs/specs/platform-hardening.md`, 2026-10-26)
+
+    Additive: no path, success response or existing `code` value changes.
+    - **`SERVICE_UNAVAILABLE` (503)** (D7): when no database connection is available, every operation that uses the database answers 503
+      with `code` `SERVICE_UNAVAILABLE`, detail "The service is temporarily unavailable. Try again later." and no
+      `Retry-After` header. This includes login (never 401 `INVALID_CREDENTIALS`) and authenticated operations (never
+      401 `UNAUTHENTICATED`), so clients must not treat it as "log in again"; a later retry can succeed. Other
+      database errors keep their mapping (409 `CONFLICT` for locks and conflicts, 500 `INTERNAL_ERROR`).
+    - **Problems before Spring MVC** (D3, D5): paths the security firewall rejects (for example containing `;`,
+      `/./`, encoded `..` or `//`) are 400 `MALFORMED_REQUEST`, and `TRACE` is 405 `METHOD_NOT_ALLOWED`, as Problems
+      with `code` and `requestId`. `instance` is the path as sent, omitted when it isn't a valid URI reference.
+    - **A direct `/error` is an unrouted path** (D4): 401 `UNAUTHENTICATED` without a valid token, 404 `NOT_FOUND`
+      with one.
+    - The phase-1 deviation note (FU-1) is replaced by "Requests rejected before the application" below.
+
+    ## Implementation status (1.4.0, review point A, 2026-10-26)
+
+    Every 1.4.0 change is implemented as described, pending qa verification of platform-hardening.
 
     ## Changes in 1.3.0 (auth-service phase 4, `docs/specs/auth-service-persistence.md`, 2026-10-15)
 
@@ -85,13 +104,14 @@ info:
     - An anonymous accept with no body, or with an empty body, lists `fullName` and `password` as separate `errors`
       entries, like `{}` (AC-6.10). Before, it had one entry whose `field` was `acceptInvitationRequest`.
 
-    ## Known phase-1 deviation (follow-up FU-1)
+    ## Requests rejected before the application (platform-hardening D6)
 
-    Requests rejected before Spring MVC handles them don't get a Problem with `code` yet. Paths that the security
-    firewall rejects (for example containing `;`, `/./`, `%2e` or `//`), the `TRACE` method and a direct `GET /error`
-    get Spring Boot's default JSON error body, with a correct status. A path containing an encoded slash (`%2F`) gets
-    Tomcat's HTML error page. Nothing internal is exposed. Follow-up FU-1 (with the gateway's FU-3) turns the first
-    three into Problems; the `%2F` page stays out of scope.
+    Tomcat rejects some requests before any application code runs: an encoded slash (`%2F`) or `%00` in the path,
+    raw characters such as `{` or `|`, the `CONNECT` method (501), a malformed request line, and an oversized URI or
+    headers. These keep Tomcat's status (400, or 501 for `CONNECT`) with Tomcat's minimal body: no Problem, no `code`, no
+    `X-Request-Id`, and nothing internal (no stack trace, no server version). This is permanent, not a phase-1
+    deviation. Everything that reaches the application, including the security firewall's 400 and `TRACE`, is a
+    Problem.
 
     ## Which error wins (Q6)
 
@@ -235,6 +255,7 @@ info:
     | Adding a user to a project who isn't a member of the project's organization, or doesn't exist | 422 | `NOT_ORG_MEMBER` |
     | A project role above the cap of the member's organization role | 422 | `PROJECT_ROLE_NOT_ALLOWED` |
     | Anything unexpected | 500 | `INTERNAL_ERROR` |
+    | No database connection available (any operation, including login) | 503 | `SERVICE_UNAVAILABLE` |
 
     - Acceptance criteria: validation errors list each invalid field (AC-1.1); an unreadable body is
       `MALFORMED_REQUEST`, also on public operations (AC-1.2); an unexpected failure reveals nothing internal and is
@@ -356,6 +377,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/auth/login:
     post:
       tags:
@@ -419,6 +442,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/auth/invitations/{token}/accept:
     post:
       tags:
@@ -589,6 +614,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs:
     post:
       tags:
@@ -641,6 +668,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       tags:
         - Organizations
@@ -682,6 +711,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}:
     get:
       tags:
@@ -713,6 +744,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/invitations:
     post:
       tags:
@@ -795,6 +828,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       tags:
         - Invitations
@@ -827,6 +862,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/invitations/{invitationId}:
     delete:
       tags:
@@ -883,6 +920,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/members:
     get:
       tags:
@@ -927,6 +966,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/members/{userId}:
     patch:
       tags:
@@ -1000,6 +1041,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     delete:
       tags:
         - Members
@@ -1049,6 +1092,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/projects:
     post:
       tags:
@@ -1124,6 +1169,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       tags:
         - Projects
@@ -1171,6 +1218,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/projects/{projectId}:
     get:
       tags:
@@ -1211,6 +1260,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     patch:
       tags:
         - Projects
@@ -1272,6 +1323,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/projects/{projectId}/archive:
     post:
       tags:
@@ -1319,6 +1372,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/projects/{projectId}/restore:
     post:
       tags:
@@ -1357,6 +1412,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/projects/{projectId}/members:
     get:
       tags:
@@ -1403,6 +1460,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     post:
       tags:
         - Project members
@@ -1484,6 +1543,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/orgs/{orgId}/projects/{projectId}/members/{userId}:
     patch:
       tags:
@@ -1558,6 +1619,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     delete:
       tags:
         - Project members
@@ -1601,6 +1664,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /internal/projects/{projectId}/access:
     get:
       tags:
@@ -1666,6 +1731,8 @@ paths:
           $ref: '#/components/responses/OtherClientError'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v3/api-docs:
     get:
       tags:
@@ -2198,6 +2265,7 @@ components:
         - PROJECT_ARCHIVED
         - NOT_ORG_MEMBER
         - PROJECT_ROLE_NOT_ALLOWED
+        - SERVICE_UNAVAILABLE
     Problem:
       type: object
       description: |
@@ -2404,6 +2472,23 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: |
+        `SERVICE_UNAVAILABLE`: no database connection was available (platform-hardening D7). Every operation that
+        uses the database can answer it, including login and the access check; it is never a reason to log in again.
+        There is no `Retry-After` header; a later retry can succeed once a connection is free.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Service Unavailable
+            status: 503
+            detail: The service is temporarily unavailable. Try again later.
+            instance: /api/auth/login
+            code: SERVICE_UNAVAILABLE
+            requestId: rid-123
     InternalError:
       description: '`INTERNAL_ERROR`: an unexpected failure. The `detail` is fixed and reveals nothing internal.'
       content:

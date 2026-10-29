@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
@@ -32,9 +33,16 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.SQLTransientConnectionException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
@@ -50,6 +58,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     static final String CONFLICT_DETAIL = "The request conflicts with existing data.";
     static final String LOCK_CONFLICT_DETAIL = "The data is being changed by another request. Try again.";
     static final String INTERNAL_ERROR_DETAIL = "An unexpected error occurred.";
+    static final String SERVICE_UNAVAILABLE_DETAIL = "The service is temporarily unavailable. Try again later.";
 
     private static final String BEARER_CHALLENGE = "Bearer";
 
@@ -104,6 +113,18 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return withBearerChallenge(problem(ErrorCode.UNAUTHENTICATED, UNAUTHENTICATED_DETAIL, request));
     }
 
+    /**
+     * An authentication that failed inside the authentication provider (for example while loading the user): 503 when
+     * no database connection was available (platform-hardening D7), otherwise 401 as before.
+     */
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public ResponseEntity<ProblemDetail> handleAuthenticationServiceFailure(InternalAuthenticationServiceException ex,
+                                                                            HttpServletRequest request) {
+        return connectionUnavailable(ex)
+                .map(failure -> serviceUnavailable(failure, request))
+                .orElseGet(() -> handleUnauthenticated(ex, request));
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         return problem(ErrorCode.FORBIDDEN, FORBIDDEN_DETAIL, request);
@@ -125,8 +146,36 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex, HttpServletRequest request) {
+        Optional<SQLTransientConnectionException> unavailable = connectionUnavailable(ex);
+        if (unavailable.isPresent()) {
+            return serviceUnavailable(unavailable.get(), request);
+        }
         log.error("Unexpected error while handling a {} request", request.getMethod(), ex);
         return problem(ErrorCode.INTERNAL_ERROR, INTERNAL_ERROR_DETAIL, request);
+    }
+
+    /**
+     * Everything that reached the error dispatch (platform-hardening D3, D5): the status is kept, the code comes from
+     * the status table, and {@code instance} is the original path, omitted when it isn't a valid URI reference.
+     */
+    @ExceptionHandler(ErrorDispatchException.class)
+    public ResponseEntity<ProblemDetail> handleErrorDispatch(ErrorDispatchException ex, HttpServletRequest request) {
+        HttpStatusCode status = HttpStatusCode.valueOf(ex.status());
+        ErrorCode code = status.value() == HttpStatus.SERVICE_UNAVAILABLE.value()
+                ? ErrorCode.SERVICE_UNAVAILABLE : codeFor(ex, status);
+        String detail = switch (code) {
+            case MALFORMED_REQUEST -> MALFORMED_REQUEST_DETAIL;
+            case SERVICE_UNAVAILABLE -> SERVICE_UNAVAILABLE_DETAIL;
+            case NOT_FOUND -> NOT_FOUND_DETAIL;
+            case INTERNAL_ERROR -> {
+                log.error("Unexpected error while handling a {} request", request.getMethod(), ex.getCause());
+                yield INTERNAL_ERROR_DETAIL;
+            }
+            default -> HttpStatus.valueOf(status.value()).getReasonPhrase();
+        };
+        ProblemDetail problem = Problems.completed(ProblemDetail.forStatusAndDetail(status, detail), code, request);
+        problem.setInstance(uriReference(ex.originalPath()));
+        return ResponseEntity.status(status).body(problem);
     }
 
     @Override
@@ -218,6 +267,39 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         HttpServletRequest servletRequest = ((ServletWebRequest) request).getRequest();
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Problems.of(ErrorCode.NOT_FOUND, NOT_FOUND_DETAIL, servletRequest));
+    }
+
+    /**
+     * The pool's "no connection available" failure in the cause chain (platform-hardening D7): HikariCP throws
+     * {@link SQLTransientConnectionException} only when it can't hand out a connection. Told apart by type only.
+     */
+    private static Optional<SQLTransientConnectionException> connectionUnavailable(Throwable ex) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable cause = ex; cause != null && seen.add(cause); cause = cause.getCause()) {
+            if (cause instanceof SQLTransientConnectionException failure) {
+                return Optional.of(failure);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** D7: 503 SERVICE_UNAVAILABLE, logged once at WARN with the failure's class name only. */
+    private static ResponseEntity<ProblemDetail> serviceUnavailable(SQLTransientConnectionException failure,
+                                                                    HttpServletRequest request) {
+        log.warn("Request rejected because no database connection is available: {}",
+                failure.getClass().getSimpleName());
+        return problem(ErrorCode.SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE_DETAIL, request);
+    }
+
+    private static URI uriReference(String path) {
+        if (path == null) {
+            return null;
+        }
+        try {
+            return new URI(path);
+        } catch (URISyntaxException e) {
+            return null;
+        }
     }
 
     private static ResponseEntity<ProblemDetail> problem(ErrorCode code, String detail, HttpServletRequest request) {

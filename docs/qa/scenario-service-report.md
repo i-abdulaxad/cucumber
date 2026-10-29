@@ -300,3 +300,80 @@ Commit: HEAD `7be734a` plus the fix-round working tree; contract 1.0.4.
 - **api-gateway, `./gradlew clean build`:** 425 tests, 0 failed, 4 skipped.
 - **auth-service, `./gradlew clean build`:** 2,023 tests, 0 failed.
 - **Manual G10a re-check through the gateway:** 8/8 checks passed. Throwaway `postgres:17` container `qa-scn-e2e-pg` on `127.0.0.1:55432`; all three jars without a profile; generated secrets held in memory only. The secret scan of the three logs found no JWT secret and no password. Processes 81320–81322 were stopped by PID, and the container was removed with its volume.
+
+## Re-verification (fix round 2), 2026-10-26
+
+### Verdict
+**Signed off with known issues.** Tested at commit `fc178b6` (T16 included), plus one QA test edit described below. The work ran on 2026-10-19 and was resumed on 2026-10-26.
+- **ACs:** 94 of 94 pass: 21 P0, 49 P1, 24 P2. AC-1.20 now passes for every element shape, tags included, which is how pm reads it (T16).
+- **BUG-6:** fixed and verified.
+- **Open bugs:** no S1, S2 or S3. Open: BUG-4 and BUG-5 (S4), which are follow-ups SFU-1 and SFU-2.
+- **Sign-off rule:** met.
+
+### Bug status
+| Bug | Severity | Status |
+|---|---|---|
+| BUG-scenario-service-1 (non-UTF-8 pragma gave 500) | S3 | Fixed, verified (fix round 1) |
+| BUG-scenario-service-2 (maximum-size save took about 1 min under the lock) | S3 | Fixed, verified (fix rounds 1 and 2) |
+| BUG-scenario-service-3 (joined match keys) | S4 | Fixed, verified (fix round 1) |
+| BUG-scenario-service-4 (JDK client retries C5) | S4 | Open, follow-up SFU-1 |
+| BUG-scenario-service-5 (non-Problem bodies before Spring MVC) | S4 | Open, follow-up SFU-2 |
+| BUG-scenario-service-6 (10,000 distinct tags held the lock about 20 s) | S3 | **Fixed, verified** (T16) |
+
+### BUG-6 re-verification
+**Through the gateway, production settings** (fresh `postgres:17`, `lock_timeout` 5 s, no manual `ANALYZE`):
+
+| Check | Fix round 1 | Now |
+|---|---|---|
+| Create, 10,000 distinct tags | 504 after 10 s; create ran 21.4 s | 201 in 0.86 s |
+| Create sent 1 s later | 409 `CONFLICT` after 5 s | 201 in 0.15 s |
+| Save, 5,000 kept and 5,000 new tags | – | 200 in 0.62 s |
+| Create sent 1 s into that save | – | 201 in 0.13 s |
+| Create, 3,333 scenarios with a tag each | 4.2 s | 201 in 0.38 s |
+
+Also through the gateway:
+- 10,001 tags is 400 on `source`.
+- The catalogue lists 13,333 tags, each once.
+- Filtering by a tag created in the batch works.
+- The logs have no ERROR, no secret and no password.
+
+**In the test suite** (3 full `clean build` runs): create 1.05–1.06 s, save 0.30 s, tagged scenarios 0.26–0.27 s.
+
+**Mutation check** (put each change back on a `/tmp` copy, deleted afterwards): 4 of 4 killed.
+
+| Mutant | Caught by |
+|---|---|
+| G1: per-tag lookup restored (the original BUG-6) | FeatureSizeTest, QaFeatureSizeTest |
+| G2: catalogue not preloaded | 14 classes (duplicate tag rows) |
+| G3: tags inserted after their assignments | 24 classes (foreign-key failure) |
+| G4: names matched ignoring case | TagsTest, QaPathAndTagRulesTest |
+
+G1 is still caught with the statistics refresh described below in place, so the refresh doesn't hide the real defect.
+
+**Tag semantics are unchanged:**
+- exact, case-sensitive names (`@Smoke`, `@smoke`, `@SMOKE`);
+- U+200B kept and matched exactly;
+- a 999-emoji tag stored under the md5 index;
+- one catalogue row per distinct name across two features;
+- code-point order in the catalogue;
+- correct `featureCount`.
+
+Covered by `QaPathAndTagRulesTest.catalogueReuseKeepsExactNames`, TagsTest and the filter tests.
+
+### Investigation: the bimodal 0.3 s / 3.7 s timings (environmental)
+In some full-suite runs on 2026-10-19, the 10,000-tag save in `QaFeatureSizeTest` took 3.6–5.1 s instead of 0.3 s, and the create took about 2 s, so a concurrent writer hit the 1 s test `lock_timeout`. It reproduced only when backend-swe's suite and `QaAccessCheckFailureMatrixTest` ran first. Evidence from temporary probes (since deleted):
+1. **Not the JVM.** GC time during the slow save was 0–12 ms, the heap was under 260 of 512 MB, and the test thread used under 250 ms of CPU. Every round in the slow configuration was slow, so it isn't a cold JIT.
+2. **Not the round-trip time, the statement count or the access check.** `SELECT 1` took about 0.4 ms in both configurations. Hibernate's statistics were identical: 14 prepared statements, 2 flushes, 6 queries, 15,001 batched inserts. `requireWrite` took 0–1 ms, and a raw 15,000-row JDBC batch insert took 85–109 ms in both.
+3. **The database is busy.** Sampling `pg_stat_activity` every 50 ms showed the app's session `active`, with no wait event, inside `insert into tag_assignments …` for 73–83 samples (about 4 s). In fast runs the same session was mostly `idle in transaction`, meaning it was waiting on the client.
+4. **Cause: stale planner statistics from the test resets.** In the slow configuration, `pg_class` recorded `reltuples=0, relpages=0` for `tags`, `features` and `tag_assignments` while `tags` held 10,000–15,000 rows; in fast runs it was `-1` (never analyzed). `FeatureData.reset()` deletes every row, autovacuum then records these tables as empty, and a pooled connection keeps the foreign-key check plans built for an empty table. A fresh generic plan uses `pk_tags` (index scan). Running `ANALYZE tags, features, tag_assignments`, which invalidates the cached plans, brought the same save from 4.6–5.0 s down to 0.33 s, with no code change.
+5. **Classification: environmental, specific to the test suite. Not a code defect, so no bug is filed.**
+   - The application never empties `tags` (catalogue rows are kept) or `features` (never hard-deleted), and autovacuum keeps their statistics current.
+   - The production-like gateway run above, on a fresh database without a manual `ANALYZE`, is fast.
+   - Residual risk, noted not filed: in a brand-new database, a burst of very large tagged saves in the first minute, before the first auto-analyze, could plan the same way briefly.
+6. **Test change (QA-owned, `QaFeatureSizeTest`).** The three tag timing tests now call `ANALYZE tags, tag_assignments, features` before they start the clock, with a comment that cites this evidence. The 3 s bound and the "a create sent 1 s later is 201" assertion are unchanged, so the requirement isn't weakened. After the change, the full suite was green 3 runs in a row with stable timings.
+
+### Suites run (2026-10-26)
+- **scenario-service, `./gradlew clean build`, 3 runs:** 863 tests (523 backend-swe, 340 qa), 0 failed, 1 skipped (the accepted measurement), each time.
+- **Concurrency, `--rerun` 3 times:** ConcurrentCreateTest, ConcurrentSaveTest, QaConcurrencyTest, ProjectLockTest, FeatureSizeTest and QaFeatureSizeTest. Green every time.
+- **api-gateway and auth-service:** not re-run. `git status` shows no change outside scenario-service since `fc178b6`, and their last builds (2026-10-19) were green.
+- **Manual G10a re-check through the gateway:** 8/8 passed. Container `qa-scn-e2e-pg` on `127.0.0.1:55432`; no `.env` and no `dev` profile; generated secrets held in memory only. Processes 62098–62100 were stopped by PID, and the container was removed with its volume.

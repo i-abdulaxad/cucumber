@@ -22,6 +22,7 @@ Project cucumber {
   - "proposed (auth-service phase 1)" would mark an entity change planned by docs/specs/auth-service.md but not yet in code. **Phase 1 plans none**: its "Will not be touched" list includes every entity in model/. Phase 1 only changes the values written (lower-cased emails, plan FREE, seat_limit 5), and those are noted on the columns.
   - "proposed (auth-service-projects)" marked the entity changes of docs/specs/auth-service-projects.md (E31, E36, E37) and its project rules. All of them are implemented (Batches A2, B and C, 2026-10-13), so no auth_service line carries the marker any more.
   - "proposed (auth-service-persistence)" marks a change of the auth_service group planned by docs/specs/auth-service-persistence.md (Ready, approved by the user 2026-10-14). **All of it is as-built since review point C (2026-10-15), V1 to V7:** PostgreSQL 17 with Flyway; timestamptz/Instant (V2); NOT NULL and lengths (V3); enums as varchar(32) plus named CHECKs, with no auth-service DBML Enums (V4); lower-case email checks and the unique (org_id, lower(name COLLATE "und-x-icu")) index on projects (V5); foreign-key indexes and ON DELETE RESTRICT (V6); audit_log dropped (V7). Any marker still left on an auth_service line is stale.
+  - "proposed (report-service)" marks a refinement of the report_service design by docs/specs/report-service.md (Ready, approved by the user on 2026-10-26). It applies on top of the 2026-10-12 design: a new upload_tokens table and test_runs.upload_token_id; feature_version (a number) instead of feature_version_id; snapshot columns as text/jsonb; step arguments on step_results; no database defaults; enums as varchar(32) plus CHECK (ERD-D12); named constraints and ON DELETE RESTRICT (no deletes in phase 1). attachments stays as designed and is not created in phase 1.
   - "proposed (scenario-service)" marks a refinement of the scenario_service design by docs/specs/scenario-service.md (Ready, approved by the user on 2026-10-14). It applies on top of the 2026-10-12 design: jsonb instead of json, names as text, path uniqueness among active features only, tag_assignments.feature_id, enums stored as varchar(32) plus CHECK (ERD-D12), named constraints and delete rules per the database pattern (spec D14), and the id-stability and content rules (spec D8 to D12). The DBML Enums of scenario_service stay for readability; the real columns are varchar(32) with a CHECK, as noted on each column. backend-swe turns the scenario_service tables into as-built when its Flyway V1 migration and entities land (spec T2, T7).
 
   **Runtime database today (as-built 2026-10-15):** PostgreSQL 17, database auth_service (UTF-8, locale provider builtin, C.UTF-8), schema from Flyway migrations V1 to V7, ddl-auto validate. Tests use a postgres:17 Testcontainers container. H2 is removed. flyway_schema_history is managed by Flyway and not modelled here. Shared conventions for all services: spec section "Database pattern for every service".
@@ -381,6 +382,9 @@ TableGroup scenario_service {
 
 // =====================================================================
 // PROPOSED: report-service (test runs and results) -- owner is decision ERD-D2
+// Refined by "proposed (report-service)" = docs/specs/report-service.md phase 1 (Ready, approved by the user on 2026-10-26).
+// Phase 1 storage per ERD-D12: every enum column is varchar(32) + CHECK ck_<table>_<column>_values; the DBML Enums stay
+// for readability. proposed (report-service): no column has a database default; the application sets every value.
 // =====================================================================
 
 Enum execution_status {
@@ -390,7 +394,7 @@ Enum execution_status {
   PENDING
   UNDEFINED
   AMBIGUOUS
-  UNKNOWN [note: 'not executed yet, e.g. a planned manual test case. Same name as the Cucumber messages status (ERD-D8).']
+  UNKNOWN [note: 'not executed yet, e.g. a planned manual test case. Same name as the Cucumber messages status (ERD-D8). proposed (report-service): also the status of an automated test case with no step or hook (spec D9).']
 }
 
 Enum test_run_source {
@@ -414,50 +418,75 @@ Enum step_result_kind {
 Table environments [headercolor: #D9822B] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
-  name varchar(100) [not null, note: 'e.g. staging, production, Chrome 129']
-  description text [null]
+  name varchar(100) [not null, note: 'e.g. staging, production, Chrome 129. proposed (report-service): exact, case-sensitive match; created on first use by a run or an upload (spec D11).']
+  description text [null, note: 'proposed (report-service): never set in phase 1 (no environment management API yet)']
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
   indexes {
-    (project_id, name) [unique]
+    (project_id, name) [unique, name: 'uk_environments_project_id_name', note: 'proposed (report-service): named; also serves project_id lookups']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. Where a test run executed. Later: key/value attributes (browser, OS) as a json column.'
+  Note: 'proposed — approved design (2026-10-12), not yet implemented. Where a test run executed. Later: key/value attributes (browser, OS) as a json column. proposed (report-service): find-or-create under the project advisory lock (spec D11).'
 }
 
 Table builds [headercolor: #D9822B] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
-  name varchar(255) [not null, note: 'build or version label, e.g. 1.4.2+517']
+  name varchar(255) [not null, note: 'build or version label, e.g. 1.4.2+517. proposed (report-service): exact, case-sensitive match (spec D11).']
   branch varchar(255) [null]
-  commit_sha varchar(64) [null]
-  ci_url varchar(2048) [null]
+  commit_sha varchar(64) [null, note: 'proposed (report-service): 4-64 hexadecimal characters, stored lower case (spec D11)']
+  ci_url varchar(2048) [null, note: 'proposed (report-service): absolute http or https URL']
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
   indexes {
-    (project_id, name) [unique]
+    (project_id, name) [unique, name: 'uk_builds_project_id_name', note: 'proposed (report-service): named']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. The software build under test. Several runs (environments) can share one build.'
+  Note: 'proposed — approved design (2026-10-12), not yet implemented. The software build under test. Several runs (environments) can share one build. proposed (report-service): created on first use; branch, commit_sha and ci_url are taken from the first run that names the build and never changed later (spec D11).'
+}
+
+Table upload_tokens [headercolor: #D9822B] {
+  id uuid [pk, not null]
+  project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
+  name varchar(100) [not null, note: 'label chosen by the project ADMIN, e.g. GitHub Actions main; 1-100 code points, not blank, no control character']
+  token_hash char(64) [not null, note: 'SHA-256 hex (lower case) of the full token text; the token itself is never stored or logged (auth-service-projects D8)']
+  token_prefix varchar(16) [not null, note: 'the first 12 characters of the token (rct_ plus 8), shown in lists so people can tell tokens apart']
+  created_by uuid [not null, note: 'references auth_service.users.id (by ID, no FK)']
+  expires_at timestamptz [null, note: 'optional; a token is usable while expires_at is null or in the future']
+  last_used_at timestamptz [null, note: 'set by each successful upload, in its transaction']
+  revoked_at timestamptz [null, note: 'set once by revoke; a revoked token never works again']
+  revoked_by uuid [null, note: 'references auth_service.users.id (by ID, no FK)']
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    token_hash [unique, name: 'uk_upload_tokens_token_hash']
+    project_id [name: 'ix_upload_tokens_project_id']
+  }
+  Note: 'proposed (report-service): new table (spec D4, D5). A per-project CI upload token: 32 random bytes, shown once, stored only as a hash, several per project (at most 10 active), revocable, optional expiry. No hard delete. Replaces the removed auth_service projects.secret_token.'
 }
 
 Table test_runs [headercolor: #D9822B] {
   id uuid [pk, not null]
   project_id uuid [not null, note: 'references auth_service.projects.id (by ID, no FK)']
-  name varchar(255) [not null]
-  source test_run_source [not null]
-  status test_run_status [not null, default: 'PLANNED']
+  name varchar(255) [not null, note: 'proposed (report-service): 1-255 code points, not blank, no control character']
+  source test_run_source [not null, note: 'proposed (report-service): varchar(32) + CHECK ck_test_runs_source_values']
+  status test_run_status [not null, note: 'proposed (report-service): no database default (was PLANNED); varchar(32) + CHECK ck_test_runs_status_values. MANUAL runs start PLANNED; AUTOMATED runs are created COMPLETED (spec D8).']
   environment_id uuid [null]
   build_id uuid [null]
-  tag_expression varchar(1000) [null, note: 'Cucumber tag expression that selected the scope, e.g. @smoke and not @wip']
+  tag_expression varchar(1000) [null, note: 'Cucumber tag expression that selected the scope, e.g. @smoke and not @wip. proposed (report-service): phase 1 stores only a single tag (e.g. @smoke) for MANUAL runs; full expressions come later.']
+  upload_token_id uuid [null, note: 'proposed (report-service): the token that uploaded an AUTOMATED run; null for MANUAL runs']
   created_by uuid [null, note: 'references auth_service.users.id (by ID, no FK); null when uploaded with a project token']
-  started_at timestamptz [null]
-  finished_at timestamptz [null]
+  started_at timestamptz [null, note: 'proposed (report-service): MANUAL: the first recorded result; AUTOMATED: null in phase 1']
+  finished_at timestamptz [null, note: 'proposed (report-service): MANUAL: complete or cancel; AUTOMATED: the upload time']
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
   indexes {
-    (project_id, created_at)
+    (project_id, created_at) [name: 'ix_test_runs_project_id_created_at', note: 'proposed (report-service): named; the run list, newest first']
+    environment_id [name: 'ix_test_runs_environment_id', note: 'proposed (report-service): foreign-key index']
+    build_id [name: 'ix_test_runs_build_id', note: 'proposed (report-service): foreign-key index']
+    upload_token_id [name: 'ix_test_runs_upload_token_id', note: 'proposed (report-service): foreign-key index']
   }
   Note: '''
   proposed — approved design (2026-10-12), not yet implemented.
@@ -471,47 +500,51 @@ Table test_case_results [headercolor: #D9822B] {
   test_run_id uuid [not null]
   position int [not null, note: 'order in the run']
   feature_id uuid [null, note: 'references scenario_service.features.id (by ID, no FK); null when an uploaded result matches no known feature']
-  feature_version_id uuid [null, note: 'references scenario_service.feature_versions.id (by ID, no FK); the version that was executed, if known']
-  scenario_id uuid [null, note: 'references scenario_service.scenarios.id (by ID, no FK)']
+  feature_version int [null, note: 'proposed (report-service): replaces feature_version_id uuid. scenario_service.feature_versions.version of feature_id (by value, no FK), the version planned for a MANUAL run; scenario-service exposes version numbers, not version ids. Null for AUTOMATED results in phase 1 (spec D6).']
+  scenario_id uuid [null, note: 'references scenario_service.scenarios.id (by ID, no FK). proposed (report-service): set for MANUAL results; null for AUTOMATED results in phase 1 (spec D6).']
   example_row_id uuid [null, note: 'references scenario_service.example_rows.id (by ID, no FK); set for Scenario Outline test cases']
-  feature_path varchar(1024) [not null, note: 'snapshot at run time, so history survives edits and deletions']
-  scenario_name varchar(1000) [not null, note: 'snapshot; for outlines, the name with placeholders filled in']
-  tags json [null, note: 'snapshot: array of tag names incl. inherited ones']
-  status execution_status [not null, default: 'UNKNOWN', note: 'worst step status using the Cucumber precedence; set by hand for MANUAL runs']
-  attempt int [not null, default: 1, note: 'retry number for automated reruns']
+  feature_path text [not null, note: 'snapshot at run time, so history survives edits and deletions. proposed (report-service): text; MANUAL = the scenario-service path, AUTOMATED = the Cucumber JSON uri as sent (at most 4,096 code points, spec D9).']
+  feature_name text [not null, note: 'proposed (report-service): new snapshot column; the Feature name (may be empty); groups the run summary per feature']
+  scenario_name text [not null, note: 'snapshot; for outlines, the name with placeholders filled in. proposed (report-service): text, as scenario_service names']
+  tags jsonb [not null, note: 'snapshot: array of tag names incl. inherited ones. proposed (report-service): jsonb, not null, [] when none; each tag once, at its first position']
+  line int [null, note: 'proposed (report-service): new snapshot column; the scenario or example-row line in the feature file']
+  status execution_status [not null, note: 'worst step status using the Cucumber precedence; set by hand for MANUAL runs. proposed (report-service): no database default; varchar(32) + CHECK ck_test_case_results_status_values']
+  attempt int [not null, note: 'retry number for automated reruns. proposed (report-service): no database default; always 1 in phase 1 (a rerun in one upload is a separate result); rerun grouping comes later (spec D9)']
   executed_by uuid [null, note: 'references auth_service.users.id (by ID, no FK); the tester for MANUAL runs']
-  comment text [null, note: 'tester remark for MANUAL runs']
-  started_at timestamptz [null]
-  finished_at timestamptz [null]
+  comment text [null, note: 'tester remark for MANUAL runs. proposed (report-service): at most 2,000 code points']
+  started_at timestamptz [null, note: 'proposed (report-service): null in phase 1']
+  finished_at timestamptz [null, note: 'proposed (report-service): MANUAL: when the status was last recorded; AUTOMATED: null']
   duration_ms bigint [null]
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
   indexes {
-    (test_run_id, position)
-    scenario_id
+    (test_run_id, position) [unique, name: 'uk_test_case_results_test_run_id_position', note: 'proposed (report-service): unique and named; also indexes the test_run_id foreign key']
+    scenario_id [name: 'ix_test_case_results_scenario_id', note: 'proposed (report-service): named; for the later "latest result per scenario"']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. The result of one test case (a scenario, or one example row of an outline) in one run.'
+  Note: 'proposed — approved design (2026-10-12), not yet implemented. The result of one test case (a scenario, or one example row of an outline) in one run. proposed (report-service): AUTOMATED results are unlinked snapshots in phase 1 (feature_id, feature_version, scenario_id, example_row_id null); linking is a later phase (spec D6).'
 }
 
 Table step_results [headercolor: #D9822B] {
   id uuid [pk, not null]
   test_case_result_id uuid [not null]
   position int [not null, note: 'order of execution, including background steps and hooks']
-  kind step_result_kind [not null, default: 'STEP']
-  step_id uuid [null, note: 'references scenario_service.steps.id (by ID, no FK); null for hooks or unmatched steps']
-  keyword_text varchar(50) [null, note: 'snapshot']
+  kind step_result_kind [not null, note: 'proposed (report-service): no database default; varchar(32) + CHECK ck_step_results_kind_values']
+  step_id uuid [null, note: 'references scenario_service.steps.id (by ID, no FK); null for hooks or unmatched steps. proposed (report-service): never set in phase 1 (step ids are not stable, scenario-service D9)']
+  keyword_text text [null, note: 'snapshot. proposed (report-service): text, because dialect keywords exceed 50 code points (scenario-service A10); null for hooks']
   step_text text [null, note: 'snapshot with outline placeholders filled in; null for hooks']
-  status execution_status [not null, default: 'UNKNOWN']
+  data_table jsonb [null, note: 'proposed (report-service): new snapshot column; array of rows of cell strings, placeholders filled in; null when the step has none']
+  doc_string text [null, note: 'proposed (report-service): new snapshot column; null when the step has none']
+  status execution_status [not null, note: 'proposed (report-service): no database default; varchar(32) + CHECK ck_step_results_status_values. MANUAL: UNKNOWN in phase 1 (results are recorded per test case)']
   duration_ms bigint [null]
-  error_message text [null, note: 'failure message and stack trace as reported by Cucumber']
+  error_message text [null, note: 'failure message and stack trace as reported by Cucumber. proposed (report-service): truncated to its first 65,536 code points (spec D9)']
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
   indexes {
-    (test_case_result_id, position)
+    (test_case_result_id, position) [unique, name: 'uk_step_results_test_case_result_id_position', note: 'proposed (report-service): unique and named; also indexes the foreign key']
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. Per-step status. Background steps appear here as ordinary steps of each test case, as in Cucumber output.'
+  Note: 'proposed — approved design (2026-10-12), not yet implemented. Per-step status. Background steps appear here as ordinary steps of each test case, as in Cucumber output. proposed (report-service): written once (manual step snapshots, or uploaded steps and hooks) and not changed in phase 1.'
 }
 
 Table attachments [headercolor: #D9822B] {
@@ -528,19 +561,22 @@ Table attachments [headercolor: #D9822B] {
   indexes {
     test_case_result_id
   }
-  Note: 'proposed — approved design (2026-10-12), not yet implemented. Screenshots, logs and other files attached to a test case or step result. Immutable.'
+  Note: 'proposed — approved design (2026-10-12), not yet implemented. Screenshots, logs and other files attached to a test case or step result. Immutable. proposed (report-service): NOT created in phase 1; uploaded embeddings are ignored until a later phase (spec D1, D9).'
 }
 
-Ref: test_runs.environment_id > environments.id [delete: set null]
-Ref: test_runs.build_id > builds.id [delete: set null]
-Ref: test_case_results.test_run_id > test_runs.id [delete: cascade]
-Ref: step_results.test_case_result_id > test_case_results.id [delete: cascade]
+// proposed (report-service): phase 1 deletes nothing, so every report_service foreign key restricts deletes and is named fk_<table>_<column> (database pattern). The attachments Refs stay as designed (not built in phase 1).
+Ref: test_runs.environment_id > environments.id [delete: restrict] // proposed (report-service): restrict, was set null
+Ref: test_runs.build_id > builds.id [delete: restrict] // proposed (report-service): restrict, was set null
+Ref: test_runs.upload_token_id > upload_tokens.id [delete: restrict] // proposed (report-service): new
+Ref: test_case_results.test_run_id > test_runs.id [delete: restrict] // proposed (report-service): restrict, was cascade
+Ref: step_results.test_case_result_id > test_case_results.id [delete: restrict] // proposed (report-service): restrict, was cascade
 Ref: attachments.test_case_result_id > test_case_results.id [delete: cascade]
 Ref: attachments.step_result_id > step_results.id [delete: cascade]
 
 TableGroup report_service {
   environments
   builds
+  upload_tokens
   test_runs
   test_case_results
   step_results

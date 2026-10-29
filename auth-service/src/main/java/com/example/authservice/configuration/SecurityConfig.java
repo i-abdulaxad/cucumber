@@ -4,6 +4,7 @@ import com.example.authservice.enums.OpenEndpoints;
 import com.example.authservice.security.ProblemAccessDeniedHandler;
 import com.example.authservice.security.ProblemAuthenticationEntryPoint;
 import com.example.authservice.service.impl.CustomUserDetailsService;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,7 +54,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/error").permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
                                 "/api/auth/invitations/{token}/accept").permitAll()
                         .requestMatchers(Arrays.stream(OpenEndpoints.values()).map(OpenEndpoints::getUrl).toArray(String[]::new)).permitAll()
