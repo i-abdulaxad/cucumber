@@ -61,7 +61,9 @@ Acceptance criteria are Gherkin, tagged `@US-n @AC-n.m @P0|@P1|@P2`. Tests carry
   - the AOP aspect around services logs one outcome line per call;
   - MDC carries `requestId` and `userId`;
   - **never** log arguments, return values, content, emails, tokens, passwords or secrets;
-  - `org.hibernate.orm.jdbc.bind` is never enabled.
+  - `org.hibernate.orm.jdbc.bind` is never enabled;
+  - pin `org.hibernate.orm.core` to INFO, because at DEBUG it prints whole entity state (user decision 2026-10-29);
+  - pin framework loggers that log bodies, URLs, headers or credentials to INFO (for example `RequestResponseBodyMethodProcessor`, `HttpEntityMethodProcessor`, `DispatcherServlet`, `FilterChainProxy`, `jdk.internal.httpclient.debug`; user decision 2026-11-02).
 - **Service boundaries:** no cross-service database access and no shared library. Patterns are copied, never imported.
 
 ## 4. Persistence

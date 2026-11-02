@@ -1,0 +1,347 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "payment;pay-by-card",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "Pay by card",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3374666
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1413457
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps/steps.js:5"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 91832
+            },
+            "arguments": [
+              {
+                "rows": [
+                  {
+                    "cells": [
+                      "item",
+                      "price"
+                    ]
+                  },
+                  {
+                    "cells": [
+                      "Mug",
+                      "8.00"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a basket with these items:",
+            "match": {
+              "location": "steps/steps.js:6"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 32333
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "the customer pays by card",
+            "match": {
+              "location": "steps/steps.js:7"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 43083
+            },
+            "arguments": [
+              {
+                "content": "Total: 8.00",
+                "line": 14
+              }
+            ],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the receipt is:",
+            "match": {
+              "location": "steps/steps.js:8"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21957
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout",
+            "line": 1
+          },
+          {
+            "name": "@smoke",
+            "line": 7
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "payment;pay-with-voucher-save10",
+        "keyword": "Scenario Outline",
+        "line": 25,
+        "name": "Pay with voucher SAVE10",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2419249
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1300958
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps/steps.js:5"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 173417
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 20,
+            "name": "the customer pays with voucher \"SAVE10\"",
+            "match": {
+              "location": "steps/steps.js:9"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 100875
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 21,
+            "name": "the result is \"confirmed\"",
+            "match": {
+              "location": "steps/steps.js:10"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21875
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout",
+            "line": 1
+          },
+          {
+            "name": "@voucher",
+            "line": 18
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "payment;pay-with-voucher-old5",
+        "keyword": "Scenario Outline",
+        "line": 26,
+        "name": "Pay with voucher OLD5",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1598250
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1321499
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps/steps.js:5"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 67167
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 20,
+            "name": "the customer pays with voucher \"OLD5\"",
+            "match": {
+              "location": "steps/steps.js:9"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 80750,
+              "error_message": "Error: expected rejected but was accepted\n    at World.<anonymous> (/private/tmp/rs-cjs-src/steps/steps.js:11:38)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 21,
+            "name": "the result is \"rejected\"",
+            "match": {
+              "location": "steps/steps.js:10"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18208
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout",
+            "line": 1
+          },
+          {
+            "name": "@voucher",
+            "line": 18
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "payment;change-address",
+        "keyword": "Scenario",
+        "line": 28,
+        "name": "Change address",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2396375
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1389999
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps/steps.js:5"
+            }
+          },
+          {
+            "result": {
+              "status": "pending",
+              "duration": 82875
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 29,
+            "name": "the address step is pending",
+            "match": {
+              "location": "steps/steps.js:13"
+            }
+          },
+          {
+            "result": {
+              "status": "undefined",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 30,
+            "name": "nobody wrote this step"
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18332
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "payment",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Payment",
+    "tags": [
+      {
+        "name": "@checkout",
+        "line": 1
+      }
+    ],
+    "uri": "features/checkout/payment.feature"
+  }
+]

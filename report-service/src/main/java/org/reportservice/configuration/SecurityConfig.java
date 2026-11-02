@@ -5,7 +5,10 @@ import org.reportservice.security.JwtAuthenticationFilter;
 import org.reportservice.security.JwtTokenValidator;
 import org.reportservice.security.ProblemAccessDeniedHandler;
 import org.reportservice.security.ProblemAuthenticationEntryPoint;
+import org.reportservice.repository.UploadTokenRepository;
+import org.reportservice.security.UploadTokenAuthenticationFilter;
 import org.reportservice.security.UploadTokenEntryPoint;
+import org.reportservice.service.impl.UploadTokenCodec;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -18,13 +21,15 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.time.Clock;
+
 /**
  * The two security chains (D5, T3): stateless, no CSRF, no CORS (the gateway owns CORS), no session, no form or basic
  * login. {@code /api/ci/**} is authenticated only by an upload token and answers 401 UPLOAD_TOKEN_INVALID otherwise;
  * every other path only by a user JWT, 401 UNAUTHENTICATED otherwise, except the container's error dispatch
  * (platform-hardening D4). A JWT is no credential on {@code /api/ci/**}, and an upload token none on user paths.
- * Project access is checked by each use case through the access checker, not here. The upload token authenticator
- * joins the CI chain with the upload endpoint (T7); until then the CI chain authenticates nothing.
+ * Project access is checked by each use case through the access checker, not here; the CI chain's
+ * {@link UploadTokenAuthenticationFilter} is the only upload token authenticator (T7).
  */
 @Configuration
 @EnableWebSecurity
@@ -35,13 +40,17 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain ciUploadFilterChain(HttpSecurity http, UploadTokenEntryPoint entryPoint,
-                                                   ProblemAccessDeniedHandler accessDeniedHandler) throws Exception {
+                                                   ProblemAccessDeniedHandler accessDeniedHandler,
+                                                   UploadTokenRepository tokens, UploadTokenCodec codec, Clock clock)
+            throws Exception {
         statelessBase(http)
                 .securityMatcher(CI_PATHS)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .addFilterBefore(new UploadTokenAuthenticationFilter(tokens, codec, clock),
+                        UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

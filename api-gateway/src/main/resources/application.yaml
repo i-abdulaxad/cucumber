@@ -76,6 +76,13 @@ logging:
   level:
     # D7: one entry per request from org.apigateway.filter.AccessLogFilter.
     org.apigateway.access: INFO
+    # FU-2 (user 2026-11-02): at root DEBUG these log bodies, URLs with path secrets, headers or credentials.
+    org.springframework.web.servlet.DispatcherServlet: INFO
+    org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor: INFO
+    org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor: INFO
+    org.springframework.security.web.FilterChainProxy: INFO
+    # The JDK HTTP client forwards every request (D6); at DEBUG it logs each forwarded URL.
+    jdk.internal.httpclient.debug: INFO
 
 gateway:
   # D3: operator settings for locating services and bounding downstream calls.

@@ -35,6 +35,15 @@ logging:
     correlation: "[requestId=%X{requestId:--} userId=%X{userId:--} tokenId=%X{tokenId:--}] "
   level:
     org.hibernate.orm.jdbc.error: ERROR
+    # RE8: Hibernate's "Listing entities" at DEBUG prints whole entity state (token hashes, step texts, messages).
+    org.hibernate.orm.core: INFO
+    # FU-2: at DEBUG these print request URLs with query values, request bodies and response bodies.
+    org.springframework.web.servlet.DispatcherServlet: INFO
+    org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor: INFO
+    org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor: INFO
+    org.springframework.security.web.FilterChainProxy: INFO
+    # FU-2: the JDK HTTP client (C5, C7) logs request URLs and exchange details at DEBUG.
+    jdk.internal.httpclient.debug: INFO
 
 app:
   jwtSecret: ${JWT_SECRET}

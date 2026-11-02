@@ -35,6 +35,13 @@ logging:
     correlation: "[requestId=%X{requestId:--} userId=%X{userId:--}] "
   level:
     org.hibernate.orm.jdbc.error: ERROR
+    org.hibernate.orm.core: INFO
+    # FU-2 (user 2026-11-02): at root DEBUG these log bodies, URLs with path secrets, headers or credentials.
+    org.springframework.web.servlet.DispatcherServlet: INFO
+    org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor: INFO
+    org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor: INFO
+    org.springframework.security.web.FilterChainProxy: INFO
+    jdk.internal.httpclient.debug: INFO
 
 app:
   jwtSecret: ${JWT_SECRET}

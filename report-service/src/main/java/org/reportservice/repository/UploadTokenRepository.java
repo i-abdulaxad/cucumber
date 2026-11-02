@@ -15,6 +15,9 @@ public interface UploadTokenRepository extends JpaRepository<UploadToken, UUID> 
 
     Optional<UploadToken> findByIdAndProjectId(UUID id, UUID projectId);
 
+    /** The token whose SHA-256 hex is {@code tokenHash} (D4); only the upload token authenticator calls it. */
+    Optional<UploadToken> findByTokenHash(String tokenHash);
+
     /** The project's tokens, newest first ({@code createdAt}, then {@code id}, both descending; AC-1.2). */
     List<UploadToken> findByProjectIdOrderByCreatedAtDescIdDesc(UUID projectId);
 

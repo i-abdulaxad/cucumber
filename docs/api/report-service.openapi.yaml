@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: report-service API
-  version: 1.0.0
+  version: 1.0.1
   summary: Test runs and results per project, from CI uploads of Cucumber JSON and from manual runs, with summaries.
   description: |
     Contract C1 of `docs/specs/report-service.md` (phase 1). It documents every operation of decision D3, the upload
@@ -10,6 +10,23 @@ info:
     both credentials: user JWTs and upload tokens (D5, contract C2). The paths, status codes, `code` values and the
     Problem members `errors` (with `field` or `pointer`) and `featureIds` come from the spec's acceptance criteria
     (AC-x.y) and are binding. The wording of `detail` and of `message` texts is not part of the contract.
+
+    ## Changes in 1.0.1 (T6, user decision 2026-10-29; docs only, no shape change)
+
+    - Contract C8 also reads the Cucumber-JS 13 forms (D9, AC-2.15): a step with `hidden: true`, keyword `Before` or
+      `After` and no `name` is a hook row in its place in `steps`; a step's table and doc string come from
+      `arguments[].rows[].cells[]` and `arguments[].content` when `rows` or `doc_string` is absent. See
+      `CucumberJson` and `CucumberStep`. Every other step still requires `name`. The hook keyword is trimmed of
+      trailing whitespace, then matched case-sensitively; with two `arguments` entries of one kind, the first wins
+      (BD-11, BD-12).
+    - An explicit `null` on any member that is read, defaulted ones included, is a wrong type: 422
+      `CUCUMBER_JSON_INVALID` with its pointer (BD-10).
+    - A `background` element's own `before` and `after` are not read (BD-13).
+    - Durations are nanoseconds in both tools (A2, verified against Cucumber-JVM 7.18.1 and Cucumber-JS 13.3.0).
+    - The CI upload (T7, BD-15): `application/json` is accepted with no charset or `charset=utf-8` (any case); any
+      other charset, and any `Content-Encoding` other than none or `identity`, is 415 `UNSUPPORTED_MEDIA_TYPE` (the
+      body is never decoded). A `Content-Length` above 20,971,520 is 413 `UPLOAD_TOO_LARGE` before the body is read.
+      C7's `projectId` is compared as a UUID (BD-18).
 
     ## Implementation status (1.0.0, review point A, 2026-10-29)
 
@@ -287,9 +304,10 @@ paths:
         credential: a missing header, another scheme, an unknown, malformed, revoked or expired token, and a user's
         JWT all get the same 401 `UPLOAD_TOKEN_INVALID` (AC-2.4). Nothing is stored unless the answer is 201.
 
-        **Body:** Cucumber's `json` formatter output (Cucumber-JVM 7, Cucumber-JS), `Content-Type: application/json`
-        (otherwise 415), at most 20 MiB = 20,971,520 bytes, with or without `Content-Length` (otherwise 413; reading
-        stops at the limit) (AC-2.9). Only the subset in schema `CucumberJson` is read; unknown fields are ignored
+        **Body:** Cucumber's `json` formatter output (Cucumber-JVM 7, Cucumber-JS 13), `Content-Type:
+        application/json` with no charset or `charset=utf-8` and no content coding but `identity` (otherwise 415; the
+        body is never decoded), at most 20 MiB = 20,971,520 bytes, with or without `Content-Length` (otherwise 413: a
+        larger `Content-Length` before the body is read, otherwise when reading reaches the limit) (AC-2.9, BD-15). Only the subset in schema `CucumberJson` is read; unknown fields are ignored
         (D9's named deviation, AC-2.12). What is read is strict: a wrong type, a missing required field, an unknown
         status, a negative duration, or U+0000 or a lone surrogate in a read string is 422 `CUCUMBER_JSON_INVALID`
         with up to 20 `errors` entries `{pointer, message}`, where `pointer` is a JSONPath such as
@@ -486,7 +504,9 @@ paths:
                     code: PROJECT_ARCHIVED
                     requestId: rid-123
         '413':
-          description: '`UPLOAD_TOO_LARGE`: the body is larger than 20,971,520 bytes, with or without `Content-Length` (AC-2.9).'
+          description: |
+            `UPLOAD_TOO_LARGE`: the body is larger than 20,971,520 bytes (AC-2.9). A larger `Content-Length` is
+            answered before the body is read (BD-15); without one, reading stops at the limit.
           content:
             application/problem+json:
               schema:
@@ -1244,6 +1264,10 @@ components:
         member, a status outside the list, a negative duration, or U+0000 or a lone surrogate in a read string is
         422 `CUCUMBER_JSON_INVALID`, with `errors[].pointer` naming the member as JSONPath (AC-2.8). `[]` is 422
         `UPLOAD_EMPTY`. A body that isn't JSON is 400 `MALFORMED_REQUEST`.
+
+        Both Cucumber-JVM 7 and Cucumber-JS 13 output is read (1.0.1). Cucumber-JS writes no `background` elements
+        (background steps are already in each scenario's `steps`), writes hooks as hidden steps and step arguments as
+        `arguments`; see `CucumberStep`.
       items:
         $ref: '#/components/schemas/CucumberFeature'
     CucumberFeature:
@@ -1299,7 +1323,7 @@ components:
             $ref: '#/components/schemas/CucumberTag'
         before:
           type: array
-          description: Element `before` hooks, recorded as `BEFORE_HOOK` rows before the steps.
+          description: Element `before` hooks, recorded as `BEFORE_HOOK` rows before the steps. Not read on a `background` (BD-13).
           items:
             $ref: '#/components/schemas/CucumberHook'
         steps:
@@ -1308,11 +1332,21 @@ components:
             $ref: '#/components/schemas/CucumberStep'
         after:
           type: array
-          description: Element `after` hooks, recorded as `AFTER_HOOK` rows after the steps.
+          description: Element `after` hooks, recorded as `AFTER_HOOK` rows after the steps. Not read on a `background` (BD-13).
           items:
             $ref: '#/components/schemas/CucumberHook'
     CucumberStep:
       type: object
+      description: |
+        A step (Cucumber-JVM 7 and Cucumber-JS 13). Cucumber-JS 13 forms (1.0.1, AC-2.15):
+        - a step with `hidden: true`, `keyword` `Before` or `After` (trailing whitespace trimmed, then matched
+          case-sensitively, BD-12) and no `name` is not a step but a hook row (`BEFORE_HOOK` or `AFTER_HOOK`) in its
+          place; it needs only `result`. A hidden step that has a `name` is an ordinary step; `before` without a
+          `name` is 422 at `.name`;
+        - when `rows` or `doc_string` is absent, the table is read from the first `arguments` entry with `rows`
+          (`rows[].cells[]`) and the doc string from the first entry with `content`; other entries are ignored.
+        `hidden`, when present, must be a boolean (otherwise 422 at `.hidden`). An explicit `null` on any member that
+        is read is 422 at that member (BD-10).
       required:
         - keyword
         - name
@@ -2147,7 +2181,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     UnsupportedMediaType:
-      description: '`UNSUPPORTED_MEDIA_TYPE`: the request body isn''t `application/json` (AC-2.9).'
+      description: |
+        `UNSUPPORTED_MEDIA_TYPE`: the request body isn't `application/json` (AC-2.9); on the CI upload also a charset
+        other than UTF-8 or a `Content-Encoding` other than `identity` (BD-15).
       content:
         application/problem+json:
           schema:

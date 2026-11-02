@@ -1,0 +1,560 @@
+[
+  {
+    "line": 2,
+    "elements": [
+      {
+        "line": 4,
+        "name": "",
+        "description": "",
+        "type": "background",
+        "keyword": "Background",
+        "steps": [
+          {
+            "result": {
+              "duration": 1362000,
+              "status": "passed"
+            },
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps.Steps.aBasket()"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 97000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Given "
+          }
+        ]
+      },
+      {
+        "start_timestamp": "2026-11-02T04:31:26.762Z",
+        "before": [
+          {
+            "result": {
+              "duration": 3652000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.before()"
+            }
+          }
+        ],
+        "line": 8,
+        "name": "Pay by card",
+        "description": "",
+        "id": "payment;pay-by-card",
+        "after": [
+          {
+            "result": {
+              "duration": 37000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.after()"
+            }
+          }
+        ],
+        "type": "scenario",
+        "keyword": "Scenario",
+        "steps": [
+          {
+            "result": {
+              "duration": 1285000,
+              "status": "passed"
+            },
+            "line": 9,
+            "name": "a basket with these items:",
+            "match": {
+              "location": "steps.Steps.items(io.cucumber.datatable.DataTable)"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 18000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "rows": [
+              {
+                "cells": [
+                  "item",
+                  "price"
+                ]
+              },
+              {
+                "cells": [
+                  "Mug",
+                  "8.00"
+                ]
+              }
+            ],
+            "keyword": "Given "
+          },
+          {
+            "result": {
+              "duration": 61000,
+              "status": "passed"
+            },
+            "line": 12,
+            "name": "the customer pays by card",
+            "match": {
+              "location": "steps.Steps.card()"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 12000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 273000,
+              "status": "passed"
+            },
+            "line": 13,
+            "name": "the receipt is:",
+            "match": {
+              "location": "steps.Steps.receipt(java.lang.String)"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 16000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Then ",
+            "doc_string": {
+              "line": 14,
+              "value": "Total: 8.00"
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout"
+          },
+          {
+            "name": "@smoke"
+          }
+        ]
+      },
+      {
+        "line": 4,
+        "name": "",
+        "description": "",
+        "type": "background",
+        "keyword": "Background",
+        "steps": [
+          {
+            "result": {
+              "duration": 1099000,
+              "status": "passed"
+            },
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps.Steps.aBasket()"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 18000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Given "
+          }
+        ]
+      },
+      {
+        "start_timestamp": "2026-11-02T04:31:26.779Z",
+        "before": [
+          {
+            "result": {
+              "duration": 2565000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.before()"
+            }
+          }
+        ],
+        "line": 25,
+        "name": "Pay with voucher SAVE10",
+        "description": "",
+        "id": "payment;pay-with-voucher-<code>;;2",
+        "after": [
+          {
+            "result": {
+              "duration": 10000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.after()"
+            }
+          }
+        ],
+        "type": "scenario",
+        "keyword": "Scenario Outline",
+        "steps": [
+          {
+            "result": {
+              "duration": 527000,
+              "status": "passed"
+            },
+            "line": 20,
+            "name": "the customer pays with voucher \"SAVE10\"",
+            "match": {
+              "arguments": [
+                {
+                  "val": "\"SAVE10\"",
+                  "offset": 31
+                }
+              ],
+              "location": "steps.Steps.voucher(java.lang.String)"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 13000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 80000,
+              "status": "passed"
+            },
+            "line": 21,
+            "name": "the result is \"confirmed\"",
+            "match": {
+              "arguments": [
+                {
+                  "val": "\"confirmed\"",
+                  "offset": 14
+                }
+              ],
+              "location": "steps.Steps.result(java.lang.String)"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 11000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Then "
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout"
+          },
+          {
+            "name": "@voucher"
+          }
+        ]
+      },
+      {
+        "line": 4,
+        "name": "",
+        "description": "",
+        "type": "background",
+        "keyword": "Background",
+        "steps": [
+          {
+            "result": {
+              "duration": 1294000,
+              "status": "passed"
+            },
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps.Steps.aBasket()"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 19000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Given "
+          }
+        ]
+      },
+      {
+        "start_timestamp": "2026-11-02T04:31:26.786Z",
+        "before": [
+          {
+            "result": {
+              "duration": 2581000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.before()"
+            }
+          }
+        ],
+        "line": 26,
+        "name": "Pay with voucher OLD5",
+        "description": "",
+        "id": "payment;pay-with-voucher-<code>;;3",
+        "after": [
+          {
+            "result": {
+              "duration": 12000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.after()"
+            }
+          }
+        ],
+        "type": "scenario",
+        "keyword": "Scenario Outline",
+        "steps": [
+          {
+            "result": {
+              "duration": 104000,
+              "status": "passed"
+            },
+            "line": 20,
+            "name": "the customer pays with voucher \"OLD5\"",
+            "match": {
+              "arguments": [
+                {
+                  "val": "\"OLD5\"",
+                  "offset": 31
+                }
+              ],
+              "location": "steps.Steps.voucher(java.lang.String)"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 9000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "error_message": "java.lang.AssertionError: expected rejected but was accepted\n\tat steps.Steps.result(Steps.java:21)\n\tat ✽.the result is \"rejected\"(file:///private/tmp/rs-cjvm/features/checkout/payment.feature:21)\n",
+              "duration": 1502000,
+              "status": "failed"
+            },
+            "line": 21,
+            "name": "the result is \"rejected\"",
+            "match": {
+              "arguments": [
+                {
+                  "val": "\"rejected\"",
+                  "offset": 14
+                }
+              ],
+              "location": "steps.Steps.result(java.lang.String)"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 20000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Then "
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout"
+          },
+          {
+            "name": "@voucher"
+          }
+        ]
+      },
+      {
+        "line": 4,
+        "name": "",
+        "description": "",
+        "type": "background",
+        "keyword": "Background",
+        "steps": [
+          {
+            "result": {
+              "duration": 1272000,
+              "status": "passed"
+            },
+            "line": 5,
+            "name": "a basket",
+            "match": {
+              "location": "steps.Steps.aBasket()"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 10000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "Given "
+          }
+        ]
+      },
+      {
+        "start_timestamp": "2026-11-02T04:31:26.807Z",
+        "before": [
+          {
+            "result": {
+              "duration": 2562000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.before()"
+            }
+          }
+        ],
+        "line": 28,
+        "name": "Change address",
+        "description": "",
+        "id": "payment;change-address",
+        "after": [
+          {
+            "result": {
+              "duration": 8000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "steps.Steps.after()"
+            }
+          }
+        ],
+        "type": "scenario",
+        "keyword": "Scenario",
+        "steps": [
+          {
+            "result": {
+              "error_message": "io.cucumber.java.PendingException: TODO: implement me\n\tat steps.Steps.pending(Steps.java:23)\n\tat ✽.the address step is pending(file:///private/tmp/rs-cjvm/features/checkout/payment.feature:29)\n",
+              "duration": 916000,
+              "status": "pending"
+            },
+            "line": 29,
+            "name": "the address step is pending",
+            "match": {
+              "location": "steps.Steps.pending()"
+            },
+            "after": [
+              {
+                "result": {
+                  "duration": 14000,
+                  "status": "passed"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 9000,
+              "status": "skipped"
+            },
+            "line": 30,
+            "name": "nobody wrote this step",
+            "match": {},
+            "after": [
+              {
+                "result": {
+                  "duration": 4000,
+                  "status": "skipped"
+                },
+                "match": {
+                  "location": "steps.Steps.afterStep()"
+                }
+              }
+            ],
+            "keyword": "And "
+          }
+        ],
+        "tags": [
+          {
+            "name": "@checkout"
+          }
+        ]
+      }
+    ],
+    "name": "Payment",
+    "description": "",
+    "id": "payment",
+    "keyword": "Feature",
+    "uri": "file:features/checkout/payment.feature",
+    "tags": [
+      {
+        "name": "@checkout",
+        "type": "Tag",
+        "location": {
+          "line": 1,
+          "column": 1
+        }
+      }
+    ]
+  }
+]

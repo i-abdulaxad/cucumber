@@ -23,7 +23,8 @@ import java.util.regex.Pattern;
 
 /**
  * The auth-service stub (D16): an in-process HTTP server (JDK {@code HttpServer}, no dependency) on {@code 127.0.0.1}
- * that stands in for auth-service's access check {@code GET /internal/projects/{id}/access} (C5) and answers per the
+ * that stands in for auth-service's access check {@code GET /internal/projects/{id}/access} (C5) and project status
+ * {@code GET /internal/service/projects/{id}} (C7, with {@code X-Service-Key}), answering per the
  * {@link ReportsFixture}. It records every request, and a test can make it fail, wait, answer oddly, change a role or
  * stop listening. One per test JVM, on the port {@link TestSettings} reserved, which every test context's
  * {@code app.auth-service.base-url} points at; binding it fails loudly (no retry). Tests call {@link #reset()} first.
@@ -31,6 +32,7 @@ import java.util.regex.Pattern;
 public final class AuthServiceStub {
 
     private static final Pattern ACCESS_PATH = Pattern.compile("^/internal/projects/([^/]+)/access$");
+    private static final Pattern STATUS_PATH = Pattern.compile("^/internal/service/projects/([^/]+)$");
     private static final Pattern SUBJECT = Pattern.compile("\"sub\"\\s*:\\s*\"([^\"]*)\"");
 
     private static AuthServiceStub instance;
@@ -129,7 +131,8 @@ public final class AuthServiceStub {
             String path = exchange.getRequestURI().getRawPath();
             received.add(new Received(exchange.getRequestMethod(), path,
                     exchange.getRequestHeaders().getFirst("Authorization"),
-                    exchange.getRequestHeaders().getFirst("X-Request-Id")));
+                    exchange.getRequestHeaders().getFirst("X-Request-Id"),
+                    exchange.getRequestHeaders().getFirst("X-Service-Key")));
             if (!delay.isZero()) {
                 Thread.sleep(delay.toMillis());
             }
@@ -151,6 +154,10 @@ public final class AuthServiceStub {
     }
 
     private Answer fixtureAnswer(HttpExchange exchange, String path) {
+        Matcher status = STATUS_PATH.matcher(path);
+        if ("GET".equals(exchange.getRequestMethod()) && status.matches()) {
+            return statusAnswer(exchange, status.group(1));
+        }
         Matcher access = ACCESS_PATH.matcher(path);
         if (!"GET".equals(exchange.getRequestMethod()) || !access.matches()) {
             return new Answer(404, problem(404, "NOT_FOUND"));
@@ -171,6 +178,24 @@ public final class AuthServiceStub {
                 .orElseGet(() -> new Answer(403, problem(403, "FORBIDDEN")));
     }
 
+    /** C7: the right key and a fixture project give its status; a wrong key 401; another project 404. */
+    private static Answer statusAnswer(HttpExchange exchange, String projectId) {
+        if (!TestSettings.INTERNAL_SERVICE_KEY.equals(exchange.getRequestHeaders().getFirst("X-Service-Key"))) {
+            return new Answer(401, problem(401, "UNAUTHENTICATED"));
+        }
+        UUID project = UUID.fromString(projectId);
+        if (!project.equals(ReportsFixture.CHECKOUT) && !project.equals(ReportsFixture.BILLING)) {
+            return new Answer(404, problem(404, "NOT_FOUND"));
+        }
+        return new Answer(200, statusBody(project));
+    }
+
+    /** The 200 body of C7 for this project, as auth-service 1.5.0 answers it. */
+    public static String statusBody(UUID projectId) {
+        return "{\"projectId\":\"" + projectId + "\",\"orgId\":\"" + ReportsFixture.ACME + "\",\"archived\":"
+                + ReportsFixture.archived(projectId) + "}";
+    }
+
     /** The {@code sub} of a bearer token, read without verification (the stub trusts the service under test). */
     private static Optional<UUID> subject(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
@@ -189,8 +214,12 @@ public final class AuthServiceStub {
         return "{\"type\":\"about:blank\",\"status\":" + status + ",\"code\":\"" + code + "\"}";
     }
 
-    /** One request the stub received. */
-    public record Received(String method, String path, String authorization, String requestId) {
+    /** One request the stub received; {@code serviceKey} is the {@code X-Service-Key} header (C7 only). */
+    public record Received(String method, String path, String authorization, String requestId, String serviceKey) {
+
+        public Received(String method, String path, String authorization, String requestId) {
+            this(method, path, authorization, requestId, null);
+        }
     }
 
     private record Answer(int status, String body) {

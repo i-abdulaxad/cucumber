@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,7 +56,9 @@ public class UploadTokenServiceImpl implements UploadTokenService {
 
     @Override
     public CreatedUploadTokenResponse create(UUID projectId, UUID userId, CreateUploadTokenRequest request) {
-        if (request.expiresAt() != null && !request.expiresAt().isAfter(Instant.now(clock))) {
+        // RE10, BD-17: microsecond precision before the check, the store and the answer
+        Instant expiresAt = request.expiresAt() == null ? null : request.expiresAt().truncatedTo(ChronoUnit.MICROS);
+        if (expiresAt != null && !expiresAt.isAfter(Instant.now(clock))) {
             throw new InvalidFieldException("expiresAt", "Expiry must be in the future");
         }
         accessChecker.requireWrite(projectId, ProjectRole.ADMIN);
@@ -73,7 +76,7 @@ public class UploadTokenServiceImpl implements UploadTokenService {
             row.setTokenHash(codec.hash(token));
             row.setTokenPrefix(codec.prefix(token));
             row.setCreatedBy(userId);
-            row.setExpiresAt(request.expiresAt());
+            row.setExpiresAt(expiresAt);
             row.setCreatedAt(now);
             row.setUpdatedAt(now);
             return tokens.save(row);

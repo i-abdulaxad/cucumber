@@ -57,6 +57,26 @@ public final class HttpCalls {
                 response.body());
     }
 
+    /**
+     * Sends a byte body with this content type; {@code chunked} sends it without {@code Content-Length} (chunked
+     * transfer encoding), otherwise with it.
+     */
+    public Answer sendBytes(String method, String rawPath, byte[] body, String contentType, boolean chunked,
+                            String... headers) throws IOException, InterruptedException {
+        HttpRequest.BodyPublisher publisher = chunked
+                ? HttpRequest.BodyPublishers.ofInputStream(() -> new java.io.ByteArrayInputStream(body))
+                : HttpRequest.BodyPublishers.ofByteArray(body);
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(origin + rawPath))
+                .timeout(Duration.ofSeconds(60)).method(method, publisher).header("Content-Type", contentType);
+        for (int i = 0; i < headers.length; i += 2) {
+            request.header(headers[i], headers[i + 1]);
+        }
+        HttpResponse<String> response = client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+        return new Answer(response.statusCode(), response.headers().firstValue("Content-Type"),
+                response.headers().firstValue("WWW-Authenticate"), response.headers().firstValue("Retry-After"),
+                response.body());
+    }
+
     /** The parts of a response the tests check. */
     public record Answer(int status, Optional<String> contentType, Optional<String> wwwAuthenticate,
                          Optional<String> retryAfter, String body) {

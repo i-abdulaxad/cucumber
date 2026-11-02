@@ -36,6 +36,11 @@ public final class TestSettings {
     /** The auth-service stub's port, the same for the whole test JVM. */
     public static final int AUTH_SERVICE_PORT = RESERVATION.getLocalPort();
 
+    private static final ServerSocket SCENARIO_RESERVATION = reserve();
+
+    /** The scenario-service stub's port ({@link ScenarioServiceStub}), the same for the whole test JVM. */
+    public static final int SCENARIO_SERVICE_PORT = SCENARIO_RESERVATION.getLocalPort();
+
     private TestSettings() {
     }
 
@@ -54,11 +59,27 @@ public final class TestSettings {
         return AUTH_SERVICE_PORT;
     }
 
+    /** {@code http://127.0.0.1:<the reserved port>}, published as {@code app.scenario-service.base-url}. */
+    public static String scenarioServiceBaseUrl() {
+        return "http://127.0.0.1:" + SCENARIO_SERVICE_PORT;
+    }
+
+    /** Frees the scenario-service stub's reserved port so that the stub can bind it; idempotent. */
+    static synchronized int releaseScenarioServicePort() {
+        try {
+            SCENARIO_RESERVATION.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return SCENARIO_SERVICE_PORT;
+    }
+
     @DynamicPropertySource
     static void testSettings(DynamicPropertyRegistry registry) {
         registry.add("JWT_SECRET", () -> JWT_SECRET);
         registry.add("INTERNAL_SERVICE_KEY", () -> INTERNAL_SERVICE_KEY);
         registry.add("app.auth-service.base-url", TestSettings::authServiceBaseUrl);
+        registry.add("app.scenario-service.base-url", TestSettings::scenarioServiceBaseUrl);
     }
 
     private static ServerSocket reserve() {

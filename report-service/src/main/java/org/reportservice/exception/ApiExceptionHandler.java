@@ -63,6 +63,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     record InvalidField(String field, String message) {
     }
 
+    record InvalidMember(String pointer, String message) {
+    }
+
     private static final Comparator<InvalidField> INVALID_FIELD_ORDER =
             Comparator.comparing(InvalidField::field, Comparator.nullsFirst(Comparator.<String>naturalOrder()))
                     .thenComparing(InvalidField::message, Comparator.nullsFirst(Comparator.naturalOrder()));
@@ -78,6 +81,36 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleInvalidField(InvalidFieldException ex, HttpServletRequest request) {
         ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
         problem.setProperty(Problems.ERRORS_PROPERTY, List.of(new InvalidField(ex.field(), ex.reason())));
+        return ResponseEntity.status(ex.code().status()).body(problem);
+    }
+
+    /** Several query parameters a service checks (the CI upload, AC-2.10), as field errors sorted by field. */
+    @ExceptionHandler(InvalidFieldsException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidFields(InvalidFieldsException ex, HttpServletRequest request) {
+        ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
+        List<InvalidField> fields = new ArrayList<>();
+        ex.fields().forEach((field, reason) -> fields.add(new InvalidField(field, reason)));
+        fields.sort(INVALID_FIELD_ORDER);
+        problem.setProperty(Problems.ERRORS_PROPERTY, fields);
+        return ResponseEntity.status(ex.code().status()).body(problem);
+    }
+
+    /** D9: 422 CUCUMBER_JSON_INVALID with {@code errors} entries {@code {pointer, message}}, in document order. */
+    @ExceptionHandler(CucumberJsonInvalidException.class)
+    public ResponseEntity<ProblemDetail> handleCucumberJsonInvalid(CucumberJsonInvalidException ex,
+                                                                   HttpServletRequest request) {
+        ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
+        problem.setProperty(Problems.ERRORS_PROPERTY, ex.problems().stream()
+                .map(item -> new InvalidMember(item.pointer(), item.message())).toList());
+        return ResponseEntity.status(ex.code().status()).body(problem);
+    }
+
+    /** D10: 422 FEATURE_NOT_PLANNABLE with {@code featureIds}, every unplannable id in request order (AC-3.4). */
+    @ExceptionHandler(FeatureNotPlannableException.class)
+    public ResponseEntity<ProblemDetail> handleFeatureNotPlannable(FeatureNotPlannableException ex,
+                                                                   HttpServletRequest request) {
+        ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
+        problem.setProperty("featureIds", ex.featureIds());
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 

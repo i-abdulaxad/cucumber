@@ -1,7 +1,7 @@
 # report-service phase 1: test runs and results
 
 Status: **Ready** (approved by the user on 2026-10-26: Q1–Q10 as recommended). **Gate:** Batch A starts only after the platform-hardening batch is accepted, including gateway FU-4. **Gate met 2026-10-29:** platform-hardening accepted with follow-ups, FU-4's abort part included (per-route timeouts stay with this spec, user 2026-10-26).
-Last updated: 2026-10-29 (Batch A: T1, T2, T4 done; RE6–RE7 approved by the user; AC-8.3 row 2 amended; build decisions recorded below). 2026-10-26: user approval recorded; T11's FU-4 fallback removed; first draft.
+Last updated: 2026-11-02 (user decisions: RE10 approved, RV-B1 and RV-B2 accepted, BD-19 as a contract limitation, batch C may start; RE9 complete). Earlier the same day: (review point B reached; RV-B1 and RV-B2; BD-19; RE10 and T13 proposed; FU-2 done). Earlier the same day: (FU-2 and RE9, user 2026-11-02; qa F1–F11 decided as BD-8 to BD-18). Earlier the same day: user decisions of 2026-10-29 recorded: D9 Cucumber-JS forms with AC-2.15, RE8 with AC-7.4, FU-1, BD-6 and BD-7). 2026-10-29 (Batch A: T1, T2, T4 done; RE6–RE7 approved by the user; AC-8.3 row 2 amended; build decisions recorded below). 2026-10-26: user approval recorded; T11's FU-4 fallback removed; first draft.
 
 **Resolved questions (user, 2026-10-26, all as recommended):**
 - Q1: scope (D1).
@@ -67,7 +67,7 @@ At `fc178b6`, nothing can record test results:
 ## Decisions (recommended defaults)
 
 ### D1. Scope and slug
-**Default:** slug `report-service`; phase 1 is the "In" list: 8 stories, 59 ACs (26 P0, 32 P1, 1 P2), 4 batches.
+**Default:** slug `report-service`; phase 1 is the "In" list: 8 stories, 61 ACs (27 P0, 33 P1, 1 P2), 4 batches.
 **Why:** it's the smallest set that brings results in both ways the user chose.
 
 ### D2. REST, not gRPC
@@ -184,6 +184,10 @@ At `fc178b6`, nothing can record test results:
   - Feature: `uri` (string, 1–4,096 code points), `name` (default `""`), `tags[].name`, `elements` (default `[]`).
   - Element: `type` is `background` or `scenario` (`scenario_outline` is read as `scenario`); `name`, `line` (integer ≥ 1, optional), `tags[].name`, `steps`, `before`, `after`.
   - Step: `keyword` (trailing whitespace trimmed), `name`, `doc_string.value`, `rows[].cells[]`, `result`, and optional step-level `before` and `after`.
+  - **Cucumber-JS 13 forms** (user decision 2026-10-29, option A):
+    - a step with `hidden: true`, keyword `Before` or `After` and no `name` is a `BEFORE_HOOK` or `AFTER_HOOK` row, in its place in `steps`;
+    - when `rows` or `doc_string` is absent, the step's table comes from `arguments[].rows[].cells[]` and its doc string from `arguments[].content`; other `arguments` entries are ignored;
+    - every other step still requires `name`.
   - Result: `status` is exactly one of `passed`, `failed`, `skipped`, `pending`, `undefined`, `ambiguous`; `duration` (integer ≥ 0, nanoseconds, optional); `error_message` (optional).
 - **Strict on what is read:**
   - a wrong type, a missing required field, an unknown status, a negative duration, or U+0000 or a lone surrogate in a string → 422 `CUCUMBER_JSON_INVALID`, with `errors[]` entries `{pointer, message}` as JSONPath (for example `$[0].elements[3].steps[1].result.status`), at most 20 entries;
@@ -500,7 +504,20 @@ Scenario: Tags are the feature's then the element's, each once
 @US-2 @AC-2.14 @P1
 Scenario: A revoke racing an upload
   When Cai revokes a fresh token while CI uploads the CI sample with it, repeated 20 times
-  Then each upload is either 201 with "createdAt" before the token's "revokedAt", or a Problem 401 / UPLOAD_TOKEN_INVALID with nothing stored; never a 500
+  Then each upload is either 201 with "createdAt" not after the token's "revokedAt", or a Problem 401 / UPLOAD_TOKEN_INVALID with nothing stored; never a 500
+
+@US-2 @AC-2.15 @P0
+Scenario: A Cucumber-JS 13 sample is read (D9, user 2026-10-29)
+  Given the JS sample: one feature "features/checkout/payment.feature" with one scenario "Pay by card", whose "steps" are
+    | step                                                                                     | result |
+    | {"hidden":true,"keyword":"Before","result":{"status":"passed","duration":400000}}        | passed |
+    | "Given " "a basket with these items:" with arguments [{"rows":[{"cells":["item","price"]},{"cells":["Mug","8.00"]}]}] | passed |
+    | "Then " "the receipt is:" with arguments [{"content":"Total: 8.00","line":15}]           | passed |
+    | {"hidden":true,"keyword":"After","result":{"status":"failed","error_message":"boom"}}    | failed |
+  When CI uploads the JS sample with {T1}
+  Then the response is 201 and the result is FAILED with 4 rows in this order: BEFORE_HOOK (keyword null, text null), STEP "Given" with dataTable [["item","price"],["Mug","8.00"]], STEP "Then" with docString "Total: 8.00", AFTER_HOOK with errorMessage "boom"
+  And the same sample with the "Given" step's "name" removed is a Problem 422 / CUCUMBER_JSON_INVALID with pointer "$[0].elements[0].steps[1].name"
+  And a step with "hidden" true, keyword "Before" and a "name" is read as a normal step
 ```
 
 ### US-3: Plan a manual run (P0)
@@ -634,7 +651,7 @@ Scenario Outline: Unknown runs and results
 @US-4 @AC-4.8 @P1
 Scenario: Complete racing a recording
   When Hal completes a run while Cai records a result on it, repeated 20 times on fresh runs
-  Then each recording is either 200 with "finishedAt" before the run's "finishedAt", or a Problem 409 / RUN_CLOSED; never a 500
+  Then each recording is either 200 with "finishedAt" not after the run's "finishedAt", or a Problem 409 / RUN_CLOSED; never a 500
 ```
 
 ### US-5: Read runs and the summary (P0)
@@ -782,6 +799,13 @@ Scenario: Correlated, content-free logs
 Scenario: The schema is exactly the ERD's phase-1 part
   When Flyway has migrated an empty database
   Then the tables are exactly environments, builds, upload_tokens, test_runs, test_case_results and step_results (plus flyway_schema_history), with the ERD's columns, nullability, named unique indexes, CHECKs, and fk_ constraints with ON DELETE RESTRICT, and no column default
+
+@US-7 @AC-7.4 @P1
+Scenario: Root DEBUG prints no entity state, body, header or credential (RE8 user 2026-10-29, RE9 user 2026-11-02)
+  Given report-service runs with "logging.level.root" DEBUG and log capture
+  When Cai creates a token named "GitHub Actions" and CI uploads the CI sample with it and "?branch=main"
+  Then the effective level of "org.hibernate.orm.core" and of each RE9 logger is INFO
+  And no captured line, from any logger, contains the token, its hash, Cai's JWT, an "Authorization" value, the service key, "GitHub Actions", "branch=main", a step text, "expected rejected" or "Listing entities"
 ```
 
 ### US-8: auth-service project status for services, C7 (P0)
@@ -833,6 +857,9 @@ Prefixes: RE (report-service), AE (auth-service), GW (gateway).
 | RE4 | `ReportServiceApplicationTests`: annotations only (the shared test meta-annotation) | `report-service/src/test/java/org/reportservice/ReportServiceApplicationTests.java` | Fails today: no datasource | Low | RE2 | T2 |
 | RE6 | `ReportServiceApplication`: set `jdk.httpclient.redirects.retrylimit=1` at start-up (a copy of platform-hardening E7). Approved by the user 2026-10-29. | `report-service/src/main/java/org/reportservice/ReportServiceApplication.java` | JDK 17 HttpClient retries a GET once, with no per-client switch; C5, C7 and the scenario-service client don't follow redirects | Low | — | T3 |
 | RE7 | `build.gradle`: one test-task `systemProperty 'jdk.httpclient.redirects.retrylimit', '1'` line (a copy of platform-hardening E8). Approved by the user 2026-10-29. | `report-service/build.gradle` | Tests run with the same JVM setting as RE6 | Low | RE6 | T3 |
+| RE8 | `application.yaml`: `logging.level.org.hibernate.orm.core: INFO`. Approved by the user 2026-10-29. | `report-service/src/main/resources/application.yaml` | At root DEBUG, Hibernate's "Listing entities" prints whole entity state (token hashes, step texts, messages) | Low | — | T7 |
+| RE9 | `application.yaml`: pin to INFO the framework loggers that log bodies, URLs, headers or credentials at DEBUG: at least `org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor`, `org.springframework.web.servlet.DispatcherServlet`, `org.springframework.security.web.FilterChainProxy`; add any other that AC-7.4 shows. Approved by the user 2026-11-02 (FU-2). | `report-service/src/main/resources/application.yaml` | At root DEBUG these print request bodies and credentials | Low | RE8 | T7 |
+| RE10 | `UploadTokenServiceImpl.create`: `expiresAt.truncatedTo(MICROS)` before the future-check and the store, so PostgreSQL doesn't round it and the response doesn't echo 9 fraction digits (BD-17). **Approved by the user 2026-11-02** (T5's code is committed, HEAD `75b19e5`). | `report-service/src/main/java/org/reportservice/service/impl/UploadTokenServiceImpl.java` | BD-17 gap | Low | — | T13 |
 | RE5 | Repository-root `.env.example` (the user's file): name report-service in the header lines; add commented `REPORT_DB_PASSWORD=` and `INTERNAL_SERVICE_KEY=` (hint: `openssl rand -base64 32`), no values | `.env.example` | D15 | Low | — | T2 |
 | AE1 | `SecurityConfig.java`: add one `@Bean @Order(1)` `SecurityFilterChain` with `securityMatcher("/internal/service/**")`: stateless, CSRF off, the service-key filter, `anyRequest().authenticated()`, the existing entry point. The existing chain's body is unchanged. | `auth-service/.../configuration/SecurityConfig.java` | D5 | **Medium** | — | T4 |
 | AE2 | `application.yaml`: `app.internal-service-key: ${INTERNAL_SERVICE_KEY:}` (empty disables C7) | `auth-service/src/main/resources/application.yaml` | D5 | Low | — | T4 |
@@ -911,22 +938,41 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 - **Test first:** AC-1.1, AC-1.6.
 
 **T6. Cucumber JSON reader (`ingest`).**
-- **Allowed files:** new `ingest/*` and its tests.
-- **Must not:** use Spring, JPA or HTTP types in `ingest`; reject unknown fields.
-- **ACs:** AC-2.3, AC-2.8, AC-2.12, AC-2.13, and the mapping part of AC-2.2.
-- **Test first:** the rollup outline.
-- **Stop if:** a real Cucumber-JVM 7 or Cucumber-JS sample (one of each, source named) falls outside D9's subset.
+- **Allowed files:** new `ingest/*` and its tests (the two real samples as test resources); `docs/api/report-service.openapi.yaml` 1.0.1, a docs-only note on C8 and `CucumberStep` for the D9 Cucumber-JS forms (user 2026-10-29).
+- **Must not:** use Spring, JPA or HTTP types in `ingest`; reject unknown fields; change any other contract shape.
+- **ACs:** AC-2.3, AC-2.8, AC-2.12, AC-2.13, AC-2.15, and the mapping part of AC-2.2; plus test rows for BD-10 to BD-13 (`null` member, two `arguments` entries, hook keyword case and non-boolean `hidden`, background hooks), each also in the 1.0.1 note.
+- **Test first:** the rollup outline; AC-2.15.
+- **Stop if:** a real Cucumber-JVM 7 or Cucumber-JS 13 sample (one of each, source named) falls outside D9's subset as extended on 2026-10-29.
 
 **T7. Upload endpoint and C7 client.**
-- **Allowed files:** new upload controller and service, `client/ProjectStatusClient`, tests; T3's security chain file (the upload path only); `ErrorCode` and advice (additive).
-- **Must not:** buffer past the limit; open a transaction before parsing and C7.
-- **ACs:** AC-2.1, AC-2.2, AC-2.4, AC-2.6, AC-2.7, AC-2.9 to AC-2.11, AC-2.14.
+- **Allowed files:** new upload controller and service, `client/ProjectStatusClient`, tests; T3's security chain file (the upload path only); `ErrorCode` and advice (additive); RE8 (user 2026-10-29); RE9 (user 2026-11-02).
+- **Must not:** buffer past the limit; open a transaction before parsing and C7; change `application.yaml` beyond RE8 and RE9.
+- **ACs:** AC-2.1, AC-2.2, AC-2.4, AC-2.6, AC-2.7, AC-2.9 to AC-2.11, AC-2.14, AC-7.4; plus test rows for BD-15 (scheme case, charset, `Content-Encoding`, early 413), BD-16 (`X-Request-Id` to C7) and BD-18 (upper-case `projectId` from C7).
 - **Test first:** AC-2.4, AC-2.7.
 - **Stop if:** a 20 MiB upload takes more than 5 s at p95 locally (the gateway's timeout is 10 s); or bounded reading needs a library.
 
 **Review point B:** token secrecy, the upload matrix, and the concurrency classes run 3 times.
+- **Reached 2026-11-02:** T5, T6 and T7 are done, including BD-10 to BD-18, RE8 and RE9; clean build 298/0/0 (backend-swe).
+- **RE9 complete:** `jdk.internal.httpclient.debug` is pinned in report-service, with an AC-7.4 test row; clean build 298/0/0.
+- **Deviations, accepted by the user 2026-11-02:**
+  - RV-B1: RE9 pins 5 loggers: `DispatcherServlet`, `RequestResponseBodyMethodProcessor`, `HttpEntityMethodProcessor`, `FilterChainProxy` and `jdk.internal.httpclient.debug`. This is within RE9's "add any other that AC-7.4 shows" and matches FU-2.
+  - RV-B2: T7 added supporting files under `security/`, `exception/`, `dto/response/` and repository lookups, all new in this feature, like BD-6.
+- **Gap found:** BD-17 precision in T5's code, fixed by T13 (below).
+- **Early 413 (BD-19; user decision 2026-11-02: a contract limitation, documented in T12's contract sync, not an FU):** a client that sends a full 20 MiB body without `Expect: 100-continue` may get a TCP reset instead of the 413 body. Default: a documented limitation in C1, not an FU. The status is still decided before the body is read; reading the rest only to deliver the body would cost the bandwidth the limit protects. CI clients should send `Content-Length` and may use `Expect: 100-continue`. The note goes into the contract in T12's sync.
 
 ### Batch C: manual runs and reading (review point C)
+**Batch C approved to start by the user (2026-11-02):** T13 first, then T8–T10, stopping at review point C.
+
+**T13. `expiresAt` precision (BD-17 gap; first in batch C; RE10 approved 2026-11-02).**
+- **Allowed files:** RE10 (`report-service/src/main/java/org/reportservice/service/impl/UploadTokenServiceImpl.java`: truncate `expiresAt` to microseconds before the future-check, the store and the create response); one new test class under `report-service/src/test/java/org/reportservice/`.
+- **Must not:** change any other file, any existing test, the schema or the contract.
+- **ACs:** AC-1.1 and AC-1.4, plus BD-17's rows.
+- **Test first** (red today):
+  - creating with `expiresAt` `2030-01-01T00:00:00.123456789+02:00` → 201, and both the create response and the list say `2029-12-31T22:00:00.123456Z`;
+  - `expiresAt` equal to the clock's `now` plus 500 ns → 400 `VALIDATION_FAILED` at `expiresAt` (it truncates to `now`).
+- **Done when:** the build is green with counts.
+- **Stop if:** the fix needs a file other than RE10's, or an existing test changes.
+
 **T8. scenario-service client and planning.**
 - **Allowed files:** new `client/ScenarioServiceClient`, the run controller (plan handler), the planning service, records and tests; `ErrorCode` and advice (additive).
 - **Must not:** call scenario-service through the gateway or inside a transaction; change scenario-service.
@@ -987,7 +1033,7 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 
 ## Assumptions
 - A1. Projects are never hard-deleted.
-- A2. Cucumber-JVM 7 and Cucumber-JS durations are nanoseconds. T6 verifies this against samples.
+- A2. Cucumber-JVM 7 and Cucumber-JS durations are nanoseconds. Verified in T6 (Cucumber-JVM 7.18, Cucumber-JS 13.3.0).
 - A3. Validation (400) runs before the access check.
 - A4. At most 5,000 results per run, so no streaming is needed.
 
@@ -1003,11 +1049,39 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 - **BD-3. ERD edited as-built by backend-swe** (standards §1): accepted.
 - **BD-4. C7 in auth-service contract 1.5.0**, since 1.4.0 belongs to platform-hardening: accepted; AE4 and C7 updated.
 - **BD-5. Settings records for T3, T7 and T8 created early in T2:** accepted; those tasks own their behaviour and tests.
+- **BD-6 (user 2026-10-29). T5:** the new typed exceptions in `exception/` and the single `@Pattern` token-name rule are accepted.
+- **BD-7 (user 2026-10-29). T5:** reusing `UploadTokenCodec.hash` is within "only the token authenticator hashes": the token format and hashing stay in one place, and nothing else hashes or compares tokens.
+
+**qa test-plan questions F1–F11 (pm, 2026-11-02;** `docs/qa/report-service-test-plan.md`**):**
+- **BD-8 (F1).** D1 now counts 61 ACs (27 P0, 33 P1, 1 P2), after AC-2.15 and AC-7.4 were added. Why: the counts match the tags.
+- **BD-9 (F2).** C8 1.0.1 is confirmed as written (hidden hooks, the first `arguments` entry of each kind, a boolean `hidden`), plus the BD-10 and BD-13 notes. Why: it matches D9 option A.
+- **BD-10 (F4).** An explicit `null` on any member that is read, defaulted ones included, is a wrong type: 422 `CUCUMBER_JSON_INVALID` with its pointer. Why: D9 is strict on what it reads, and neither formatter writes `null`. If a real T6 sample does, T6's stop condition applies.
+- **BD-11 (F3).** With two `arguments` entries of the same kind, the first one wins and the rest are ignored. Why: it's deterministic and matches 1.0.1.
+- **BD-12 (F5).** The hook keyword is trimmed like any keyword, then matched case-sensitively against `Before` and `After`. So a `before` step without a `name` is 422 at `.name`. A non-boolean `hidden` is 422 at `.hidden`. Why: this is exactly what Cucumber-JS writes.
+- **BD-13 (F6).** A `background` element's own `before` and `after` are ignored. Why: no formatter writes them, and there is no order rule for them.
+- **BD-14 (F7).** In AC-2.14 and AC-4.8, "before" now reads "not after". Why: microsecond timestamps can be equal.
+- **BD-15 (F8).** On the CI upload:
+  - the `Bearer` scheme is case-insensitive (standards §3);
+  - `application/json` is accepted with no charset or with `charset=utf-8` (in any case); any other charset is 415;
+  - a `Content-Encoding` other than none or `identity` is 415, and the body is never decoded;
+  - a `Content-Length` above 20,971,520 gets 413 before the body is read.
+
+  Why: JSON is UTF-8, decompression would bypass the limit, and the early 413 costs nothing.
+- **BD-16 (F9).** A valid `X-Request-Id` is forwarded to C7, as it is to C5 and scenario-service. Why: log correlation; C7 is unchanged. C1's "Calls" text is synced in T12.
+- **BD-17 (F10).** `expiresAt`:
+  - any RFC 3339 offset is accepted and stored as UTC, truncated to microseconds, and returned with `Z`;
+  - it must be strictly after the injected clock's `now`; equal to `now` is 400;
+  - a token is active while `now` < `expiresAt`.
+
+  Why: this follows standards §3 time and the glossary's "in the future". It touches T5, which is done: qa verifies, and a mismatch is a fix-round bug.
+- **BD-18 (F11).** C7's `projectId` is compared as a UUID, so an upper-case form of the token's project is the same project (contract 1.3.0). Any other id is still 503. Why: BD-1.
 
 ## Follow-ups and refactoring candidates
 | ID | Item | Owner | Priority |
 |---|---|---|---|
 | RC-1 | auth-service README still says the access check is "Not yet available"; stale, outside AE5. Needs a user-approved E-item. | pm (E-item), backend-swe | P2 |
+| FU-1 | Pin `logging.level.org.hibernate.orm.core: INFO` in auth-service's and scenario-service's `application.yaml` (one line each, as RE8), with a root-DEBUG test like AC-7.4. User-approved 2026-10-29; a separate small task, not in this spec's batches. Allowed files: those two `application.yaml` files and one new test per service. | backend-swe | P1 |
+| FU-2 | **Done 2026-11-02** in auth-service, scenario-service and api-gateway; builds green. Pin to INFO the framework loggers that log bodies, URLs, headers or credentials at root DEBUG (at least `RequestResponseBodyMethodProcessor`, `DispatcherServlet`, `FilterChainProxy`; they print plaintext passwords, emails and invitation tokens) in auth-service, scenario-service and the gateway, each with a root-DEBUG capture test like AC-7.4. User decision 2026-11-02; report-service's part is RE9 in T7. May be done together with FU-1. Allowed files: each service's `application.yaml` and one new test per service. | backend-swe | P1 |
 | RC-2 | A C7 401 carries `WWW-Authenticate: Bearer` and the bearer detail text, from the shared entry point; a service-key path should not advertise Bearer. Changing it needs a user-approved AE-item and a contract note. | pm (E-item), backend-swe | P2 |
 
 ## Acceptance
