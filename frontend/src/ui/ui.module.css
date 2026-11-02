@@ -1,0 +1,109 @@
+.region {
+  min-height: 6rem;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.alert {
+  border: 2px solid var(--error);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: #fff;
+}
+
+.alertTitle {
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.alert p {
+  margin: 0.25rem 0;
+}
+
+.reference {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.empty {
+  padding: 1rem 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  max-width: 28rem;
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.field input {
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.field input[aria-invalid='true'] {
+  border: 2px solid var(--error);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.fieldError {
+  color: var(--error);
+  font-weight: 600;
+  margin: 0;
+}
+
+.summary {
+  composes: alert;
+}
+
+.summary h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.summary ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.secondary {
+  composes: button;
+  background: #fff;
+  color: var(--accent);
+}
+
+.h1 {
+  margin: 0 0 1rem;
+}

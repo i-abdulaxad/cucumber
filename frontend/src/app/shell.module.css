@@ -1,0 +1,48 @@
+.skip {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 2px solid var(--accent);
+  z-index: 10;
+}
+
+.skip:focus {
+  top: 0.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logout {
+  font: inherit;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.main {
+  padding: 1.5rem;
+  max-width: 72rem;
+}

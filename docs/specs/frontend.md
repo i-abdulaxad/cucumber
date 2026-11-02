@@ -6,11 +6,11 @@ Last updated: 2026-11-02 (user answers to Q1–Q4 recorded; F1 stop condition fo
 ## Questions (answered by the user 2026-11-02: all as recommended)
 - **User answers 2026-11-02:**
   - **Q1:** Node 24 LTS, npm, and a committed `package-lock.json`, pinned in `.nvmrc` and `engines`. This machine has only Node 22.23.2 (nvm); the user will install Node 24.
-  - **Q2:** the six peer packages are approved.
+  - **Q2:** the six peer packages are approved. **User 2026-11-02 (F1 stop):** `@testing-library/dom` 10.4.2 is approved as a seventh peer (required by @testing-library/react 16.3).
   - **Q3:** SE1 is approved.
   - **Q4:** the report screens go in batch D of phase 1.
 - **Q1. Runtime and package manager.** Recommended: Node 24 LTS, pinned in `frontend/.nvmrc` and `engines`, with npm and a committed `package-lock.json`. Why: no extra tool to install, and the lockfile makes builds reproducible.
-- **Q2. Direct peer packages.** Approve these as part of the stack, at the versions npm resolves (recorded in F1's handoff): `react-dom`, `@types/react`, `@types/react-dom`, `@codemirror/state`, `@codemirror/language` and `@codemirror/commands`. Why: the approved libraries can't be used without them. Any other package is a stop condition.
+- **Q2. Direct peer packages.** Approve these as part of the stack, at the versions npm resolves (recorded in F1's handoff): `react-dom`, `@types/react`, `@types/react-dom`, `@codemirror/state`, `@codemirror/language`, `@codemirror/commands`, and (added 2026-11-02) `@testing-library/dom` 10.4.2. Why: the approved libraries can't be used without them. Any other package is a stop condition.
 - **Q3. SE1 (scenario-service, docs and one test).** Recommended: approve. backend-swe pins down the unit of `parseErrors[].column` (expected: Unicode code points) with one new scenario-service test, and documents it in contract 1.0.7. Why: without it, error markers can land in the wrong place on lines with non-ASCII text (G2).
 - **Q4. Report screens.** Recommended: batch D of this phase (D1). Why: report-service is accepted (contract 1.0.2) and gateway 0.3.4 routes it, so nothing blocks them.
 
@@ -57,7 +57,12 @@ Every capability exists only as a REST API today. Testers, leads and admins need
 **D1. Phases and order.** Phase 1 runs in batches A to E. Screen 6 is batch D, because nothing blocks it any more (Q4). **Why:** risky foundations first, then the editor, then the CRUD screens.
 
 **D2. Stack (user decision 2026-11-02, option A).** Exactly these packages; Q2's peers; nothing else without approval.
-- **Core:** React 19.3; Vite 8.3 with @vitejs/plugin-react 6.1; TypeScript pinned at 6.0.3.
+- **User decisions 2026-11-02 (F1 stop: the planned versions didn't resolve together):**
+  - TypeScript 5.9.3 replaces 6.0.3, because openapi-typescript 7.13's peer is `typescript ^5.x`;
+  - ESLint 9.39.5 replaces 10.14, because eslint-plugin-jsx-a11y 6.10.2 supports at most ESLint 9;
+  - no `overrides` for either;
+  - `npx playwright install chromium` is allowed only if the cached revision doesn't match @playwright/test 1.64.1.
+- **Core:** React 19.3; Vite 8.3 with @vitejs/plugin-react 6.1; TypeScript pinned at 5.9.3.
 - **UI:** react-aria-components 1.22.
 - **Editor:** @codemirror/view 6.43, @codemirror/legacy-modes 6.5 (Gherkin), @codemirror/lint 6.9.
 - **Data and routing:** @tanstack/react-query 5.105, @tanstack/react-router 1.170.
@@ -65,7 +70,7 @@ Every capability exists only as a REST API today. Testers, leads and admins need
 - **Charts:** echarts 6.1.
 - **Unit and component tests:** vitest 5, @testing-library/react 16.3, jsdom 30, msw 3.
 - **End to end:** @playwright/test 1.64, @axe-core/playwright 4.14.
-- **Lint and types:** eslint 10.14, typescript-eslint 8.72, eslint-plugin-jsx-a11y 6.10, `tsc --noEmit` strict.
+- **Lint and types:** eslint 9.39.5, typescript-eslint 8.72, eslint-plugin-jsx-a11y 6.10, `tsc --noEmit` strict.
 - **Styling:** CSS modules.
 - **No jwt-decode:** `sub`, `email` and `exp` are decoded by hand.
 
@@ -656,7 +661,7 @@ Scenario: Secrets stay secret
 - **Common stop conditions:**
   - a file outside Allowed files;
   - a contract that doesn't support an AC;
-  - a package version that doesn't resolve or conflicts with the pinned TypeScript 6.0.3;
+  - a package version that doesn't resolve or conflicts with the pinned TypeScript 5.9.3;
   - an existing test that would need weakening.
 
 ### Batch A: foundation (review point A)
