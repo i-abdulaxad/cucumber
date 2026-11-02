@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: scenario-service API
-  version: 1.0.5
+  version: 1.0.7
   summary: Gherkin features, their versions and parsed structure, derived test cases and tags, per project.
   description: |
     Contract C1 of `docs/specs/scenario-service.md` (phase 1). It documents every operation of decision D2, the
@@ -9,6 +9,17 @@ info:
     paths, status codes, `code` values and the Problem members `parseErrors` and `currentVersion` come from the
     spec's acceptance criteria (AC-x.y) and are binding. The wording of `detail`, of validation `message` texts and of
     parse error `message` texts is not part of the contract.
+
+    ## Changes in 1.0.7 (`docs/specs/frontend.md` SE1, 2026-11-02)
+
+    1.0.7: docs only; no behaviour change. `ParseError.column` counts Unicode code points (verified, not changed): an
+    emoji outside the BMP is one column, a combining mark is a column of its own.
+
+    ## Changes in 1.0.6 (`docs/specs/platform-hardening.md` FU-3, E18–E19, 2026-11-02)
+
+    1.0.6: one error-table row; no path, schema or `code` changes. A query parameter whose percent-encoding isn't
+    valid UTF-8 (for example `?tag=%FF`) was a 500 `INTERNAL_ERROR`; it is now 400 `MALFORMED_REQUEST`, after the
+    401 for a missing or invalid token and before the access check. The value is never logged.
 
     ## Changes in 1.0.5 (`docs/specs/platform-hardening.md`, 2026-10-26)
 
@@ -252,6 +263,7 @@ info:
     | A write on an archived project | 409 | `PROJECT_ARCHIVED` | — |
     | A lock that can't be acquired in time, a deadlock, or another unique-constraint conflict | 409 | `CONFLICT` | — |
     | Unsupported `Content-Type` | 415 | `UNSUPPORTED_MEDIA_TYPE` | — |
+    | A query parameter whose percent-encoding isn't valid UTF-8 (for example `?tag=%FF`; 1.0.6) | 400 | `MALFORMED_REQUEST` | — |
     | Any other 4xx that Spring MVC raises itself and that no row above covers (for example a missing required header) | Spring's status, unchanged | `MALFORMED_REQUEST` | — |
     | The text isn't valid Gherkin: the parser reports errors (only those are listed), or, only when it reports none, the text has no Feature (one entry: line 1, column 1, `The text has no Feature`; AC-1.13, AC-1.15); or a `# encoding:` pragma other than UTF-8 (one entry: line 1, column 1, `Only UTF-8 encoding is supported`; AC-1.19) | 422 | `GHERKIN_INVALID` | `parseErrors` |
     | Anything unexpected | 500 | `INTERNAL_ERROR` | — |
@@ -2067,7 +2079,10 @@ components:
           type: integer
           format: int32
           minimum: 1
-          description: 1-based column. A column the parser reports as 0 (for example at the end of the file) is 1.
+          description: |
+            1-based column, counted in Unicode code points (not UTF-16 units, bytes or user-perceived characters):
+            an emoji outside the BMP such as `💳` is one column, and a combining mark is a column of its own. A column
+            the parser reports as 0 (for example at the end of the file) is 1.
           example: 7
         message:
           type: string

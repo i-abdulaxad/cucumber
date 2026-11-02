@@ -1146,7 +1146,7 @@ Rules: each fix starts with a failing test. qa's tests (`.../qa/**`) are read-on
 | RC-1 | auth-service README still says the access check is "Not yet available"; stale, outside AE5. Needs a user-approved E-item. | pm (E-item), backend-swe | P2 |
 | FU-1 | **Done 2026-11-02** (with FU-2): pinned in auth-service `application.yaml` line 39 and scenario-service `application.yaml` line 38, each with `configuration/RootDebugEntityStateLoggingTest.java`; auth-service 2086/0/0, scenario-service 901/0/1. Pin `logging.level.org.hibernate.orm.core: INFO` in auth-service's and scenario-service's `application.yaml` (one line each, as RE8), with a root-DEBUG test like AC-7.4. User-approved 2026-10-29; a separate small task, not in this spec's batches. Allowed files: those two `application.yaml` files and one new test per service. | backend-swe | P1 |
 | FU-2 | **Done 2026-11-02** in auth-service, scenario-service and api-gateway; builds green. Pin to INFO the framework loggers that log bodies, URLs, headers or credentials at root DEBUG (at least `RequestResponseBodyMethodProcessor`, `DispatcherServlet`, `FilterChainProxy`; they print plaintext passwords, emails and invitation tokens) in auth-service, scenario-service and the gateway, each with a root-DEBUG capture test like AC-7.4. User decision 2026-11-02; report-service's part is RE9 in T7. May be done together with FU-1. Allowed files: each service's `application.yaml` and one new test per service. | backend-swe | P1 |
-| FU-3 | auth-service and scenario-service probably answer a malformed percent-encoded query parameter with a 500, like RE12. Confirm with a failing test, then fix as a user-approved E-item, after report-service is accepted. User decision 2026-11-02. | backend-swe | P1 |
+| FU-3 | auth-service and scenario-service probably answer a malformed percent-encoded query parameter with a 500, like RE12. Confirm with a failing test, then fix as a user-approved E-item, after report-service is accepted. User decision 2026-11-02. **Done 2026-11-02:** `docs/specs/platform-hardening.md` T9. scenario-service fixed (E18, contract 1.0.6); auth-service had no defect (E17 not applied); signed off by qa. | backend-swe | P1 |
 | RC-3 | `service/impl/RunAttributes` duplicates the upload's environment and build lookup; merge them into one owner (RV-C1). | backend-swe | P2 |
 | FU-4 | QA-5 (S4): `expiresAt` accepts a JSON number. Make timestamps string-only platform-wide, in the shared strict-JSON setup, not in report-service alone. Why not now: the value is unambiguous and still checked to be in the future. | pm (platform rule), backend-swe | P2 |
 | FU-5 | QA-6 (S4): a repeated single-valued query parameter is joined (`name=a&name=b` → `a,b`). Make it 400 `VALIDATION_FAILED` platform-wide (scenario-service's `tag` and `archived` are the same). Why not now: CI tools don't repeat parameters, and the joined value is still validated. | pm (platform rule), backend-swe | P2 |
@@ -1162,7 +1162,6 @@ Rules: each fix starts with a failing test. qa's tests (`.../qa/**`) are read-on
 
 | ID | Item | Owner | Priority |
 |---|---|---|---|
-| FU-3 | Malformed percent-encoding gives 500 in auth-service and scenario-service | backend-swe | P1 |
 | FU-4 | Timestamps string-only in JSON, platform-wide (QA-5) | pm, backend-swe | P2 |
 | FU-5 | Repeated single-valued query parameter → 400, platform-wide (QA-6) | pm, backend-swe | P2 |
 | FU-6 | Format-character-only names (U+202E), standards rule (QA-7) | pm (user approval), backend-swe | P2 |
@@ -1170,4 +1169,4 @@ Rules: each fix starts with a failing test. qa's tests (`.../qa/**`) are read-on
 | RC-2 | C7 401 advertises `WWW-Authenticate: Bearer` | pm (E-item), backend-swe | P2 |
 | RC-3 | Merge `RunAttributes` with the upload's environment and build lookup | backend-swe | P2 |
 
-FU-1 and FU-2 are done (2026-11-02). Each fix to committed code needs a user-approved E-item.
+FU-1, FU-2 and FU-3 are done (2026-11-02). Each fix to committed code needs a user-approved E-item.

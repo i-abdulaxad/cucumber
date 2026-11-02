@@ -1,6 +1,6 @@
 # Platform hardening: one C5 request, and Problems for requests rejected before Spring MVC
-Status: Accepted with follow-ups (pm, 2026-10-29; see "Acceptance")
-Last updated: 2026-10-29 (acceptance; E16)
+Status: Accepted with follow-ups (pm, 2026-10-29; see "Acceptance"). Follow-up round FU-3 (T9) done 2026-11-02.
+Last updated: 2026-11-02 (T9 done and signed off by qa; E17 not applied)
 
 Binding rules: `docs/engineering/standards.md` (referenced as "standards §n"). This spec lists only feature-specific rules. It has **no named deviation** from the standards.
 
@@ -471,7 +471,59 @@ Common to every task: standards §2, §5, §6, §7 apply. New tests are not unde
 - **Still open:** BUG-PH-1 until verified; PH-FU-1, PH-FU-2, PH-FU-3; RC-1; gateway FU-5 (now with the health sub-paths), gateway FU-4's per-route timeouts (with report-service). Observations OBS-1 (one slow stall row under parallel load) and OBS-2 (HikariCP's own WARNs on a database restart) need no action unless they recur. auth-service's RC-3 and RC-4 are unrelated and stay open in that spec.
 - **Gate:** report-service's gate (this batch accepted, including FU-4's abort part) is met.
 
+## Follow-up round FU-3 (report-service FU-3; approved by the user 2026-11-02)
+
+**Problem.** report-service RE12 fixed a 500. A query parameter whose percent-encoding isn't valid UTF-8 (Tomcat 11 `InvalidParameterException`, "Character decoding failed") fell through the catch-all `@ExceptionHandler(Exception.class)`, which logs ERROR with the exception. Its message contains the value. auth-service and scenario-service have the same catch-all.
+
+**Verified 2026-11-02:**
+- `ErrorCode.MALFORMED_REQUEST(400)` and `MALFORMED_REQUEST_DETAIL` "The request could not be read." exist in both services.
+- Neither `ApiExceptionHandler` handles `InvalidParameterException`.
+- auth-service's catch-all (line 147) logs `log.error(..., ex)`.
+- scenario-service's `listFeatures` reads query parameters (`archived`, `tag`, `MultiValueMap`), so it is likely affected.
+- No auth-service controller declares `@RequestParam`, so auth-service may decode no parameter at all. Its rows below confirm this before any change.
+
+**Behaviour (as RE12):** wherever a parameter is decoded and fails, the answer is a Problem 400 / `MALFORMED_REQUEST` with the existing detail. No log line contains the value, the exception message or a stack trace. An endpoint that never decodes parameters keeps its normal answer, and never a 500.
+
+| ID | Service | File | Change | Risk | Task |
+|---|---|---|---|---|---|
+| E17 | auth | `auth-service/src/main/java/com/example/authservice/exception/ApiExceptionHandler.java` | One `@ExceptionHandler(InvalidParameterException.class)` → 400 `MALFORMED_REQUEST`, logging nothing, as report-service RE12. **Only if** a T9 row is red in auth-service; otherwise auth-service gets only the new test. | L | T9 |
+| E18 | scenario | `scenario-service/src/main/java/org/scenarioservice/exception/ApiExceptionHandler.java` | As E17 | L | T9 |
+| E19 | contracts | `docs/api/auth-service.openapi.yaml` (1.5.0 → 1.5.1, only with E17) and `docs/api/scenario-service.openapi.yaml` (1.0.5 → 1.0.6) | One error-table row: "A query parameter whose percent-encoding isn't valid UTF-8 → 400 `MALFORMED_REQUEST`", plus a changes note. No existing row covers it, because the exception isn't raised by Spring MVC itself. | L | T9 |
+
+All three are approved by the user (2026-11-02, "do FU-3 now"); E17 and its 1.5.1 note only under E17's condition.
+
+**T9. FU-3: malformed query encoding (E17–E19).**
+- **Allowed files:** E17, E18 and E19 exactly. One new test class per service, not under `qa/`: `auth-service/src/test/java/com/example/authservice/exception/ParameterDecodingTest.java` and `scenario-service/src/test/java/org/scenarioservice/exception/ParameterDecodingTest.java`.
+- **Must not:** change any other file, any existing test or `ErrorCode`; catch anything broader than `InvalidParameterException`; log the value, the message or a stack trace.
+- **Test first.** Run every row before any change, and report which rows are red. In each row the marker `QaLeakFu3` must appear in no captured log line, and no ERROR line may appear.
+  - **scenario-service** (expected red today, 500):
+    - `GET /api/projects/{p}/features?tag=QaLeakFu3%FF` with a valid JWT → 400 `MALFORMED_REQUEST`;
+    - `GET /api/projects/{p}/features?archived=%ED%A0%80` with a valid JWT → 400 `MALFORMED_REQUEST`;
+    - `GET /api/projects/{p}/features?x=QaLeakFu3%E0%A4` with a valid JWT → 400 `MALFORMED_REQUEST`;
+    - `GET /api/projects/{p}/features?tag=QaLeakFu3%FF` without a token → 401 `UNAUTHENTICATED`, unchanged (the 401 still comes first);
+    - `GET /api/projects/{p}/features/{f}?x=QaLeakFu3%FF` with a valid JWT → its normal answer (200 or 404 as today) or 400, never 500; report which.
+  - **auth-service** (confirm first):
+    - `POST /api/auth/login?x=QaLeakFu3%FF` with valid credentials (public) → 200 as today, or 400 `MALFORMED_REQUEST`; never 500;
+    - `POST /api/auth/register?x=QaLeakFu3%E0%A4` with a valid body (public) → 201 as today, or 400; never 500;
+    - `GET /api/orgs?x=QaLeakFu3%FF` with a valid JWT → 200 as today, or 400; never 500;
+    - `GET /api/orgs?x=QaLeakFu3%FF` without a token → 401 `UNAUTHENTICATED`, unchanged.
+  - If every auth-service row is already green with its normal answer, E17 and the 1.5.1 note are not applied. The test class still stays as a guard.
+- **Done when:** both clean builds are green, with counts and context counts, and the handoff lists each row as red-before or green-before.
+- **Stop if:**
+  - the exception is raised outside MVC (in a filter, or before the `DispatcherServlet`), so the advice can't see it;
+  - the fix changes any existing 401/403/404 order;
+  - an existing test needs a change;
+  - `ErrorCode` lacks a suitable code. It doesn't today; if that changes, stop and ask.
+- **Then:** qa verifies T9 (rows, log scan, mutants on E17 and E18), and pm closes report-service FU-3.
+- **Done 2026-11-02:**
+  - E18 is applied, and E19 for scenario-service 1.0.6.
+  - E17 was correctly not applied: auth-service never gave a 500, so its contract stays at 1.5.0.
+  - qa signed off with no bugs (`docs/qa/platform-hardening-report.md`).
+  - Builds: auth-service 2109/0/0, scenario-service 926/0/1 (main session).
+
 ## Changelog
+- 2026-11-02: T9 done; qa signed off; E17 not applied (no defect in auth-service).
+- 2026-11-02: follow-up round FU-3 added (E17–E19, T9), approved by the user.
 - 2026-10-29: accepted with follow-ups; E16 recorded; D7 per-request bound confirmed; backlogs updated in the three source specs.
 - 2026-10-26: created by pm (Draft).
 - 2026-10-29: user decisions: E14 (T7 option A, Tomcat valve), E15 / T8 (RC-2 fix), gateway contract 0.3.0 now and 0.3.1 with T7. Status stays Ready.

@@ -154,3 +154,63 @@ Commit tested: `566fc1b` plus working tree (T7 E13/E14, T8 E15, the auth-service
   - plus backend-swe's uncommitted T7/T8 files.
   - No production code, config, build file, spec or contract changed by qa.
 - Removed: `/tmp` mutation copies, the manual-run container and processes, and the scratch files.
+
+## FU-3 / T9 verification (2026-11-02)
+
+- **Code under test:** HEAD `d9ae040` plus the working tree: E18 in `scenario-service/.../exception/ApiExceptionHandler.java`, E19 (scenario-service contract 1.0.6), and backend-swe's `ParameterDecodingTest` in both services.
+- **Rules followed:** no `src/main` edits, no `.env`, no git that changes state.
+- **Method:** every row runs on a real Tomcat on `127.0.0.1`, because MockMvc doesn't decode parameters. Broken escapes (`%`, `%G1`, `%F`) go over a raw socket, because the JDK client refuses to send them. Each row captures the log and asserts: no `QaLeakFu3` marker, no ERROR line, no stack trace, and no "Character decoding" or "Exception" text in the body.
+
+### scenario-service (E18): verified, 20 qa rows, all green
+`listFeatures` is the only endpoint that decodes query parameters (grep: `@RequestParam` appears only in `FeatureController`).
+
+| Rows | Expected and actual | C5 calls |
+|---|---|---|
+| `GET features` with `?tag=QaLeakFu3%FF`, `?archived=QaLeakFu3%ED%A0%80`, the marker in the parameter name (`?QaLeakFu3%FF=1`), overlong `%C0%AF`, a valid parameter followed by a bad one, and the broken `%`, `%G1` and `%F` | 400 `MALFORMED_REQUEST`, "The request could not be read." | 0 |
+| The same request with no token, or with an expired token | 401 (comes first) | 0 |
+| A non-member (Ivy), or an unknown project | 400. Decoding fails before the access check, as A3 orders | 0 |
+| Endpoints that don't decode: `features/{f}` (also with `%G1`), `versions`, `versions/1`, `test-cases`, `/tags` | 200 (their normal answer) | 1 |
+| `features/{f}` as Ivy | 403 (normal answer) | 1 |
+| An unknown feature | 404 (normal answer) | 1 |
+
+- **backend-swe's rows (`ParameterDecodingTest`):** green.
+- **Contract:** 1.0.6 has the error-table row (line 261) and a changes note.
+
+### auth-service (E17's condition): confirmed, E17 isn't needed. 19 qa rows, all green
+I sent malformed escapes (`%FF`, `%`, `%G1`, `%F`, `%C0%AF`, `%ED%A0%80`, `%E0%A4`, and the marker in a parameter name) to every route family:
+
+| Route family | Rows and their answers |
+|---|---|
+| auth | login 200; register 201; invitation accept with an unknown token 404 |
+| orgs | GET 200; POST 201; GET one 200; unknown org 403; no token 401 |
+| members | GET org members 200 |
+| invitations | POST 201; GET 200 |
+| projects | GET list 200; POST 201; GET one 200; project members 200 |
+| internal C5 | `/internal/projects/{p}/access` with a JWT: 200 |
+| internal C7 | `/internal/service/projects/{p}` with the key: 200; no key: 401; a JWT only: 401 |
+
+- **Result:** I ran the class once more with a temporary stricter assertion, which I then reverted. Every row gave exactly its normal status: none gave 400, none gave 500, and the log stayed clean.
+- **Contract:** auth-service stays at 1.5.0, which is correct.
+
+### Bugs
+None.
+
+### Mutants on E18 (/tmp copy, since deleted): 5 of 5 killed
+| Mutant | Failures |
+|---|---|
+| S1: handler removed (falls to the catch-all 500) | 13 of 25 tests |
+| S2: wrong code `VALIDATION_FAILED` | 13 |
+| S3: a WARN line logs the exception message | 12 (marker found in the log) |
+| S4: an ERROR line with a stack trace | 13 |
+| S5: the detail echoes the exception message | 10 |
+
+### Builds (one clean build per service, one at a time)
+| Service | Tests | Failed | Skipped | Notes |
+|---|---|---|---|---|
+| auth-service | 2109 | 0 | 0 | backend-swe's 2090 plus `QaParameterDecodingTest` (19) |
+| scenario-service | 926 | 0 | 1 | backend-swe's 906 plus `QaParameterDecodingTest` (20); the 1 skip was already there |
+
+No new cached test context: both qa classes start their own server and close it afterwards.
+
+### Verdict
+**Signed off.** E18 behaves as RE12 does, E17 is correctly not applied, and E19 is correct. pm can close report-service FU-3.
