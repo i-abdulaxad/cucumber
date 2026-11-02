@@ -1,7 +1,7 @@
 # report-service phase 1: test runs and results
 
-Status: **Ready** (approved by the user on 2026-10-26: Q1–Q10 as recommended). **Gate:** Batch A starts only after the platform-hardening batch is accepted, including gateway FU-4. **Gate met 2026-10-29:** platform-hardening accepted with follow-ups, FU-4's abort part included (per-route timeouts stay with this spec, user 2026-10-26).
-Last updated: 2026-11-02 (user decisions: RE10 approved, RV-B1 and RV-B2 accepted, BD-19 as a contract limitation, batch C may start; RE9 complete). Earlier the same day: (review point B reached; RV-B1 and RV-B2; BD-19; RE10 and T13 proposed; FU-2 done). Earlier the same day: (FU-2 and RE9, user 2026-11-02; qa F1–F11 decided as BD-8 to BD-18). Earlier the same day: user decisions of 2026-10-29 recorded: D9 Cucumber-JS forms with AC-2.15, RE8 with AC-7.4, FU-1, BD-6 and BD-7). 2026-10-29 (Batch A: T1, T2, T4 done; RE6–RE7 approved by the user; AC-8.3 row 2 amended; build decisions recorded below). 2026-10-26: user approval recorded; T11's FU-4 fallback removed; first draft.
+Status: **Accepted with follow-ups** (2026-11-02; see Acceptance). Approved by the user on 2026-10-26 (Q1–Q10 as recommended). **Gate:** Batch A starts only after the platform-hardening batch is accepted, including gateway FU-4. **Gate met 2026-10-29:** platform-hardening accepted with follow-ups, FU-4's abort part included (per-route timeouts stay with this spec, user 2026-10-26).
+Last updated: 2026-11-02 (accepted with follow-ups; fix round 1 done; ERD markers set to as-built). Earlier the same day: (review point D reached; Q-RC1 = 422; qa triaged: fix round 1 with RE13/T16 and GW6/T17; FU-4 to FU-6). Earlier the same day: (review point C reached; D8 deviation 2 accepted; RE11 and RE12 approved as T14 and T15, first in batch D; FU-3; RC-3). Earlier the same day: (user decisions: RE10 approved, RV-B1 and RV-B2 accepted, BD-19 as a contract limitation, batch C may start; RE9 complete). Earlier the same day: (review point B reached; RV-B1 and RV-B2; BD-19; RE10 and T13 proposed; FU-2 done). Earlier the same day: (FU-2 and RE9, user 2026-11-02; qa F1–F11 decided as BD-8 to BD-18). Earlier the same day: user decisions of 2026-10-29 recorded: D9 Cucumber-JS forms with AC-2.15, RE8 with AC-7.4, FU-1, BD-6 and BD-7). 2026-10-29 (Batch A: T1, T2, T4 done; RE6–RE7 approved by the user; AC-8.3 row 2 amended; build decisions recorded below). 2026-10-26: user approval recorded; T11's FU-4 fallback removed; first draft.
 
 **Resolved questions (user, 2026-10-26, all as recommended):**
 - Q1: scope (D1).
@@ -171,6 +171,7 @@ At `fc178b6`, nothing can record test results:
   - `status` is `PASSED`, `FAILED`, `SKIPPED` or `UNKNOWN` (UNKNOWN resets the result);
   - optional `comment`: at most 2,000 code points, no control characters except LF and TAB; null clears it;
   - sets `executedBy` and `finishedAt`; the last write wins.
+  - **User decision 2026-11-02 (review point C, deviation 2):** recording UNKNOWN resets only the status; it still sets `executedBy` and `finishedAt`, and the last write wins.
 - API statuses are UPPER_CASE.
 
 ### D9. Cucumber JSON ingestion (named deviation: unknown fields are ignored)
@@ -860,6 +861,9 @@ Prefixes: RE (report-service), AE (auth-service), GW (gateway).
 | RE8 | `application.yaml`: `logging.level.org.hibernate.orm.core: INFO`. Approved by the user 2026-10-29. | `report-service/src/main/resources/application.yaml` | At root DEBUG, Hibernate's "Listing entities" prints whole entity state (token hashes, step texts, messages) | Low | — | T7 |
 | RE9 | `application.yaml`: pin to INFO the framework loggers that log bodies, URLs, headers or credentials at DEBUG: at least `org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor`, `org.springframework.web.servlet.DispatcherServlet`, `org.springframework.security.web.FilterChainProxy`; add any other that AC-7.4 shows. Approved by the user 2026-11-02 (FU-2). | `report-service/src/main/resources/application.yaml` | At root DEBUG these print request bodies and credentials | Low | RE8 | T7 |
 | RE10 | `UploadTokenServiceImpl.create`: `expiresAt.truncatedTo(MICROS)` before the future-check and the store, so PostgreSQL doesn't round it and the response doesn't echo 9 fraction digits (BD-17). **Approved by the user 2026-11-02** (T5's code is committed, HEAD `75b19e5`). | `report-service/src/main/java/org/reportservice/service/impl/UploadTokenServiceImpl.java` | BD-17 gap | Low | — | T13 |
+| RE11 | `CucumberJsonReader.duration`: a `Math.addExact` overflow becomes a `CUCUMBER_JSON_INVALID` problem with the element's pointer, not an `ArithmeticException` (a 500). Approved by the user 2026-11-02 (batch B committed as `67ab38b`). | `report-service/src/main/java/org/reportservice/ingest/CucumberJsonReader.java` | Confirmed 500 | Low | — | T14 |
+| RE12 | `ApiExceptionHandler`: Tomcat's parameter decoding failure (`InvalidParameterException`, "Character decoding failed") becomes 400 `MALFORMED_REQUEST` on every endpoint. Approved by the user 2026-11-02. | `report-service/src/main/java/org/reportservice/exception/ApiExceptionHandler.java` | Confirmed 500 | Low | — | T15 |
+| RE13 | `RunQueryServiceImpl.paging`: when `page × size` exceeds the int offset range, answer an empty page (requested `page` and `size`, real `total`) for both the runs list and the results list, instead of a 500 (QA-3). Approved by the user 2026-11-02. | `report-service/src/main/java/org/reportservice/service/impl/RunQueryServiceImpl.java` | Contract allows any int32 `page` ≥ 0 | Low | — | T16 |
 | RE5 | Repository-root `.env.example` (the user's file): name report-service in the header lines; add commented `REPORT_DB_PASSWORD=` and `INTERNAL_SERVICE_KEY=` (hint: `openssl rand -base64 32`), no values | `.env.example` | D15 | Low | — | T2 |
 | AE1 | `SecurityConfig.java`: add one `@Bean @Order(1)` `SecurityFilterChain` with `securityMatcher("/internal/service/**")`: stateless, CSRF off, the service-key filter, `anyRequest().authenticated()`, the existing entry point. The existing chain's body is unchanged. | `auth-service/.../configuration/SecurityConfig.java` | D5 | **Medium** | — | T4 |
 | AE2 | `application.yaml`: `app.internal-service-key: ${INTERNAL_SERVICE_KEY:}` (empty disables C7) | `auth-service/src/main/resources/application.yaml` | D5 | Low | — | T4 |
@@ -870,13 +874,14 @@ Prefixes: RE (report-service), AE (auth-service), GW (gateway).
 | GW2 | Same file: public operation `POST /api/ci/runs` | same (91–99) | D3, D5 | **Medium** (new public path) | GW1 | T11 |
 | GW3 | `ScenarioServiceRoutesTest:64`: `"/runs"` becomes `"/runsx"` (backend-swe's test; GW1 makes the old row false) | `api-gateway/src/test/java/org/apigateway/ScenarioServiceRoutesTest.java` | Keeps the test's intent | Low | GW1 | T11 |
 | GW4 | New `ReportServiceRoutesTest`. The five patterns reach the stub unchanged. `POST /api/ci/runs` with `Bearer rct_…` and no JWT reaches the stub with the header unchanged. `GET /api/ci/runs` and `POST /api/ci/runs/x` without a token get 401. `/api/projects/{id}/runsx` gets 404. | new file in `api-gateway/src/test/java/org/apigateway/` | Proves GW1, GW2 | Low | GW1, GW2 | T11 |
+| GW6 | `GatewayExceptionHandler`: Tomcat's `InvalidParameterException` (raised at `StrictHttpFirewall$StrictFirewalledRequest.getParameterMap`) becomes a 400 Problem in the gateway's style (no `code`), logged without any parameter value; contract 0.3.4 gains the row (QA-4). Approved by the user 2026-11-02. | `api-gateway/src/main/java/org/apigateway/exception/GatewayExceptionHandler.java`, `docs/api/api-gateway.openapi.yaml` | 500 today, with the value in an ERROR line | Low–medium | — | T17 |
 | GW5 | Gateway contract 0.2.4: route table, `x-routes` `reports`, public operations | `docs/api/api-gateway.openapi.yaml` | Docs | Low | — | T11 |
 
 **Will not be touched:**
 - **report-service:** `ReportServiceApplication.java` beyond RE6, `settings.gradle`, the wrapper, `gradlew*`, `.gitignore`, `.gitattributes`, `bin/`, and every build line not named in RE1, RE2 or RE7.
 - **scenario-service:** all of it, and its contract.
 - **auth-service:** everything outside AE1–AE3 and AE5, including C5, `JwtAuthenticationFilter`, the entities, the migrations and every existing test.
-- **api-gateway:** everything outside GW1–GW4.
+- **api-gateway:** everything outside GW1–GW4 and GW6.
 - **Repository root:** `.env` (never opened) and `.gitignore`.
 
 ## Engineering guardrails
@@ -993,19 +998,78 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 - **Stop if:** the summary needs more than one aggregate query per page.
 
 **Review point C.**
+- **Reached 2026-11-02:** T13, T8, T9 and T10 are done; clean build 403/0/0; the concurrency classes passed 3 times (53/0 each).
+- **Deviation 1 (RV-C1, of the RV-B2 kind):** T9 added new repository lookups and the summary query, `RunViews`, typed exceptions and `RunAttributes`. `RunAttributes` duplicates the upload's environment and build lookup (RC-3).
+- **Deviation 2 (D8):** accepted by the user on 2026-11-02; see D8.
+- **Contract:** the "Implementation status" note is stale; T12 syncs it.
+- **Q-RC1 (answered by the user 2026-11-02): 422**, as D9 and C1 say. The RE11 decision's "400" was superseded.
 
 ### Batch D: gateway, docs, end to end (review point D)
+**Order (user, 2026-11-02):** T14 and T15 first (test first; independent of each other), then T11, then T12.
+
+**T14. RE11: duration overflow becomes a client error.**
+- **Allowed files:** `report-service/src/main/java/org/reportservice/ingest/CucumberJsonReader.java` (RE11 only); one new test class under `report-service/src/test/java/org/reportservice/ingest/`.
+- **Must not:** change any other file, an existing test, the contract, or D9's rules.
+- **ACs:** AC-2.8 (invalid Cucumber JSON stores nothing), plus the rows below.
+- **Test first** (red today, as an `ArithmeticException` or a 500):
+  - a scenario with two steps whose `duration` is `9223372036854775807` each → the D9 answer for invalid Cucumber JSON, `CUCUMBER_JSON_INVALID` (status per Q-RC1), with an `errors[]` entry whose pointer is that element, `$[0].elements[0]`; the number of runs is unchanged;
+  - two durations of `4611686018427387904` each (2^62; their sum is still `Long.MAX_VALUE` + 1) → the same;
+  - two durations whose sum is exactly `Long.MAX_VALUE` → 201.
+- **Stop if:** the reader can't name the element pointer without changing its structure; or the status question (Q-RC1) is still open when the test is written.
+
+**T15. RE12: malformed percent-encoding is 400 everywhere.**
+- **Allowed files:** `report-service/src/main/java/org/reportservice/exception/ApiExceptionHandler.java` (RE12 only); one new test class under `report-service/src/test/java/org/reportservice/exception/`.
+- **Must not:** change any other file, an existing test or the contract; catch broader than the decoding failure.
+- **ACs:** AC-2.10 and AC-6.5 (strict input), plus the rows below.
+- **Test first** (each red today as a 500; each must be a Problem 400 / `MALFORMED_REQUEST`, nothing stored, no stack trace or parameter value in the log):
+  - `POST /api/ci/runs?name=%ED%A0%80` with {T1} and the CI sample;
+  - `POST /api/ci/runs?branch=%E0%A4` (truncated sequence) with {T1};
+  - `GET {runs}?page=%FF` as Dan;
+  - `GET {runs}?size=%ED%A0%80` and `GET {runs}?status=%C3%28` as Dan;
+  - `GET {runs}/{run id}/results?page=%FF` as Dan.
+- **Stop if:** Tomcat raises the failure outside MVC (for example in a security filter or before the `DispatcherServlet`), so the advice can't map it; then report the evidence and the options.
+
 **T11. Gateway.**
 - **Allowed files:** exactly GW1–GW5.
 - **ACs:** GW4's assertions, and AC-6.6's routing.
 - **Stop if:** any gateway test other than GW3's line fails; or gateway FU-4 isn't in the code (it lands with the hardening batch, user decision Q8).
 
 **T12. README, contract sync, end to end.**
-- **Allowed files:** `report-service/README.md` and the three contracts (sync only).
+- **Allowed files:** `report-service/README.md` and the three contracts (sync only, including the stale "Implementation status" note and BD-19's limitation).
 - **ACs:** AC-6.6, as a manual run per standards §6.
 - **Done when:** the upload and planning timings are reported.
 
 **Review point D**, then qa.
+- **Reached 2026-11-02:** T14, T15, T11 and T12 are done; report-service 412/0/0, gateway 488/0/3.
+- **qa (2026-11-02,** `docs/qa/report-service-report.md`**):** signed off with known issues; 61/61 ACs and 27/27 P0 pass; report-service 780/0/0 (verified by the main session). Open: QA-3 and QA-4 (S3), and QA-5 to QA-7 (S4).
+
+### Fix round 1 (user decision 2026-11-02: QA-3 and QA-4 are fixed before acceptance)
+Rules: each fix starts with a failing test. qa's tests (`.../qa/**`) are read-only for backend-swe; there is no F1 exception, because `QaManualRunTest.aFarPageIsEmpty` already passes and needs no change. FU-3 (auth-service and scenario-service) stays a later follow-up.
+
+**T16. RE13: a far page is an empty page (QA-3).**
+- **Allowed files:** `report-service/src/main/java/org/reportservice/service/impl/RunQueryServiceImpl.java` (RE13 only); one new test class under `report-service/src/test/java/org/reportservice/` (not under `qa/`).
+- **Must not:** change the contract, the page-size limits, the repositories or any existing test; turn the case into a 400.
+- **Test first** (each red today as a 500; each must be a 200 with `items` `[]`, the requested `page` and `size`, and the real `total`; no ERROR line):
+  - as Dan, `GET {runs}?page=21474837&size=100`;
+  - as Dan, `GET {runs}?page=2147483647` (default size 20);
+  - as Dan, `GET {runs}/{run id}/results?page=2147483647&size=500`;
+  - as Dan, `GET {runs}/{run id}/results?page=4294968&size=500` (offset 2,147,484,000);
+  - regression: `GET {runs}?page=21474836&size=100` (offset 2,147,483,600, still in range) is still 200 with `[]`.
+- **Stop if:** the real `total` needs a new repository query or a file outside Allowed files; or an existing test changes.
+
+**T17. GW6: the gateway answers 400 for a malformed query encoding (QA-4).**
+- **Allowed files:** `api-gateway/src/main/java/org/apigateway/exception/GatewayExceptionHandler.java` (GW6 only); `docs/api/api-gateway.openapi.yaml` (0.3.4: one error-table row and a changes note); one new test class under `api-gateway/src/test/java/org/apigateway/` (not under `qa/`).
+- **Must not:** add a `code` member (the gateway's own Problems have none, per its contract); log any parameter value or the exception message (it contains the value); change any other mapping, the firewall, the routes or any existing test.
+- **Test first** (each red today as a 500 with the value in an ERROR line). Each must be a Problem 400 "Bad Request" with detail `The request query could not be decoded.` and the request not forwarded; the captured log must contain neither `QaLeakMarker67` nor any ERROR line, at most one WARN line naming only the failure type:
+  - `POST /api/ci/runs?branch=QaLeakMarker67%FF` with `Bearer rct_…` and the CI sample;
+  - `GET /api/projects/{p}/runs?page=%FF` with a valid JWT;
+  - `GET /api/projects/{p}/features?tag=%ED%A0%80` with a valid JWT;
+  - `POST /api/auth/login?x=%E0%A4` (public path).
+- **Stop if:** the exception is raised where `GatewayExceptionHandler` can't see it (for example before the `DispatcherServlet` or inside the security filter chain); or the 400 changes any existing 401/404 order; or any existing gateway test changes.
+
+**Done 2026-11-02:** T16 and T17 are done; qa re-verified QA-3 and QA-4 (signed off; mutants 6/6 killed); report-service 798/0/0 and api-gateway 545/0/3 (verified by the main session).
+
+**Re-verification (qa, after T16 and T17):** re-run QA-3 and QA-4 (MockMvc and through the gateway, with log capture for `QaLeakMarker67`); full clean builds of report-service and the gateway with counts; update `docs/qa/report-service-report.md` with the verdict. The main session verifies both builds.
 
 ## Contracts
 1. **C1:** new `report-service.openapi.yaml` 1.0.0, binding for the ACs.
@@ -1080,9 +1144,30 @@ Common stop conditions: you'd need a file outside Allowed files; any existing te
 | ID | Item | Owner | Priority |
 |---|---|---|---|
 | RC-1 | auth-service README still says the access check is "Not yet available"; stale, outside AE5. Needs a user-approved E-item. | pm (E-item), backend-swe | P2 |
-| FU-1 | Pin `logging.level.org.hibernate.orm.core: INFO` in auth-service's and scenario-service's `application.yaml` (one line each, as RE8), with a root-DEBUG test like AC-7.4. User-approved 2026-10-29; a separate small task, not in this spec's batches. Allowed files: those two `application.yaml` files and one new test per service. | backend-swe | P1 |
+| FU-1 | **Done 2026-11-02** (with FU-2): pinned in auth-service `application.yaml` line 39 and scenario-service `application.yaml` line 38, each with `configuration/RootDebugEntityStateLoggingTest.java`; auth-service 2086/0/0, scenario-service 901/0/1. Pin `logging.level.org.hibernate.orm.core: INFO` in auth-service's and scenario-service's `application.yaml` (one line each, as RE8), with a root-DEBUG test like AC-7.4. User-approved 2026-10-29; a separate small task, not in this spec's batches. Allowed files: those two `application.yaml` files and one new test per service. | backend-swe | P1 |
 | FU-2 | **Done 2026-11-02** in auth-service, scenario-service and api-gateway; builds green. Pin to INFO the framework loggers that log bodies, URLs, headers or credentials at root DEBUG (at least `RequestResponseBodyMethodProcessor`, `DispatcherServlet`, `FilterChainProxy`; they print plaintext passwords, emails and invitation tokens) in auth-service, scenario-service and the gateway, each with a root-DEBUG capture test like AC-7.4. User decision 2026-11-02; report-service's part is RE9 in T7. May be done together with FU-1. Allowed files: each service's `application.yaml` and one new test per service. | backend-swe | P1 |
+| FU-3 | auth-service and scenario-service probably answer a malformed percent-encoded query parameter with a 500, like RE12. Confirm with a failing test, then fix as a user-approved E-item, after report-service is accepted. User decision 2026-11-02. | backend-swe | P1 |
+| RC-3 | `service/impl/RunAttributes` duplicates the upload's environment and build lookup; merge them into one owner (RV-C1). | backend-swe | P2 |
+| FU-4 | QA-5 (S4): `expiresAt` accepts a JSON number. Make timestamps string-only platform-wide, in the shared strict-JSON setup, not in report-service alone. Why not now: the value is unambiguous and still checked to be in the future. | pm (platform rule), backend-swe | P2 |
+| FU-5 | QA-6 (S4): a repeated single-valued query parameter is joined (`name=a&name=b` → `a,b`). Make it 400 `VALIDATION_FAILED` platform-wide (scenario-service's `tag` and `archived` are the same). Why not now: CI tools don't repeat parameters, and the joined value is still validated. | pm (platform rule), backend-swe | P2 |
+| FU-6 | QA-7 (S4): a token name of only U+202E (a format character) is accepted; it meets the "Unicode-blank" rule as written. Widen the rule platform-wide together with auth-service's open invisible-characters follow-up. Why not now: it's a standards change, not a report-service bug. | pm (standards change, user approval), backend-swe | P2 |
 | RC-2 | A C7 401 carries `WWW-Authenticate: Bearer` and the bearer detail text, from the shared entry point; a service-key path should not advertise Bearer. Changing it needs a user-approved AE-item and a contract note. | pm (E-item), backend-swe | P2 |
 
 ## Acceptance
-Pending.
+**Accepted with follow-ups (pm, 2026-11-02).**
+- **Evidence:** qa signed off (`docs/qa/report-service-report.md`): 61/61 ACs with results, 27/27 P0 pass. QA-1 to QA-4 are fixed and verified, no S1–S3 bug is open, and mutants were 6/6 killed. Builds: report-service 798/0/0, api-gateway 545/0/3 (main session).
+- **S4 items:** QA-5 to QA-7 became FU-4 to FU-6 (P2, platform-wide). That is pm's default; the user may revisit it.
+- **ERD:** the six phase-1 tables are as-built (V1); `attachments` stays proposed (not built).
+- **Open follow-ups:**
+
+| ID | Item | Owner | Priority |
+|---|---|---|---|
+| FU-3 | Malformed percent-encoding gives 500 in auth-service and scenario-service | backend-swe | P1 |
+| FU-4 | Timestamps string-only in JSON, platform-wide (QA-5) | pm, backend-swe | P2 |
+| FU-5 | Repeated single-valued query parameter → 400, platform-wide (QA-6) | pm, backend-swe | P2 |
+| FU-6 | Format-character-only names (U+202E), standards rule (QA-7) | pm (user approval), backend-swe | P2 |
+| RC-1 | Stale "Not yet available" line in the auth-service README | pm (E-item), backend-swe | P2 |
+| RC-2 | C7 401 advertises `WWW-Authenticate: Bearer` | pm (E-item), backend-swe | P2 |
+| RC-3 | Merge `RunAttributes` with the upload's environment and build lookup | backend-swe | P2 |
+
+FU-1 and FU-2 are done (2026-11-02). Each fix to committed code needs a user-approved E-item.

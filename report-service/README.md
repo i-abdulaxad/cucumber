@@ -4,14 +4,71 @@ Test runs and their results: CI uploads of Cucumber JSON with per-project upload
 scenario-service features, and run summaries (spec: `docs/specs/report-service.md`, phase 1). The API contract is
 `docs/api/report-service.openapi.yaml`.
 
-**Status (batch A, T2):** build, settings, schema, entities and test support are in place. The HTTP API (security,
-tokens, uploads, runs) comes with tasks T3 to T10; until then the service starts but serves no endpoint of the
-contract.
+**Status (review point D, 2026-11-02):** every operation of contract 1.0.2 is served, also through the gateway
+(routes GW1 and GW2), pending qa verification.
+
+## API overview
+
+All paths are project-scoped and need a user JWT, except the CI upload, which needs an upload token. Through the
+gateway use `http://localhost:8080`; directly, port 8083.
+
+| Operation | Method and path | Minimum project role |
+|---|---|---|
+| Upload tokens | `POST`, `GET /api/projects/{projectId}/upload-tokens`; `POST .../upload-tokens/{tokenId}/revoke` | `ADMIN` |
+| CI upload | `POST /api/ci/runs?name=&environment=&build=&branch=&commit=&ciUrl=` with `Authorization: Bearer <upload token>` | an active token of the project |
+| Plan a manual run | `POST /api/projects/{projectId}/runs` | `MEMBER` |
+| Record a result | `PUT /api/projects/{projectId}/runs/{runId}/results/{resultId}` | `TESTER` |
+| Complete / cancel | `POST .../runs/{runId}/complete` (`TESTER`), `POST .../runs/{runId}/cancel` (`MEMBER`) | see left |
+| Read | `GET .../runs?page=&size=`, `GET .../runs/{runId}`, `GET .../runs/{runId}/results?status=&page=&size=`, `GET .../runs/{runId}/results/{resultId}` | `READER` |
+
+- An archived project is read-only: writes are 409 `PROJECT_ARCHIVED`, except token list and revoke.
+- Path ids are lower-case canonical UUIDs. Errors are RFC 9457 Problems with a stable `code` (contract C1).
+
+## Uploading from CI
+
+1. A project `ADMIN` creates a token (`POST /api/projects/{projectId}/upload-tokens` with `{"name":"GitHub Actions"}`)
+   and stores the `token` from the answer as a CI secret; it is shown only once (only its SHA-256 is stored). At most
+   10 tokens are active per project; revoke is final.
+2. CI posts Cucumber's `json` formatter output (Cucumber-JVM 7 or Cucumber-JS 13):
+
+   ```sh
+   curl --fail-with-body -H "Authorization: Bearer $REPORT_UPLOAD_TOKEN" -H 'Content-Type: application/json' \
+     -H 'Expect: 100-continue' --data-binary @target/cucumber.json \
+     'http://localhost:8080/api/ci/runs?name=Nightly&environment=staging&build=1.4.2%2B517&branch=main&commit=9fceb02'
+   ```
+
+   The answer is 201 with the completed run and its summary.
+- **Limits:** `application/json` in UTF-8 without content coding (otherwise 415); at most 20 MiB (otherwise 413; a
+  larger `Content-Length` is answered before the body is read, so send `Expect: 100-continue`, as curl does for large
+  bodies); at most 5,000 test cases. Unknown JSON fields are ignored; what is read is checked strictly (422
+  `CUCUMBER_JSON_INVALID` with JSONPath pointers). Embeddings are not stored in phase 1.
+- **Measured** (2026-11-02, local, through the gateway): a 2-test-case upload p95 41 ms; a 15.8 MB upload with
+  5,000 test cases 861 ms (the stop limit is 5 s; the gateway's timeout is 10 s). Planning a run of one feature (3
+  test cases, 3 scenario-service calls) p95 147 ms.
+
+## Calls to other services
+
+- **auth-service C5** (`/internal/projects/{projectId}/access`) for every user path, with the caller's token, and
+  **C7** (`/internal/service/projects/{projectId}`) for the CI upload, with `X-Service-Key` (`INTERNAL_SERVICE_KEY`,
+  which auth-service must share). Both: connect 1 s, read 2 s, no cache, fail closed with 503.
+- **scenario-service** (public reads, contract 1.0.4) for planning: the feature list, each feature's test cases, the
+  list again; connect 1 s, read 5 s. A feature saved meanwhile is 409 `FEATURE_CHANGED`.
+- Every call is one attempt on one connection: the JDK HTTP client's retry is turned off JVM-wide at start-up (RE6),
+  and no client follows redirects. A valid `X-Request-Id` is forwarded on every call.
+
+## Logging
+
+One outcome line per service call (the logging aspect), with `requestId`, `userId` on user paths and `tokenId` on
+uploads; one INFO line per upload (run id, test-case count, duration). Never logged: tokens or their prefixes and
+hashes, the service key, `Authorization`, Cucumber JSON content, step texts, error messages, comments or query values.
+Even at root DEBUG, `application.yaml` keeps Hibernate's entity dumps and the framework loggers that print URLs,
+bodies or headers at INFO (RE8, RE9).
 
 ## Running locally
 
 Requirements: JDK 17 (the Gradle toolchain), PostgreSQL 17 with the database `report_service` (see "Dev database"
-below). Later tasks also need auth-service on `http://localhost:8081` and scenario-service on `http://localhost:8082`.
+below), auth-service on `http://localhost:8081` (access check and project status) and scenario-service on
+`http://localhost:8082` (planning).
 
 One-time setup: copy `.env.example` to `.env` in the repository root and fill in the values (the file shows how to
 generate them). `.env` is gitignored; never commit it. report-service reads three keys from it:

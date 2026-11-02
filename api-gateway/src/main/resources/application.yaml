@@ -42,11 +42,12 @@ spring:
                 - Path=/api/scenarios/**,/api/projects/*/features,/api/projects/*/features/**,/api/projects/*/tags
               metadata:
                 service: scenario-service
-            # Provisional placeholder: report-service's first spec decides its final prefixes.
+            # report-service, decided in docs/specs/report-service.md D3 (GW1); /api/reports/** is kept as scenarios kept
+            # its placeholder. /api/ci/runs is the CI upload (public, GW2: authenticated by report-service's token).
             - id: reports
               uri: ${gateway.downstream.report-service-url}
               predicates:
-                - Path=/api/reports/**
+                - Path=/api/reports/**,/api/projects/*/runs,/api/projects/*/runs/**,/api/projects/*/upload-tokens,/api/projects/*/upload-tokens/**,/api/ci/runs
               metadata:
                 service: report-service
 
@@ -104,6 +105,9 @@ gateway:
         path: /api/auth/invitations/{token}/accept
       - method: GET
         path: /actuator/health
+      # GW2 (report-service spec D3, D5): the CI upload carries an upload token, not a JWT; report-service checks it.
+      - method: POST
+        path: /api/ci/runs
   cors:
     # D5: exact origins only, comma-separated, no wildcards. Empty by default, so no cross-origin access.
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}

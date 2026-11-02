@@ -135,11 +135,34 @@ public class CucumberJsonReader {
                         Set<String> allTags = new LinkedHashSet<>(featureTags);
                         allTags.addAll(elementTags);
                         cases.add(new IngestedTestCase(uri, name, elementName,
-                                List.copyOf(allTags), line, status(rows), duration(rows), List.copyOf(rows)));
+                                List.copyOf(allTags), line, status(rows), duration(rows, elementAt),
+                                List.copyOf(rows)));
                     }
                     default -> problem(elementAt + ".type", "Type must be background, scenario or scenario_outline");
                 }
             }
+        }
+
+        /**
+         * floor(sum of the row nanoseconds / 1,000,000), or null when no row has a duration (D9). A sum beyond
+         * {@code Long.MAX_VALUE} nanoseconds is invalid JSON at the element (RE11), not an arithmetic failure.
+         */
+        private Long duration(List<IngestedRow> rows, String elementAt) {
+            boolean any = false;
+            long sum = 0;
+            for (IngestedRow row : rows) {
+                if (row.durationNanos() != null) {
+                    any = true;
+                    try {
+                        sum = Math.addExact(sum, row.durationNanos());
+                    } catch (ArithmeticException ex) {
+                        problem(elementAt, "The durations of this test case add up to more than "
+                                + Long.MAX_VALUE + " nanoseconds");
+                        return null;
+                    }
+                }
+            }
+            return any ? sum / NANOS_PER_MILLI : null;
         }
 
         private List<IngestedRow> steps(JsonNode element, String at) {
@@ -414,17 +437,6 @@ public class CucumberJsonReader {
         return ExecutionStatus.UNKNOWN;
     }
 
-    private static Long duration(List<IngestedRow> rows) {
-        boolean any = false;
-        long sum = 0;
-        for (IngestedRow row : rows) {
-            if (row.durationNanos() != null) {
-                any = true;
-                sum = Math.addExact(sum, row.durationNanos());
-            }
-        }
-        return any ? sum / NANOS_PER_MILLI : null;
-    }
 
     private static Long millis(Long nanos) {
         return nanos == null ? null : nanos / NANOS_PER_MILLI;

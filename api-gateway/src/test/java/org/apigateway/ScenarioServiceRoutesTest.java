@@ -61,7 +61,7 @@ class ScenarioServiceRoutesTest extends GatewayIntegrationTest {
     }
 
     @ParameterizedTest(name = "GET {0} -> the gateway's 404")
-    @ValueSource(strings = {"/api/projects/1", "/api/projects/" + PROJECT, "/api/projects/" + PROJECT + "/runs",
+    @ValueSource(strings = {"/api/projects/1", "/api/projects/" + PROJECT, "/api/projects/" + PROJECT + "/runsx",
             "/api/projects/" + PROJECT + "/featuresx", "/api/projects/" + PROJECT + "/tags/x"})
     void otherProjectPathsAreStillNotRouted(String path) {
         // When

@@ -56,6 +56,9 @@ public class RunQueryServiceImpl implements RunQueryService {
     static final int DEFAULT_RESULT_PAGE_SIZE = 100;
     static final int MAX_RESULT_PAGE_SIZE = 500;
 
+    /** One row of the first page: enough for the total of an empty far page (RE13). */
+    private static final PageRequest FIRST_ROW = PageRequest.of(0, 1);
+
     private final ProjectAccessChecker accessChecker;
     private final TestRunRepository runs;
     private final TestCaseResultRepository results;
@@ -85,6 +88,10 @@ public class RunQueryServiceImpl implements RunQueryService {
         int[] paging = paging(page, size, DEFAULT_RUN_PAGE_SIZE, MAX_RUN_PAGE_SIZE, null);
         accessChecker.requireRead(projectId, ProjectRole.READER);
         return readTransaction.execute(status -> {
+            if (beyondOffsetRange(paging)) {
+                long total = runs.findByProjectIdOrderByCreatedAtDescIdDesc(projectId, FIRST_ROW).getTotalElements();
+                return new RunPageResponse(List.of(), paging[0], paging[1], total);
+            }
             Page<TestRun> found = runs.findByProjectIdOrderByCreatedAtDescIdDesc(projectId,
                     PageRequest.of(paging[0], paging[1]));
             List<UUID> ids = found.getContent().stream().map(TestRun::getId).toList();
@@ -125,11 +132,12 @@ public class RunQueryServiceImpl implements RunQueryService {
         accessChecker.requireRead(projectId, ProjectRole.READER);
         return readTransaction.execute(transaction -> {
             found(projectId, runId);
-            PageRequest request = PageRequest.of(paging[0], paging[1]);
+            boolean empty = beyondOffsetRange(paging);
+            PageRequest request = empty ? FIRST_ROW : PageRequest.of(paging[0], paging[1]);
             Page<TestCaseResult> found = status == null ? results.findByTestRunIdOrderByPosition(runId, request)
                     : results.findByTestRunIdAndStatusOrderByPosition(runId, ExecutionStatus.valueOf(status), request);
-            return new ResultPageResponse(found.getContent().stream().map(RunViews::result).toList(), paging[0],
-                    paging[1], found.getTotalElements());
+            return new ResultPageResponse(empty ? List.of() : found.getContent().stream().map(RunViews::result)
+                    .toList(), paging[0], paging[1], found.getTotalElements());
         });
     }
 
@@ -152,6 +160,14 @@ public class RunQueryServiceImpl implements RunQueryService {
                     result.getAttempt(), result.getExecutedBy(), result.getComment(), result.getFinishedAt(),
                     result.getDurationMs(), result.getCreatedAt(), result.getUpdatedAt(), rows);
         });
+    }
+
+    /**
+     * RE13: whether the page starts beyond the int offset the database query can take. Such a page is empty by
+     * definition (at most 5,000 results per run, A4); its total comes from the same query at the first row.
+     */
+    private static boolean beyondOffsetRange(int[] paging) {
+        return (long) paging[0] * paging[1] > Integer.MAX_VALUE;
     }
 
     private TestRun found(UUID projectId, UUID runId) {

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: report-service API
-  version: 1.0.1
+  version: 1.0.2
   summary: Test runs and results per project, from CI uploads of Cucumber JSON and from manual runs, with summaries.
   description: |
     Contract C1 of `docs/specs/report-service.md` (phase 1). It documents every operation of decision D3, the upload
@@ -10,6 +10,16 @@ info:
     both credentials: user JWTs and upload tokens (D5, contract C2). The paths, status codes, `code` values and the
     Problem members `errors` (with `field` or `pointer`) and `featureIds` come from the spec's acceptance criteria
     (AC-x.y) and are binding. The wording of `detail` and of `message` texts is not part of the contract.
+
+    ## Changes in 1.0.2 (T12 sync, 2026-11-02; notes only, no path, schema or code changes)
+
+    - Implementation status updated: every operation is served (see below).
+    - RE11 (T14): durations of one test case that add up to more than 9,223,372,036,854,775,807 nanoseconds are 422
+      `CUCUMBER_JSON_INVALID`, with the element's pointer (for example `$[0].elements[0]`).
+    - RE12 (T15): a query parameter whose percent-encoding isn't valid UTF-8 (for example `%ED%A0%80` or `%FF`) is 400
+      `MALFORMED_REQUEST` on every operation.
+    - BD-16: a valid `X-Request-Id` is also forwarded to auth-service's C7 (see "Calls report-service makes").
+    - BD-19: the early 413 limitation, under "Requests rejected before the application".
 
     ## Changes in 1.0.1 (T6, user decision 2026-10-29; docs only, no shape change)
 
@@ -28,12 +38,11 @@ info:
       body is never decoded). A `Content-Length` above 20,971,520 is 413 `UPLOAD_TOO_LARGE` before the body is read.
       C7's `projectId` is compared as a UUID (BD-18).
 
-    ## Implementation status (1.0.0, review point A, 2026-10-29)
+    ## Implementation status (1.0.2, review point D, 2026-11-02)
 
-    No operation is served yet (tasks T5 to T10). Implemented and tested (T3) for every path: both credentials and
-    their 401s (`UNAUTHENTICATED` on user paths, `UPLOAD_TOKEN_INVALID` on `/api/ci/**`), lower-case path ids,
-    strict JSON, the Problem format with `requestId`, the error dispatch, and the access check with its failure
-    mapping (C5, one attempt per call, no cache). Reviewed by pm (BD-2).
+    Every operation in this file is served as described (tasks T3 to T10, T13 to T15), and through the gateway
+    (gateway contract 0.3.3, T11), pending qa verification. AC-6.6 was run end to end through the gateway on
+    2026-11-02.
 
     ## Which error wins (D13)
 
@@ -74,6 +83,12 @@ info:
     `TRACE` is 405 `METHOD_NOT_ALLOWED`, as Problems. A direct `/error` is an unrouted path. None of them calls the
     access check or the project check.
 
+    **Early 413 on the CI upload (BD-19, a documented limitation).** A `Content-Length` above 20,971,520 is answered
+    with 413 `UPLOAD_TOO_LARGE` before any of the body is read. A client that keeps sending a full body after that
+    may see the connection reset instead of the 413 body, because the server doesn't read the rest: reading it only
+    to deliver the answer would cost the bandwidth the limit protects. CI clients should send `Content-Length`, and
+    may send `Expect: 100-continue` (curl does for large bodies) so that no body is sent when the answer is 413.
+
     ## Headers and other rules
 
     - `Location` headers are relative (`/api/projects/{projectId}/runs/{runId}`), with lower-case ids.
@@ -98,15 +113,16 @@ info:
       caller's `Authorization` and `X-Request-Id` forwarded unchanged; no cache, no retry, connect 1 s, read 2 s;
       fails closed with 503 `ACCESS_CHECK_UNAVAILABLE` (AC-6.3).
     - **auth-service C7** (`GET /internal/service/projects/{projectId}`, auth-service 1.5.0), for the CI upload, with
-      `X-Service-Key`: no cache, no retry, connect 1 s, read 2 s. A timeout, 5xx, 401, 404, unreadable body or another
-      `projectId` is 503 `PROJECT_CHECK_UNAVAILABLE` (AC-2.7).
+      `X-Service-Key` and the request's `X-Request-Id` (BD-16): no cache, no retry, connect 1 s, read 2 s. A timeout,
+      5xx, 401, 404, unreadable body or another `projectId` (compared as a UUID, BD-18) is 503
+      `PROJECT_CHECK_UNAVAILABLE` (AC-2.7).
     - **scenario-service 1.0.4** (contract C6), for planning only: the feature list, each selected feature's test
       cases, and the list again (exactly 3 + n − 1 requests for n features), with the caller's `Authorization` and
       `X-Request-Id`; connect 1 s, read 5 s, no retry (D6, AC-3.8).
   x-spec: docs/specs/report-service.md
 servers:
   - url: http://localhost:8080
-    description: Through the API gateway (normal use), once the gateway routes of spec GW1 and GW2 (task T11) are in place.
+    description: Through the API gateway (normal use; routes GW1 and GW2, gateway contract 0.3.3).
   - url: http://localhost:8083
     description: Direct to report-service (local development and tests).
 security:
@@ -2021,7 +2037,8 @@ components:
       description: |
         `VALIDATION_FAILED` (a body field or query parameter breaks a rule; the body has `errors` with `field`), or
         `MALFORMED_REQUEST` (unreadable JSON; a JSON number or boolean where a string belongs; a path id that isn't a
-        lower-case canonical UUID, matched exactly as received). No access check is made.
+        lower-case canonical UUID, matched exactly as received; a query parameter whose percent-encoding isn't valid
+        UTF-8, RE12). No access check is made.
       content:
         application/problem+json:
           schema:

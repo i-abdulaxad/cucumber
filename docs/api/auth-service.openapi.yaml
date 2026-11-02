@@ -23,9 +23,11 @@ info:
     - New schema `ProjectStatus`, response `ProjectNotFound` and tag `Project status for services`.
     - The access check (C5) is unchanged: `X-Service-Key` is no credential there (AC-8.4).
 
-    ## Implementation status (1.5.0, report-service review point A, 2026-10-29)
+    ## Implementation status (1.5.0, report-service review point D, 2026-11-02)
 
-    C7 is implemented as described (report-service T4), pending qa verification.
+    C7 is implemented as described (report-service T4), pending qa verification. report-service's CI upload uses it,
+    end to end through the gateway (report-service AC-6.6, 2026-11-02); report-service compares the answered
+    `projectId` as a UUID (report-service BD-18).
 
     ## Changes in 1.4.0 (`docs/specs/platform-hardening.md`, 2026-10-26)
 

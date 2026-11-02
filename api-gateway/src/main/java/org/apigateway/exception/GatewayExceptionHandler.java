@@ -3,6 +3,7 @@ package org.apigateway.exception;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +40,27 @@ public class GatewayExceptionHandler extends ResponseEntityExceptionHandler {
     public static final String ABORT_CONNECTION_ATTRIBUTE =
             GatewayExceptionHandler.class.getName() + ".abortConnection";
 
+    /** GW6: the detail of the 400 for a query whose percent-encoding isn't valid UTF-8. */
+    static final String QUERY_NOT_DECODED_DETAIL = "The request query could not be decoded.";
+
     private static final Logger log = LoggerFactory.getLogger(GatewayExceptionHandler.class);
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ProblemDetail> handleAuthenticationFailure(AuthenticationException ex,
                                                                      HttpServletRequest request) {
         return problem(HttpStatus.UNAUTHORIZED, GatewayProblems.UNAUTHORIZED_DETAIL, request);
+    }
+
+    /**
+     * GW6 (report-service spec T17): Tomcat's parameter decoding failure, raised when the request's parameters are
+     * first read, is a 400 in the gateway's Problem style, and the request isn't forwarded. The exception message
+     * quotes the parameter value, so only the failure type is logged.
+     */
+    @ExceptionHandler(InvalidParameterException.class)
+    public ResponseEntity<ProblemDetail> handleUndecodableQuery(InvalidParameterException ex,
+                                                                HttpServletRequest request) {
+        log.warn("Request query could not be decoded: {}", ex.getClass().getSimpleName());
+        return problem(HttpStatus.BAD_REQUEST, QUERY_NOT_DECODED_DETAIL, request);
     }
 
     @ExceptionHandler(ResourceAccessException.class)

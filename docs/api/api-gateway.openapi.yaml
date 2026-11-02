@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: API gateway edge contract
-  version: 0.3.2
+  version: 0.3.4
   summary: Conventions every client and downstream service relies on when calling the platform through the API gateway.
   description: |
     The API gateway (`api-gateway`) is the single entry point for every API call (spec: `docs/specs/api-gateway.md`).
@@ -9,6 +9,24 @@ info:
     This file documents **edge conventions only** (D9). Downstream operations are not copied here; each service
     documents its own operations in `docs/api/<service>.openapi.yaml`. External paths equal downstream paths: the
     gateway does no prefix stripping, no path rewriting and no API versioning (D2).
+
+    ## Changes in 0.3.4 (`docs/specs/report-service.md` GW6, T17, qa QA-4, 2026-11-02)
+
+    - A query whose percent-encoding isn't valid UTF-8 (for example `?page=%FF` or `?x=%E0%A4`) is the gateway's 400
+      "Bad Request" Problem with detail "The request query could not be decoded.", on every path that reaches a route
+      (public or with a valid token); the request isn't forwarded. Before, it was a 500. The existing order is kept:
+      a protected path without a token is still 401, an unrouted path with a token still 404. See "Errors (D6)".
+    - Status: implemented (report-service T17), pending qa verification.
+
+    ## Changes in 0.3.3 (`docs/specs/report-service.md` GW1, GW2, GW5, 2026-11-02)
+
+    Additive: no existing route, public operation or answer changes.
+    - The `reports` route is active: `/api/reports/**` (kept), `/api/projects/*/runs`, `/api/projects/*/runs/**`,
+      `/api/projects/*/upload-tokens`, `/api/projects/*/upload-tokens/**` and `/api/ci/runs`.
+    - New public operation `POST /api/ci/runs`: the CI upload carries a report-service upload token, not a JWT, so the
+      gateway forwards its `Authorization` header unevaluated and report-service authenticates it. Every other method
+      on `/api/ci/runs`, and every other `/api/ci/...` path, still needs a valid JWT at the gateway.
+    - Status: implemented (report-service T11), pending qa verification.
 
     ## Changes in 0.3.2 (qa BUG-PH-1, 2026-10-29)
 
@@ -51,7 +69,7 @@ info:
     | auth | `/api/auth/**` | auth-service | `AUTH_SERVICE_URL` | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/invitations/{token}/accept` | Active |
     | orgs | `/api/orgs` and `/api/orgs/**` | auth-service | `AUTH_SERVICE_URL` | none | Active |
     | scenarios | `/api/scenarios/**`, `/api/projects/*/features`, `/api/projects/*/features/**`, `/api/projects/*/tags` | scenario-service | `SCENARIO_SERVICE_URL` | none | Active |
-    | reports | `/api/reports/**` | report-service | `REPORT_SERVICE_URL` | none | Provisional placeholder |
+    | reports | `/api/reports/**`, `/api/projects/*/runs`, `/api/projects/*/runs/**`, `/api/projects/*/upload-tokens`, `/api/projects/*/upload-tokens/**`, `/api/ci/runs` | report-service | `REPORT_SERVICE_URL` | `POST /api/ci/runs` | Active |
     | (gateway-owned) | `GET /actuator/health` | the gateway itself | — | yes | Active |
 
     The same table is available in machine-readable form in the `x-routes` extension.
@@ -62,7 +80,7 @@ info:
     - **Deny by default.** Any path that matches no route returns **401** without a valid token and **404** with one.
       Authentication is checked before route matching, so anonymous callers cannot discover which routes exist.
     - auth-service's `/h2-console`, `/swagger-ui/**`, `/v3/api-docs` and `/actuator/**` are not reachable through the
-      gateway. `/api/projects/**` is not routed, except the scenario-service patterns above.
+      gateway. `/api/projects/**` is not routed, except the scenario-service and report-service patterns above.
       `/internal/**` is never routed (auth-service's access check is service-to-service).
     - The gateway exposes no management endpoint other than `GET /actuator/health`. `/actuator/env`,
       `/actuator/beans`, `/actuator/configprops`, `/actuator/gateway/**` and the rest follow the deny-by-default rule:
@@ -135,6 +153,7 @@ info:
     | Situation | Status | `title` | Suggested `detail` |
     |---|---|---|---|
     | A path the request firewall rejects (non-canonical, `//`, `/./`, encoded `..`, or a `;` path parameter) | 400 | Bad Request | The request URL was rejected. |
+    | A query whose percent-encoding isn't valid UTF-8, on a routed path that passed authentication (GW6) | 400 | Bad Request | The request query could not be decoded. |
     | Protected path with a missing, invalid or expired token | 401 | Unauthorized | A valid bearer token is required. |
     | Valid token, but no route matches the path (including a direct `/error`) | 404 | Not Found | No API route matches this path. |
     | A method the gateway endpoint or path doesn't support (for example `POST /actuator/health`, or `TRACE` on any path) | 405 | Method Not Allowed | This method is not supported for this path. |
@@ -522,13 +541,20 @@ x-routes:
   - id: reports
     pathPrefixes:
       - /api/reports/**
+      - /api/projects/*/runs
+      - /api/projects/*/runs/**
+      - /api/projects/*/upload-tokens
+      - /api/projects/*/upload-tokens/**
+      - /api/ci/runs
     service: report-service
     baseUrlSetting: REPORT_SERVICE_URL
     defaultBaseUrl: http://localhost:8083
-    publicOperations: []
-    status: provisional
+    publicOperations:
+      - method: POST
+        path: /api/ci/runs
+    status: active
     contract: report-service.openapi.yaml
-    contractNote: Not defined yet. The prefix is a placeholder until report-service's first spec.
+    contractNote: Version 1.0.1 (report-service spec D3). POST /api/ci/runs is public at the gateway and authenticated by report-service's upload token (D5). /api/reports/** is kept as a placeholder; report-service answers it with 404 behind its own authentication.
   - id: gateway-health
     pathPrefixes:
       - /actuator/health

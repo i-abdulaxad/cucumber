@@ -3,6 +3,7 @@ package org.reportservice.exception;
 import jakarta.persistence.LockTimeoutException;
 import jakarta.persistence.PessimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
@@ -112,6 +113,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
         problem.setProperty("featureIds", ex.featureIds());
         return ResponseEntity.status(ex.code().status()).body(problem);
+    }
+
+    /**
+     * RE12: a query parameter whose percent-encoding isn't valid UTF-8 (Tomcat's "Character decoding failed") is 400
+     * MALFORMED_REQUEST on every endpoint. Neither the parameter's value nor the exception message is logged.
+     */
+    @ExceptionHandler(InvalidParameterException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidParameter(InvalidParameterException ex,
+                                                                HttpServletRequest request) {
+        return problem(ErrorCode.MALFORMED_REQUEST, MALFORMED_REQUEST_DETAIL, request);
     }
 
     @ExceptionHandler(AuthenticationException.class)
