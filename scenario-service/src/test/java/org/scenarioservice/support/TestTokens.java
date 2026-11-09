@@ -29,7 +29,9 @@ public final class TestTokens {
     private TestTokens() {
     }
 
-    /** {@code {token of X}}. */
+    /**
+     * {@code {token of X}}.
+     */
     public static String valid(UUID userId, String email) {
         return withSubject(userId.toString(), email);
     }
@@ -62,7 +64,9 @@ public final class TestTokens {
         return claims(email, Instant.now().plus(ONE_HOUR)).signWith(KEY, Jwts.SIG.HS512).compact();
     }
 
-    /** The claims of a valid token with header {@code alg: none} and no signature. */
+    /**
+     * The claims of a valid token with header {@code alg: none} and no signature.
+     */
     public static String unsigned(UUID userId, String email) {
         String[] parts = valid(userId, email).split("\\.");
         String header = Base64.getUrlEncoder().withoutPadding()

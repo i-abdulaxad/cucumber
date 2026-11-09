@@ -47,7 +47,9 @@ public final class ScratchDatabase implements AutoCloseable {
         return POSTGRES.getPassword();
     }
 
-    /** A new connection to this database; the caller closes it. */
+    /**
+     * A new connection to this database; the caller closes it.
+     */
     public Connection connect() throws SQLException {
         return DriverManager.getConnection(url(), username(), password());
     }

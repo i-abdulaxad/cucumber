@@ -98,7 +98,9 @@ public class TestCaseServiceImpl implements TestCaseService {
                 scenarioId, rowId, testCase.name(), testCase.tags(), testCase.line(), steps);
     }
 
-    /** Every stored scenario (Backgrounds included) in text order: the Feature's children, a Rule's in its place. */
+    /**
+     * Every stored scenario (Backgrounds included) in text order: the Feature's children, a Rule's in its place.
+     */
     private List<Scenario> scenariosInTextOrder(UUID featureId) {
         List<Rule> storedRules = rules.findByFeatureId(featureId);
         List<Scenario> storedScenarios = scenarios.findByFeatureId(featureId);
@@ -118,7 +120,9 @@ public class TestCaseServiceImpl implements TestCaseService {
         return ordered;
     }
 
-    /** Every stored example row in text order: by scenario, then Examples block, then row position. */
+    /**
+     * Every stored example row in text order: by scenario, then Examples block, then row position.
+     */
     private List<ExampleRow> rowsInTextOrder(List<Scenario> scenariosInTextOrder) {
         List<UUID> scenarioIds = scenariosInTextOrder.stream().map(Scenario::getId).toList();
         if (scenarioIds.isEmpty()) {

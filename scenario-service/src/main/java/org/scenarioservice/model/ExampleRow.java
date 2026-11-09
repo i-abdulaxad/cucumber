@@ -16,7 +16,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** One data row of an Examples block, one test case (ERD {@code example_rows}). */
+/**
+ * One data row of an Examples block, one test case (ERD {@code example_rows}).
+ */
 @Entity
 @Table(name = "example_rows")
 @Getter

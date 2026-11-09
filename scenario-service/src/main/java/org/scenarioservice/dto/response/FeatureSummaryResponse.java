@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Contract {@code FeatureSummary}: a listed feature, without text or structure (AC-2.2). No content in toString. */
+/**
+ * Contract {@code FeatureSummary}: a listed feature, without text or structure (AC-2.2). No content in toString.
+ */
 public record FeatureSummaryResponse(UUID id, UUID projectId, String path, String name, String language,
                                      int currentVersion, List<String> tags, int testCaseCount, UUID createdBy,
                                      Instant createdAt, UUID updatedBy, Instant updatedAt, Instant archivedAt) {

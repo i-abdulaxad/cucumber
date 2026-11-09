@@ -137,7 +137,9 @@ class RowLockTimeoutTest {
         assertThat(orgMembershipRepository.count()).isEqualTo(memberships);
     }
 
-    /** Holds a row lock from another connection while the request runs, then checks the answer and its log. */
+    /**
+     * Holds a row lock from another connection while the request runs, then checks the answer and its log.
+     */
     private void whileLocked(String lockSql, UUID rowId, MockHttpServletRequestBuilder request, String instance,
                              CapturedOutput output) throws Exception {
         try (Connection holder = dataSource.getConnection()) {

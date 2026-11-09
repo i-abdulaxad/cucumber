@@ -6,7 +6,9 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Clock;
 import java.time.Duration;
 
-/** The service clock (D14 item 11): UTC with a microsecond tick, injected wherever "now" is needed. */
+/**
+ * The service clock (D14 item 11): UTC with a microsecond tick, injected wherever "now" is needed.
+ */
 @Configuration
 public class ClockConfiguration {
 

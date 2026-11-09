@@ -13,7 +13,9 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
-/** The project's tag catalogue (ERD {@code tags}); names are compared exactly (D12). */
+/**
+ * The project's tag catalogue (ERD {@code tags}); names are compared exactly (D12).
+ */
 @Entity
 @Table(name = "tags")
 @Getter

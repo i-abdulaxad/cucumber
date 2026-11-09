@@ -28,7 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public final class HttpCalls {
 
-    /** Things a Problem body must never contain (D5 item 6): internals, stack traces, the server's identity. */
+    /**
+     * Things a Problem body must never contain (D5 item 6): internals, stack traces, the server's identity.
+     */
     private static final String[] INTERNAL_MARKERS = {
             "Exception", "at org.", "at java.", "jakarta.", "Tomcat", "Apache", "localhost:"
     };
@@ -44,7 +46,9 @@ public final class HttpCalls {
         this.port = port;
     }
 
-    /** Sends the request; {@code headers} are name/value pairs, {@code body} {@code null} for none (JSON otherwise). */
+    /**
+     * Sends the request; {@code headers} are name/value pairs, {@code body} {@code null} for none (JSON otherwise).
+     */
     public Answer send(String method, String rawPath, String body, String... headers)
             throws IOException, InterruptedException {
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + rawPath))
@@ -89,7 +93,9 @@ public final class HttpCalls {
         }
     }
 
-    /** The parts of a response the tests check. */
+    /**
+     * The parts of a response the tests check.
+     */
     public record Answer(int status, Optional<String> contentType, Optional<String> requestIdHeader, String body) {
 
         /**

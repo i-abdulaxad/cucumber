@@ -12,7 +12,9 @@ import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** D14 item 11: one UTC clock with microsecond ticks; tests get the adjustable clock in the shared context. */
+/**
+ * D14 item 11: one UTC clock with microsecond ticks; tests get the adjustable clock in the shared context.
+ */
 @ScenarioServiceIntegrationTest
 class ServiceClockTest {
 

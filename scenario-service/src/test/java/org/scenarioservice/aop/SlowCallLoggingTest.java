@@ -65,7 +65,9 @@ class SlowCallLoggingTest {
         }
     }
 
-    /** Gus creates Payment: an access check over HTTP and several inserts, so well over 1 ms and far under 1 h. */
+    /**
+     * Gus creates Payment: an access check over HTTP and several inserts, so well over 1 ms and far under 1 h.
+     */
     private static RequestLog callASlowUseCase(MockMvc mockMvc, CapturedOutput output) throws Exception {
         AccessCheckStub.get().reset();
         UUID projectId = ScenarioFixture.CHECKOUT;

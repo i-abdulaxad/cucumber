@@ -1,6 +1,8 @@
 package org.reportservice.exception;
 
-/** The selection has more than 2,000 test cases (D10, AC-3.5). */
+/**
+ * The selection has more than 2,000 test cases (D10, AC-3.5).
+ */
 public class RunTooLargeException extends ApiException {
 
     public RunTooLargeException() {

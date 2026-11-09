@@ -25,7 +25,9 @@ public final class GatewayClient {
         this.baseUri = URI.create("http://localhost:" + port);
     }
 
-    /** Starts a request to {@code pathAndQuery}; the caller sets method, headers and body. */
+    /**
+     * Starts a request to {@code pathAndQuery}; the caller sets method, headers and body.
+     */
     public HttpRequest.Builder request(String pathAndQuery) {
         return HttpRequest.newBuilder(baseUri.resolve(pathAndQuery)).timeout(REQUEST_TIMEOUT);
     }
@@ -45,7 +47,9 @@ public final class GatewayClient {
         return send(request(pathAndQuery).method(method, HttpRequest.BodyPublishers.noBody()));
     }
 
-    /** Sends a body-less request with {@code Authorization: Bearer {valid token}}. */
+    /**
+     * Sends a body-less request with {@code Authorization: Bearer {valid token}}.
+     */
     public HttpResponse<String> sendWithValidToken(String method, String pathAndQuery) {
         return send(request(pathAndQuery)
                 .header("Authorization", TestTokens.bearerValid())

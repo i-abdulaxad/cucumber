@@ -30,7 +30,9 @@ class QaCommittedResponseAbortTest extends QaCommittedResponseGatewayTest {
 
     private static final String DOWNSTREAM_FAILED = "Downstream call failed";
 
-    /** The AC-6.1 Examples rows; the stub always adds {@code Connection: close} so no closed connection is reused. */
+    /**
+     * The AC-6.1 Examples rows; the stub always adds {@code Connection: close} so no closed connection is reused.
+     */
     enum Row {
         BIG_CUT_CHUNKED("big-cut-chunked", out -> {
             // 25 chunks of 4096 bytes, then closes without the terminating chunk

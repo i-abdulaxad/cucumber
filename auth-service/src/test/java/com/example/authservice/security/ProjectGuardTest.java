@@ -78,7 +78,9 @@ class ProjectGuardTest {
         assertThat(projectGuard.hasRole(projects.checkout(), hal, "READER")).isFalse();
     }
 
-    /** The fixture's effective-role table (spec glossary) against every required role. */
+    /**
+     * The fixture's effective-role table (spec glossary) against every required role.
+     */
     @ParameterizedTest(name = "{0} in {1} is {2}")
     @CsvSource({
             "ana, checkout, ADMIN", "ana, billing, ADMIN", "ana, portal, NONE",

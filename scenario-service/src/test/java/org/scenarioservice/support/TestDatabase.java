@@ -24,7 +24,9 @@ import org.testcontainers.utility.DockerImageName;
  */
 public final class TestDatabase {
 
-    /** PostgreSQL 17, major version pinned (item 1). */
+    /**
+     * PostgreSQL 17, major version pinned (item 1).
+     */
     public static final DockerImageName IMAGE = DockerImageName.parse("postgres:17");
 
     static final int MAX_CONNECTIONS = 300;

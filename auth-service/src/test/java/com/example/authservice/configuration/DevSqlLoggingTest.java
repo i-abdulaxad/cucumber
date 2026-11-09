@@ -146,7 +146,9 @@ class DevSqlLoggingTest {
         });
     }
 
-    /** The SQL text of an entry: its continuation lines, joined with single spaces. */
+    /**
+     * The SQL text of an entry: its continuation lines, joined with single spaces.
+     */
     private static String statement(List<String> lines, String entry) {
         StringBuilder sql = new StringBuilder();
         for (int i = lines.indexOf(entry) + 1; i < lines.size() && !ENTRY.matcher(lines.get(i)).matches(); i++) {

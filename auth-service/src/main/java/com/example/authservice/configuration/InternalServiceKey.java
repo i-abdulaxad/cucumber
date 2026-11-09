@@ -29,12 +29,16 @@ public class InternalServiceKey {
         this.keyHash = key == null || key.isEmpty() ? Optional.empty() : Optional.of(sha256(checked(key)));
     }
 
-    /** Whether the key is configured; when it isn't, no request is a service. */
+    /**
+     * Whether the key is configured; when it isn't, no request is a service.
+     */
     public boolean enabled() {
         return keyHash.isPresent();
     }
 
-    /** Whether the presented header value is exactly the configured key, compared in constant time. */
+    /**
+     * Whether the presented header value is exactly the configured key, compared in constant time.
+     */
     public boolean matches(String presented) {
         if (presented == null || keyHash.isEmpty()) {
             return false;

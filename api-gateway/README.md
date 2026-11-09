@@ -15,38 +15,38 @@ The gateway:
 
 ## Port plan
 
-| Service | Local port | Status |
-|---|---|---|
-| api-gateway | 8080 | Clients and the frontend use this port. |
-| auth-service | 8081 | |
-| scenario-service | 8082 | Reserved. |
-| report-service | 8083 | Reserved. |
+| Service          | Local port | Status                                  |
+|------------------|------------|-----------------------------------------|
+| api-gateway      | 8080       | Clients and the frontend use this port. |
+| auth-service     | 8081       |                                         |
+| scenario-service | 8082       | Reserved.                               |
+| report-service   | 8083       | Reserved.                               |
 
 ## Routes
 
-| External path prefix | Service | Public operations (no token) |
-|---|---|---|
-| `/api/auth/**` | auth-service | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/invitations/{token}/accept` |
-| `/api/orgs`, `/api/orgs/**` | auth-service | none |
-| `/api/scenarios/**` (provisional) | scenario-service | none |
-| `/api/reports/**` (provisional) | report-service | none |
-| `GET /actuator/health` | the gateway itself | yes |
+| External path prefix              | Service            | Public operations (no token)                                                                   |
+|-----------------------------------|--------------------|------------------------------------------------------------------------------------------------|
+| `/api/auth/**`                    | auth-service       | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/invitations/{token}/accept` |
+| `/api/orgs`, `/api/orgs/**`       | auth-service       | none                                                                                           |
+| `/api/scenarios/**` (provisional) | scenario-service   | none                                                                                           |
+| `/api/reports/**` (provisional)   | report-service     | none                                                                                           |
+| `GET /actuator/health`            | the gateway itself | yes                                                                                            |
 
 Any other path gets 401 without a valid token and 404 with one. Routes and public operations live in
 `src/main/resources/application.yaml`.
 
 ## Settings
 
-| Setting | Environment variable | Default (no profile) | `dev` profile |
-|---|---|---|---|
-| Gateway port | `SERVER_PORT` | 8080 | 8080 |
-| auth-service base URL | `AUTH_SERVICE_URL` | `http://localhost:8081` | same |
-| scenario-service base URL | `SCENARIO_SERVICE_URL` | `http://localhost:8082` | same |
-| report-service base URL | `REPORT_SERVICE_URL` | `http://localhost:8083` | same |
-| JWT shared secret | `JWT_SECRET` | none, so the gateway refuses to start | from the gitignored `.env` in the repository root, shared with auth-service |
-| CORS allowed origins (comma-separated, exact origins) | `CORS_ALLOWED_ORIGINS` | empty, so no cross-origin access | `http://localhost:3000,http://localhost:5173` |
-| Connect timeout | `GATEWAY_CONNECT_TIMEOUT` | `2s` | `2s` |
-| Response timeout | `GATEWAY_RESPONSE_TIMEOUT` | `10s` | `10s` |
+| Setting                                               | Environment variable       | Default (no profile)                  | `dev` profile                                                               |
+|-------------------------------------------------------|----------------------------|---------------------------------------|-----------------------------------------------------------------------------|
+| Gateway port                                          | `SERVER_PORT`              | 8080                                  | 8080                                                                        |
+| auth-service base URL                                 | `AUTH_SERVICE_URL`         | `http://localhost:8081`               | same                                                                        |
+| scenario-service base URL                             | `SCENARIO_SERVICE_URL`     | `http://localhost:8082`               | same                                                                        |
+| report-service base URL                               | `REPORT_SERVICE_URL`       | `http://localhost:8083`               | same                                                                        |
+| JWT shared secret                                     | `JWT_SECRET`               | none, so the gateway refuses to start | from the gitignored `.env` in the repository root, shared with auth-service |
+| CORS allowed origins (comma-separated, exact origins) | `CORS_ALLOWED_ORIGINS`     | empty, so no cross-origin access      | `http://localhost:3000,http://localhost:5173`                               |
+| Connect timeout                                       | `GATEWAY_CONNECT_TIMEOUT`  | `2s`                                  | `2s`                                                                        |
+| Response timeout                                      | `GATEWAY_RESPONSE_TIMEOUT` | `10s`                                 | `10s`                                                                       |
 
 Invalid values stop the gateway at startup with a message that names the setting. The secret value is never
 logged.

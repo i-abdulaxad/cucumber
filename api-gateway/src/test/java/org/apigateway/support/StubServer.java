@@ -66,7 +66,9 @@ public final class StubServer implements AutoCloseable {
         this.response = scripted;
     }
 
-    /** Forgets recorded requests and restores the default answer. */
+    /**
+     * Forgets recorded requests and restores the default answer.
+     */
     public void reset() {
         requests.clear();
         response = StubResponse.ok();
@@ -105,7 +107,9 @@ public final class StubServer implements AutoCloseable {
         }
     }
 
-    /** Stub-side delay used by the timeout scenarios; returns false if the stub is shutting down. */
+    /**
+     * Stub-side delay used by the timeout scenarios; returns false if the stub is shutting down.
+     */
     private static boolean waitBeforeAnswering(Duration delay) {
         if (delay.isZero()) {
             return true;

@@ -127,7 +127,8 @@ class QaErrorShapeTest {
                 yield new Scenario(accept("inv-shape-QA"), as(post(accept("inv-shape-QA")), acme.eve()));
             }
             case NOT_FOUND -> new Scenario(orgs + "/qa-nothing", as(get(orgs + "/qa-nothing"), acme.ana()));
-            case INVITATION_NOT_FOUND -> new Scenario(accept("inv-none-QA"), as(post(accept("inv-none-QA")), acme.eve()));
+            case INVITATION_NOT_FOUND ->
+                    new Scenario(accept("inv-none-QA"), as(post(accept("inv-none-QA")), acme.eve()));
             case MEMBER_NOT_FOUND -> new Scenario(members + acme.eve().getId(),
                     as(delete(members + acme.eve().getId()), acme.ana()));
             case METHOD_NOT_ALLOWED -> new Scenario(orgs, as(put(orgs), acme.ana()));
@@ -158,9 +159,11 @@ class QaErrorShapeTest {
                 yield new Scenario(invitations + "/" + accepted.getId(),
                         as(delete(invitations + "/" + accepted.getId()), acme.ben()));
             }
-            case INVITATION_EXPIRED -> gone(acmeOrg, InvitationStatus.PENDING, Instant.now().minus(1, ChronoUnit.MINUTES));
+            case INVITATION_EXPIRED ->
+                    gone(acmeOrg, InvitationStatus.PENDING, Instant.now().minus(1, ChronoUnit.MINUTES));
             case INVITATION_REVOKED -> gone(acmeOrg, InvitationStatus.REVOKED, Instant.now().plus(1, ChronoUnit.DAYS));
-            case INVITATION_ALREADY_ACCEPTED -> gone(acmeOrg, InvitationStatus.ACCEPTED, Instant.now().plus(1, ChronoUnit.DAYS));
+            case INVITATION_ALREADY_ACCEPTED ->
+                    gone(acmeOrg, InvitationStatus.ACCEPTED, Instant.now().plus(1, ChronoUnit.DAYS));
             case UNSUPPORTED_MEDIA_TYPE -> new Scenario("/api/auth/register",
                     post("/api/auth/register").contentType(MediaType.TEXT_PLAIN).content("x"));
             case ROLE_CEILING -> new Scenario(members + acme.ana().getId(),

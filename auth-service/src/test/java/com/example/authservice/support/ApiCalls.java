@@ -15,7 +15,9 @@ public final class ApiCalls {
     private ApiCalls() {
     }
 
-    /** {token of X}: the accessToken returned by POST /api/auth/login for the given email and the fixture password. */
+    /**
+     * {token of X}: the accessToken returned by POST /api/auth/login for the given email and the fixture password.
+     */
     public static String tokenOf(MockMvc mockMvc, String email) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

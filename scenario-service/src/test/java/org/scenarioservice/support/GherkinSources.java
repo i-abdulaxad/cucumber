@@ -10,13 +10,13 @@ public final class GherkinSources {
             @checkout
             Feature: Payment
               Customers pay for their basket.
-
+            
               Background:
                 Given a basket with these items:
                   | item  | price |
                   | Mug   | 8.00  |
                   | Shirt | 20.00 |
-
+            
               @smoke
               Scenario: Pay by card
                 When the customer pays by card
@@ -24,38 +24,40 @@ public final class GherkinSources {
                   \"""text
                   Total: 28.00
                   \"""
-
+            
               Rule: Vouchers
-
+            
                 Scenario Outline: Pay with a voucher
                   When the customer pays with voucher "<code>"
                   Then the result is "<result>"
-
+            
                   @regression
                   Examples: Valid vouchers
                     | code   | result    |
                     | SAVE10 | confirmed |
                     | SAVE20 | confirmed |
-
+            
                   Examples: Expired vouchers
                     | code | result   |
                     | OLD5 | rejected |
             """;
 
-    /** The Payment source with "pays by credit card" and a new scenario after "Pay by card" (glossary). */
+    /**
+     * The Payment source with "pays by credit card" and a new scenario after "Pay by card" (glossary).
+     */
     public static final String PAYMENT_V2 = PAYMENT
             .replace("    When the customer pays by card\n", "    When the customer pays by credit card\n")
             .replace("""
                           \"""
-
+                    
                       Rule: Vouchers
                     """, """
                           \"""
-
+                    
                       Scenario: Pay by bank transfer
                         When the customer pays by bank transfer
                         Then the order waits for payment
-
+                    
                       Rule: Vouchers
                     """);
 
@@ -83,7 +85,7 @@ public final class GherkinSources {
                   \"""
                   Hello, <name>!
                   \"""
-
+            
                 Examples:
                   | name |
                   | Ana  |

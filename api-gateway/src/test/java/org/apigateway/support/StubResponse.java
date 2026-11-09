@@ -18,7 +18,9 @@ public record StubResponse(int status, Map<String, String> headers, String body,
         headers = Map.copyOf(headers);
     }
 
-    /** The spec's default stub answer: status 200 with body {@code {}}. */
+    /**
+     * The spec's default stub answer: status 200 with body {@code {}}.
+     */
     public static StubResponse ok() {
         return json(200, "{}");
     }
@@ -31,7 +33,9 @@ public record StubResponse(int status, Map<String, String> headers, String body,
         return new StubResponse(status, Map.of(), "", Duration.ZERO, false);
     }
 
-    /** Accepts the request, then closes the connection without sending a response. */
+    /**
+     * Accepts the request, then closes the connection without sending a response.
+     */
     public static StubResponse dropConnection() {
         return new StubResponse(0, Map.of(), "", Duration.ZERO, true);
     }
@@ -42,7 +46,9 @@ public record StubResponse(int status, Map<String, String> headers, String body,
         return new StubResponse(status, copy, body, delay, dropsConnection);
     }
 
-    /** Waits this long after receiving the request before answering. */
+    /**
+     * Waits this long after receiving the request before answering.
+     */
     public StubResponse after(Duration waitBeforeAnswering) {
         return new StubResponse(status, headers, body, waitBeforeAnswering, dropsConnection);
     }

@@ -66,7 +66,7 @@ class GatewayErrorDispatchTest {
         if (gateway != null) {
             gateway.close();
         }
-        for (StubServer stub : new StubServer[] {authService, scenarioService, reportService}) {
+        for (StubServer stub : new StubServer[]{authService, scenarioService, reportService}) {
             if (stub != null) {
                 stub.close();
             }
@@ -153,7 +153,9 @@ class GatewayErrorDispatchTest {
         }
     }
 
-    /** The access entry is written after the response is sent: waits for it, then checks there is only one. */
+    /**
+     * The access entry is written after the response is sent: waits for it, then checks there is only one.
+     */
     private static void assertExactlyOneAccessEntry(CapturedOutput output, String requestId) {
         Pattern entry = Pattern.compile(Pattern.quote(AccessLogFilter.LOGGER_NAME)
                 + ".*requestId=" + Pattern.quote(requestId) + "(\\s|$)");

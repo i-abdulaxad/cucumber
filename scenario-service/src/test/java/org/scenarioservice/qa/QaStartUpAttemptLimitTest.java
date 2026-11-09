@@ -28,7 +28,7 @@ class QaStartUpAttemptLimitTest {
         try {
             System.clearProperty(ATTEMPT_LIMIT);
 
-            Throwable startUp = catchThrowable(() -> ScenarioServiceApplication.main(new String[] {
+            Throwable startUp = catchThrowable(() -> ScenarioServiceApplication.main(new String[]{
                     "--spring.main.web-application-type=none", "--spring.profiles.active=",
                     "--JWT_SECRET=qa-not-used", "--SCENARIO_DB_URL=jdbc:postgresql://127.0.0.1:1/qa_none",
                     "--SCENARIO_DB_USERNAME=qa", "--SCENARIO_DB_PASSWORD=qa-not-used",

@@ -7,7 +7,9 @@ import org.reportservice.dto.response.TestRunResponse;
 
 import java.util.UUID;
 
-/** Reading runs and results (US-5, D12): {@code READER} or higher, also on an archived project. */
+/**
+ * Reading runs and results (US-5, D12): {@code READER} or higher, also on an archived project.
+ */
 public interface RunQueryService {
 
     RunPageResponse runs(UUID projectId, Integer page, Integer size);

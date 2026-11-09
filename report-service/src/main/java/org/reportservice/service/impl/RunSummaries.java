@@ -22,7 +22,9 @@ final class RunSummaries {
     private RunSummaries() {
     }
 
-    /** One result, as the summary needs it. */
+    /**
+     * One result, as the summary needs it.
+     */
     record Item(String featurePath, String featureName, ExecutionStatus status, Long durationMs) {
     }
 
@@ -45,7 +47,9 @@ final class RunSummaries {
         return new RunSummaryResponse(items.size(), counts, executed, passRate, duration, byFeature);
     }
 
-    /** All 7 statuses, in contract order, at 0. */
+    /**
+     * All 7 statuses, in contract order, at 0.
+     */
     static Map<ExecutionStatus, Integer> zeroCounts() {
         Map<ExecutionStatus, Integer> counts = new EnumMap<>(ExecutionStatus.class);
         for (ExecutionStatus status : ExecutionStatus.values()) {

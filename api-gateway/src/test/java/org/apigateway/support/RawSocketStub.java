@@ -24,7 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class RawSocketStub implements AutoCloseable {
 
-    /** Writes the reply to one request. */
+    /**
+     * Writes the reply to one request.
+     */
     @FunctionalInterface
     public interface Reply {
         void writeTo(OutputStream out) throws IOException, InterruptedException;
@@ -71,7 +73,9 @@ public final class RawSocketStub implements AutoCloseable {
         this.reply = scripted;
     }
 
-    /** Request lines (for example {@code GET /api/scenarios/42 HTTP/1.1}) in the order they arrived. */
+    /**
+     * Request lines (for example {@code GET /api/scenarios/42 HTTP/1.1}) in the order they arrived.
+     */
     public List<String> requestLines() {
         return List.copyOf(requestLines);
     }
@@ -117,7 +121,9 @@ public final class RawSocketStub implements AutoCloseable {
         }
     }
 
-    /** Reads the request line and headers; the stubbed requests carry no body. */
+    /**
+     * Reads the request line and headers; the stubbed requests carry no body.
+     */
     private static String readHead(InputStream in) throws IOException {
         ByteArrayOutputStream head = new ByteArrayOutputStream();
         int matched = 0;

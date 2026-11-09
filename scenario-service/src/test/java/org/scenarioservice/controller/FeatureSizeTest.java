@@ -228,7 +228,9 @@ class FeatureSizeTest {
         assertThat(data.count("feature_versions")).isEqualTo(1);
     }
 
-    /** {@code count} distinct tags {@code @<prefix>0 …} on one line, then {@code Feature: Tags}: count elements. */
+    /**
+     * {@code count} distinct tags {@code @<prefix>0 …} on one line, then {@code Feature: Tags}: count elements.
+     */
     private static String distinctTags(int count, String prefix) {
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < count; i++) {
@@ -237,7 +239,9 @@ class FeatureSizeTest {
         return text.append("\nFeature: Tags\n").toString();
     }
 
-    /** {@code count} Scenarios with one step each, after the Feature line: 2 x count elements. */
+    /**
+     * {@code count} Scenarios with one step each, after the Feature line: 2 x count elements.
+     */
     private static String scenarios(int count, int offset) {
         StringBuilder text = new StringBuilder("Feature: Big\n");
         for (int i = offset; i < offset + count; i++) {

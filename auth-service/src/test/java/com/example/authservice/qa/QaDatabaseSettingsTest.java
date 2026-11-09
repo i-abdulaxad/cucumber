@@ -47,7 +47,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 class QaDatabaseSettingsTest {
 
     private static final String MARKER_PASSWORD = "Qa-Db-Pw-Marker-61";
-    /** The three BUG-1 passwords in one, so that one real start-up proves all of them. */
+    /**
+     * The three BUG-1 passwords in one, so that one real start-up proves all of them.
+     */
     private static final String DOLLAR_BRACE_PASSWORD = "Qa${Pw-61 Pw${QA}61 Pw$QA{61}";
 
     @Test

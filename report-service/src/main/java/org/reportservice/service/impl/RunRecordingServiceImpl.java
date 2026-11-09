@@ -144,7 +144,9 @@ public class RunRecordingServiceImpl implements RunRecordingService {
         }
     }
 
-    /** At most 2,000 code points; no control character but LF and TAB; no lone surrogate (D8). */
+    /**
+     * At most 2,000 code points; no control character but LF and TAB; no lone surrogate (D8).
+     */
     private static boolean isComment(String comment) {
         int count = 0;
         for (int i = 0; i < comment.length(); ) {

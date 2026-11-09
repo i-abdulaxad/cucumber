@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-/** Run operations in tests (US-4, US-5): record, complete, cancel and reads, as a fixture user. */
+/**
+ * Run operations in tests (US-4, US-5): record, complete, cancel and reads, as a fixture user.
+ */
 public final class Runs {
 
     private Runs() {
@@ -35,7 +37,9 @@ public final class Runs {
                 .header(HttpHeaders.AUTHORIZATION, caller.bearer())).andReturn();
     }
 
-    /** {@code GET} of a path relative to the project's runs ({@code ""} for the list). */
+    /**
+     * {@code GET} of a path relative to the project's runs ({@code ""} for the list).
+     */
     public static MvcResult read(MockMvc mockMvc, User caller, UUID projectId, String relative) throws Exception {
         return mockMvc.perform(get(Plans.runs(projectId) + relative)
                 .header(HttpHeaders.AUTHORIZATION, caller.bearer())).andReturn();

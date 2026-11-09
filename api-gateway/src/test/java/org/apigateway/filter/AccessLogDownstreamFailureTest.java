@@ -32,7 +32,9 @@ class AccessLogDownstreamFailureTest {
 
     private static final Duration STUB_DELAY = Duration.ofSeconds(5);
 
-    /** The AC-7.8 conditions at the configured scenario-service URL. */
+    /**
+     * The AC-7.8 conditions at the configured scenario-service URL.
+     */
     enum DownstreamCondition {
 
         NOTHING_LISTENING {
@@ -95,7 +97,9 @@ class AccessLogDownstreamFailureTest {
         }
     }
 
-    /** Waits for the entry (it is written after the response is sent) and checks that there is only one. */
+    /**
+     * Waits for the entry (it is written after the response is sent) and checks that there is only one.
+     */
     private static String theOnlyAccessEntry(CapturedOutput output, String requestId) {
         await().atMost(Duration.ofSeconds(5)).until(() -> !accessEntries(output, requestId).isEmpty());
         await().during(Duration.ofMillis(300)).atMost(Duration.ofSeconds(2))

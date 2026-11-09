@@ -47,7 +47,9 @@ public final class ScratchDatabase implements AutoCloseable {
         return POSTGRES.getPassword();
     }
 
-    /** A new connection to this database as the container's superuser; the caller closes it. */
+    /**
+     * A new connection to this database as the container's superuser; the caller closes it.
+     */
     public Connection connect() throws SQLException {
         return DriverManager.getConnection(url(), username(), password());
     }
@@ -57,7 +59,9 @@ public final class ScratchDatabase implements AutoCloseable {
         admin("DROP DATABASE " + name + " WITH (FORCE)");
     }
 
-    /** Runs one statement as the container's superuser on its default database (scratch set-up only). */
+    /**
+     * Runs one statement as the container's superuser on its default database (scratch set-up only).
+     */
     public static void admin(String sql) throws SQLException {
         try (Connection connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

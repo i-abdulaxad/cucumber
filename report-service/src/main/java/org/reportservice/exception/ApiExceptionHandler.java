@@ -77,7 +77,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ex.code().status() == HttpStatus.UNAUTHORIZED ? withBearerChallenge(response) : response;
     }
 
-    /** A field rule a service checks (for example a past {@code expiresAt}, AC-1.4), as a field error. */
+    /**
+     * A field rule a service checks (for example a past {@code expiresAt}, AC-1.4), as a field error.
+     */
     @ExceptionHandler(InvalidFieldException.class)
     public ResponseEntity<ProblemDetail> handleInvalidField(InvalidFieldException ex, HttpServletRequest request) {
         ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
@@ -85,7 +87,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 
-    /** Several query parameters a service checks (the CI upload, AC-2.10), as field errors sorted by field. */
+    /**
+     * Several query parameters a service checks (the CI upload, AC-2.10), as field errors sorted by field.
+     */
     @ExceptionHandler(InvalidFieldsException.class)
     public ResponseEntity<ProblemDetail> handleInvalidFields(InvalidFieldsException ex, HttpServletRequest request) {
         ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
@@ -96,7 +100,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 
-    /** D9: 422 CUCUMBER_JSON_INVALID with {@code errors} entries {@code {pointer, message}}, in document order. */
+    /**
+     * D9: 422 CUCUMBER_JSON_INVALID with {@code errors} entries {@code {pointer, message}}, in document order.
+     */
     @ExceptionHandler(CucumberJsonInvalidException.class)
     public ResponseEntity<ProblemDetail> handleCucumberJsonInvalid(CucumberJsonInvalidException ex,
                                                                    HttpServletRequest request) {
@@ -106,7 +112,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 
-    /** D10: 422 FEATURE_NOT_PLANNABLE with {@code featureIds}, every unplannable id in request order (AC-3.4). */
+    /**
+     * D10: 422 FEATURE_NOT_PLANNABLE with {@code featureIds}, every unplannable id in request order (AC-3.4).
+     */
     @ExceptionHandler(FeatureNotPlannableException.class)
     public ResponseEntity<ProblemDetail> handleFeatureNotPlannable(FeatureNotPlannableException ex,
                                                                    HttpServletRequest request) {

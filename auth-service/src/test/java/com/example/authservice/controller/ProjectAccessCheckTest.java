@@ -148,7 +148,7 @@ class ProjectAccessCheckTest {
     void anArchivedProjectIsReportedAsArchivedWithTheRole() throws Exception {
         // Given Cai has archived Checkout
         MvcResult archived = mockMvc.perform(post("/api/orgs/" + projects.acme().orgId() + "/projects/"
-                        + projects.checkout() + "/archive")
+                + projects.checkout() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(tokenOf(mockMvc, "cai@example.com")))).andReturn();
         assertThat(archived.getResponse().getStatus()).isEqualTo(200);
 
@@ -174,7 +174,7 @@ class ProjectAccessCheckTest {
         assertThat(before.getResponse().getStatus()).isEqualTo(200);
         assertThat(JsonPath.<String>read(before.getResponse().getContentAsString(), "$.role")).isEqualTo("TESTER");
         MvcResult removed = mockMvc.perform(delete("/api/orgs/" + projects.acme().orgId() + "/projects/"
-                        + projects.checkout() + "/members/" + projects.hal().getId())
+                + projects.checkout() + "/members/" + projects.hal().getId())
                 .header(HttpHeaders.AUTHORIZATION, bearer(tokenOf(mockMvc, "cai@example.com")))).andReturn();
         assertThat(removed.getResponse().getStatus()).isEqualTo(204);
 

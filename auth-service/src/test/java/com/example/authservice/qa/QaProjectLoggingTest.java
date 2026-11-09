@@ -275,7 +275,9 @@ class QaProjectLoggingTest {
         return matcher.find() ? matcher.group(1) : "<none>";
     }
 
-    /** devtools' web default, added the way devtools adds it: lowest precedence, below application.yaml. */
+    /**
+     * devtools' web default, added the way devtools adds it: lowest precedence, below application.yaml.
+     */
     static class DevToolsDefaults implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
         @Override

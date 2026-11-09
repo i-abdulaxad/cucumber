@@ -180,7 +180,8 @@ class InvitationAcceptanceTest {
         String token = t;
         switch (state) {
             case "unknown token" -> token = "inv-unknown-QA";
-            case "expired" -> updateInvitation(invitation -> invitation.setExpiresAt(Instant.now().minus(1, ChronoUnit.HOURS)));
+            case "expired" ->
+                    updateInvitation(invitation -> invitation.setExpiresAt(Instant.now().minus(1, ChronoUnit.HOURS)));
             case "revoked by Ben" -> assertThat(revoke(BEN, invitationId).getResponse().getStatus()).isEqualTo(204);
             default -> updateInvitation(invitation -> invitation.setStatus(InvitationStatus.ACCEPTED));
         }
@@ -256,7 +257,7 @@ class InvitationAcceptanceTest {
 
         // When
         MvcResult result = mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"fay@example.com\",\"password\":\"Secret123!\",\"fullName\":\"Fay Lin\"}"))
+                        .content("{\"email\":\"fay@example.com\",\"password\":\"Secret123!\",\"fullName\":\"Fay Lin\"}"))
                 .andReturn();
 
         // Then
@@ -522,7 +523,7 @@ class InvitationAcceptanceTest {
 
     private void registerFay(String password) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"fay@example.com\",\"password\":\"" + password + "\",\"fullName\":\"Fay Lin\"}"))
+                        .content("{\"email\":\"fay@example.com\",\"password\":\"" + password + "\",\"fullName\":\"Fay Lin\"}"))
                 .andReturn();
         assertThat(result.getResponse().getStatus()).isEqualTo(201);
     }
@@ -532,7 +533,9 @@ class InvitationAcceptanceTest {
         assertThat(passwordEncoder.matches(AcmeFixture.PASSWORD, user.getPasswordHash())).isTrue();
     }
 
-    /** The user's role in Acme, or {@code null} if they aren't a member. */
+    /**
+     * The user's role in Acme, or {@code null} if they aren't a member.
+     */
     private OrganizationRole membershipOf(String email) {
         return userRepository.findByEmail(email)
                 .flatMap(user -> orgMembershipRepository.findByUserIdAndOrganizationId(user.getId(), acme.orgId()))

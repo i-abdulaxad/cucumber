@@ -168,7 +168,9 @@ class QaMigrationsTest {
 
     // --- expected values ---------------------------------------------------------------------------------------
 
-    /** The phase-2 as-built ERD (qa's QaSchemaTest at HEAD), in PostgreSQL type names: enums are varchar(255). */
+    /**
+     * The phase-2 as-built ERD (qa's QaSchemaTest at HEAD), in PostgreSQL type names: enums are varchar(255).
+     */
     private static final Set<String> V1_COLUMNS = new TreeSet<>(List.of(
             "USERS.ID UUID NOT NULL", "USERS.EMAIL CHARACTER VARYING(255) NOT NULL",
             "USERS.PASSWORD_HASH CHARACTER VARYING(255) NULL", "USERS.FULL_NAME CHARACTER VARYING(255) NULL",

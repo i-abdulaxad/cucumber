@@ -9,7 +9,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-/** A run in the list (contract C1 {@code TestRunListItem}, D12): {@code total}, {@code counts}, {@code passRate}. */
+/**
+ * A run in the list (contract C1 {@code TestRunListItem}, D12): {@code total}, {@code counts}, {@code passRate}.
+ */
 public record TestRunListItemResponse(UUID id, UUID projectId, String name, TestRunSource source, TestRunStatus status,
                                       EnvironmentResponse environment, BuildResponse build, String tagExpression,
                                       UUID createdBy, Instant startedAt, Instant finishedAt, Instant createdAt,

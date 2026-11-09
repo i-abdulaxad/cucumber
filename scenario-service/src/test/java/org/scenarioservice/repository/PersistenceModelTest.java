@@ -39,7 +39,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ScenarioServiceIntegrationTest
 class PersistenceModelTest {
 
-    /** The longest keyword of gherkin 28's dialects (en-tx Examples), 53 code points. */
+    /**
+     * The longest keyword of gherkin 28's dialects (en-tx Examples), 53 code points.
+     */
     private static final String EN_TX_EXAMPLES = "Now that's a story longer than a cattle drive in July";
 
     @Autowired
@@ -170,7 +172,7 @@ class PersistenceModelTest {
             assertThat(read.getCreatedAt()).isEqualTo(now);
         });
         String jsonType = (String) entityManager.createNativeQuery(
-                "SELECT jsonb_typeof(data_table) FROM steps WHERE id = :id").setParameter("id", step.getId())
+                        "SELECT jsonb_typeof(data_table) FROM steps WHERE id = :id").setParameter("id", step.getId())
                 .getSingleResult();
         assertThat(jsonType).isEqualTo("array");
     }

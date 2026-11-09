@@ -123,7 +123,9 @@ public class UploadServiceImpl implements UploadService {
         return run;
     }
 
-    /** BD-15: {@code application/json} with no charset or {@code charset=utf-8}; no content coding but identity. */
+    /**
+     * BD-15: {@code application/json} with no charset or {@code charset=utf-8}; no content coding but identity.
+     */
     private static void checkMediaType(UploadBody body) {
         if (body.contentType() != null) {
             String[] parts = body.contentType().split(";");

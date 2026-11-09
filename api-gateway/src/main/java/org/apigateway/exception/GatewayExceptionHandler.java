@@ -40,7 +40,9 @@ public class GatewayExceptionHandler extends ResponseEntityExceptionHandler {
     public static final String ABORT_CONNECTION_ATTRIBUTE =
             GatewayExceptionHandler.class.getName() + ".abortConnection";
 
-    /** GW6: the detail of the 400 for a query whose percent-encoding isn't valid UTF-8. */
+    /**
+     * GW6: the detail of the 400 for a query whose percent-encoding isn't valid UTF-8.
+     */
     static final String QUERY_NOT_DECODED_DETAIL = "The request query could not be decoded.";
 
     private static final Logger log = LoggerFactory.getLogger(GatewayExceptionHandler.class);
@@ -124,19 +126,19 @@ public class GatewayExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
     protected @Nullable ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+                                                                              HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return noRoute(request);
     }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+                                                                             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return noRoute(request);
     }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body,
-            HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+                                                                       HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
         if (body == null && statusCode.value() == HttpStatus.METHOD_NOT_ALLOWED.value()
                 && ex instanceof ErrorResponse errorResponse) {
             // Spring passes no body for its 405; render it in D6 too (platform-hardening D5, E11)

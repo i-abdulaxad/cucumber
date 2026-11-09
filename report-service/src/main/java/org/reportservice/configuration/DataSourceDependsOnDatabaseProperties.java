@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 
-/** Makes every {@link DataSource} wait for {@link DatabaseSettingsCheck}, so a missing setting is reported first. */
+/**
+ * Makes every {@link DataSource} wait for {@link DatabaseSettingsCheck}, so a missing setting is reported first.
+ */
 @Component
 public class DataSourceDependsOnDatabaseProperties extends AbstractDependsOnBeanFactoryPostProcessor {
 

@@ -7,7 +7,9 @@ import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 
-/** The logging aspect's settings (D17): on or off, and the slow-call threshold for the WARN line. */
+/**
+ * The logging aspect's settings (D17): on or off, and the slow-call threshold for the WARN line.
+ */
 @Validated
 @ConfigurationProperties(prefix = "app.logging")
 public record LoggingProperties(

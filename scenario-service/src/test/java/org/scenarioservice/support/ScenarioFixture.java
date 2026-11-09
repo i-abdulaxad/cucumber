@@ -36,12 +36,16 @@ public final class ScenarioFixture {
     private ScenarioFixture() {
     }
 
-    /** Whether the user exists (auth-service answers 401 for a token of an unknown user). */
+    /**
+     * Whether the user exists (auth-service answers 401 for a token of an unknown user).
+     */
     public static boolean isKnown(UUID userId) {
         return ROLES.containsKey(userId);
     }
 
-    /** The user's effective role in the project, or empty for "none". */
+    /**
+     * The user's effective role in the project, or empty for "none".
+     */
     public static Optional<String> role(UUID userId, UUID projectId) {
         return Optional.ofNullable(ROLES.getOrDefault(userId, Map.of()).get(projectId));
     }
@@ -50,14 +54,18 @@ public final class ScenarioFixture {
         return LEGACY.equals(projectId);
     }
 
-    /** A fixture user: {@code name@example.com} and a fixed id. */
+    /**
+     * A fixture user: {@code name@example.com} and a fixed id.
+     */
     public record User(String name, UUID id) {
 
         public String email() {
             return name + "@example.com";
         }
 
-        /** {@code {token of X}}. */
+        /**
+         * {@code {token of X}}.
+         */
         public String token() {
             return TestTokens.valid(id, email());
         }

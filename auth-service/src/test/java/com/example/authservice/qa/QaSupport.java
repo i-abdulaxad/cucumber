@@ -62,7 +62,9 @@ final class QaSupport {
         return JsonPath.read(result.getResponse().getContentAsString(), path);
     }
 
-    /** A token signed HS512 with the shared secret over exactly this header and payload JSON. */
+    /**
+     * A token signed HS512 with the shared secret over exactly this header and payload JSON.
+     */
     static String signedRaw(String headerJson, String payloadJson) {
         try {
             String signingInput = base64Url(headerJson) + "." + base64Url(payloadJson);
@@ -100,7 +102,9 @@ final class QaSupport {
                 Instant.now().plus(7, ChronoUnit.DAYS), token);
     }
 
-    /** Starts every call at the same moment and returns the results in call order. */
+    /**
+     * Starts every call at the same moment and returns the results in call order.
+     */
     @SafeVarargs
     static List<MvcResult> concurrently(Callable<MvcResult>... calls) throws Exception {
         return concurrently(List.of(calls));
@@ -136,7 +140,9 @@ final class QaSupport {
         return () -> mockMvc.perform(request).andReturn();
     }
 
-    /** A MockMvc call that can run on another thread. */
+    /**
+     * A MockMvc call that can run on another thread.
+     */
     @FunctionalInterface
     interface MockMvcCall extends Callable<MvcResult> {
     }

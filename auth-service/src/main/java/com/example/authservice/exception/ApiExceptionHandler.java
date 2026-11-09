@@ -283,7 +283,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return Optional.empty();
     }
 
-    /** D7: 503 SERVICE_UNAVAILABLE, logged once at WARN with the failure's class name only. */
+    /**
+     * D7: 503 SERVICE_UNAVAILABLE, logged once at WARN with the failure's class name only.
+     */
     private static ResponseEntity<ProblemDetail> serviceUnavailable(SQLTransientConnectionException failure,
                                                                     HttpServletRequest request) {
         log.warn("Request rejected because no database connection is available: {}",

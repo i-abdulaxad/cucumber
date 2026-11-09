@@ -195,7 +195,9 @@ public class RunPlanningServiceImpl implements RunPlanningService {
         return featureIds;
     }
 
-    /** {@code @} and at least one more code point; no whitespace, control character or lone surrogate (D10). */
+    /**
+     * {@code @} and at least one more code point; no whitespace, control character or lone surrogate (D10).
+     */
     private static boolean isTag(String tag) {
         if (!tag.startsWith("@") || tag.length() < 2 || !TextRules.isName(tag, MAX_TAG_CODE_POINTS)) {
             return false;

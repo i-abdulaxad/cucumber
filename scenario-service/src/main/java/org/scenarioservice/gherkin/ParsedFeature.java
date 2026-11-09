@@ -16,7 +16,9 @@ public record ParsedFeature(String language, String keyword, String name, String
         children = List.copyOf(children);
     }
 
-    /** Every Background, Scenario and Scenario Outline, Rules' included, in text order. */
+    /**
+     * Every Background, Scenario and Scenario Outline, Rules' included, in text order.
+     */
     public List<ParsedScenario> scenariosInTextOrder() {
         List<ParsedScenario> scenarios = new ArrayList<>();
         for (ParsedChild child : children) {
@@ -29,7 +31,9 @@ public record ParsedFeature(String language, String keyword, String name, String
         return scenarios;
     }
 
-    /** Every Examples row of every outline, in text order. */
+    /**
+     * Every Examples row of every outline, in text order.
+     */
     public List<ParsedRow> rowsInTextOrder() {
         return scenariosInTextOrder().stream().flatMap(scenario -> scenario.examples().stream())
                 .flatMap(examples -> examples.rows().stream()).toList();

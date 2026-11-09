@@ -23,7 +23,7 @@ final class RawDownload {
 
     private static final int CLIENT_READ_TIMEOUT_MILLIS = 10_000;
 
-    enum End { COMPLETE, EOF_BEFORE_COMPLETE, CONNECTION_RESET, CLOSE_DELIMITED, CLIENT_TIMEOUT }
+    enum End {COMPLETE, EOF_BEFORE_COMPLETE, CONNECTION_RESET, CLOSE_DELIMITED, CLIENT_TIMEOUT}
 
     record Received(int status, String framing, String body, End end) {
 
@@ -109,7 +109,9 @@ final class RawDownload {
         }
     }
 
-    /** Copies up to {@code length} bytes; false if the stream ended first. */
+    /**
+     * Copies up to {@code length} bytes; false if the stream ended first.
+     */
     private static boolean copy(InputStream in, ByteArrayOutputStream body, long length) throws IOException {
         byte[] buffer = new byte[8192];
         long remaining = length;
@@ -124,7 +126,9 @@ final class RawDownload {
         return true;
     }
 
-    /** One CRLF-terminated line without the CRLF, or null at end of stream. */
+    /**
+     * One CRLF-terminated line without the CRLF, or null at end of stream.
+     */
     private static String readLine(InputStream in) throws IOException {
         ByteArrayOutputStream line = new ByteArrayOutputStream();
         int previous = -1;

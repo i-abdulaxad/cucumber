@@ -74,9 +74,9 @@ class DevSqlLoggingTest {
         try {
             loggingSystem.setLogLevel(SQL_LOGGER, devLevel());
             status = mockMvc.perform(post(features(CHECKOUT)).contentType(MediaType.APPLICATION_JSON)
-                    .content(json(fields("path", "features/checkout/payment.feature", "source",
-                            GherkinSources.PAYMENT, "message", "First draft")))
-                    .header("X-Request-Id", "req-814").header(HttpHeaders.AUTHORIZATION, GUS.bearer()))
+                            .content(json(fields("path", "features/checkout/payment.feature", "source",
+                                    GherkinSources.PAYMENT, "message", "First draft")))
+                            .header("X-Request-Id", "req-814").header(HttpHeaders.AUTHORIZATION, GUS.bearer()))
                     .andReturn().getResponse().getStatus();
         } finally {
             loggingSystem.setLogLevel(SQL_LOGGER, foundLevel);
@@ -106,7 +106,9 @@ class DevSqlLoggingTest {
         }
     }
 
-    /** Each {@code org.hibernate.SQL} entry: its first line and its indented continuation lines. */
+    /**
+     * Each {@code org.hibernate.SQL} entry: its first line and its indented continuation lines.
+     */
     private static List<List<String>> sqlEntries(List<String> lines) {
         List<List<String>> entries = new ArrayList<>();
         List<String> current = null;

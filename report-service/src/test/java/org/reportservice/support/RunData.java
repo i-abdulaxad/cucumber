@@ -17,7 +17,9 @@ public final class RunData {
     private RunData() {
     }
 
-    /** A stored run and its result ids, by position. */
+    /**
+     * A stored run and its result ids, by position.
+     */
     public record Run(UUID id, List<UUID> results) {
     }
 
@@ -43,9 +45,9 @@ public final class RunData {
         for (int position = 1; position <= results; position++) {
             UUID resultId = UUID.randomUUID();
             jdbc.update("INSERT INTO test_case_results (id, test_run_id, position, feature_path, feature_name, "
-                            + "scenario_name, tags, status, attempt, created_at, updated_at) VALUES (?, ?, ?, "
-                            + "'features/checkout/payment.feature', 'Payment', ?, '[\"@checkout\"]'::jsonb, "
-                            + "'UNKNOWN', 1, ?, ?)", resultId, runId, position, "Scenario " + position, at, at);
+                    + "scenario_name, tags, status, attempt, created_at, updated_at) VALUES (?, ?, ?, "
+                    + "'features/checkout/payment.feature', 'Payment', ?, '[\"@checkout\"]'::jsonb, "
+                    + "'UNKNOWN', 1, ?, ?)", resultId, runId, position, "Scenario " + position, at, at);
             jdbc.update("INSERT INTO step_results (id, test_case_result_id, position, kind, keyword_text, step_text, "
                             + "status, created_at, updated_at) "
                             + "VALUES (?, ?, 1, 'STEP', 'Given', 'a step', 'UNKNOWN', ?, ?)",

@@ -4,7 +4,9 @@ import org.reportservice.ingest.JsonProblem;
 
 import java.util.List;
 
-/** The uploaded Cucumber JSON breaks D9's read subset (AC-2.8): 422 with 1 to 20 {@code {pointer, message}}. */
+/**
+ * The uploaded Cucumber JSON breaks D9's read subset (AC-2.8): 422 with 1 to 20 {@code {pointer, message}}.
+ */
 public class CucumberJsonInvalidException extends ApiException {
 
     private final transient List<JsonProblem> problems;

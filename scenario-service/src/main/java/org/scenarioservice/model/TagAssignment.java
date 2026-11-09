@@ -16,7 +16,9 @@ import org.scenarioservice.enums.TagTargetType;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Which element of a feature's current version carries which tag (ERD {@code tag_assignments}). */
+/**
+ * Which element of a feature's current version carries which tag (ERD {@code tag_assignments}).
+ */
 @Entity
 @Table(name = "tag_assignments")
 @Getter

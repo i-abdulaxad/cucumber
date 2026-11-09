@@ -46,7 +46,9 @@ import static org.scenarioservice.support.ScenarioFixture.LEGACY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-/** US-3 (T9, end to end): save a new version and read the history. Background: Gus has created Payment. */
+/**
+ * US-3 (T9, end to end): save a new version and read the history. Background: Gus has created Payment.
+ */
 @ScenarioServiceIntegrationTest
 class SaveFeatureTest {
 

@@ -13,24 +13,38 @@ CREATE INDEX ix_invitations_org_id_email ON invitations (org_id, email);
 CREATE INDEX ix_invitations_invited_by ON invitations (invited_by);
 
 ALTER TABLE org_memberships
-    DROP CONSTRAINT fk_org_memberships_user_id,
-    DROP CONSTRAINT fk_org_memberships_org_id,
-    ADD CONSTRAINT fk_org_memberships_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
-    ADD CONSTRAINT fk_org_memberships_org_id FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE RESTRICT;
+DROP
+CONSTRAINT fk_org_memberships_user_id,
+    DROP
+CONSTRAINT fk_org_memberships_org_id,
+    ADD CONSTRAINT fk_org_memberships_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE
+RESTRICT,
+    ADD CONSTRAINT fk_org_memberships_org_id FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE
+RESTRICT;
 
 ALTER TABLE projects
-    DROP CONSTRAINT fk_projects_org_id,
-    ADD CONSTRAINT fk_projects_org_id FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE RESTRICT;
+DROP
+CONSTRAINT fk_projects_org_id,
+    ADD CONSTRAINT fk_projects_org_id FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE
+RESTRICT;
 
 ALTER TABLE project_memberships
-    DROP CONSTRAINT fk_project_memberships_user_id,
-    DROP CONSTRAINT fk_project_memberships_project_id,
-    ADD CONSTRAINT fk_project_memberships_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+DROP
+CONSTRAINT fk_project_memberships_user_id,
+    DROP
+CONSTRAINT fk_project_memberships_project_id,
+    ADD CONSTRAINT fk_project_memberships_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE
+RESTRICT,
     ADD CONSTRAINT fk_project_memberships_project_id FOREIGN KEY (project_id) REFERENCES projects (id)
-        ON DELETE RESTRICT;
+        ON DELETE
+RESTRICT;
 
 ALTER TABLE invitations
-    DROP CONSTRAINT fk_invitations_org_id,
-    DROP CONSTRAINT fk_invitations_invited_by,
-    ADD CONSTRAINT fk_invitations_org_id FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE RESTRICT,
-    ADD CONSTRAINT fk_invitations_invited_by FOREIGN KEY (invited_by) REFERENCES users (id) ON DELETE RESTRICT;
+DROP
+CONSTRAINT fk_invitations_org_id,
+    DROP
+CONSTRAINT fk_invitations_invited_by,
+    ADD CONSTRAINT fk_invitations_org_id FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE
+RESTRICT,
+    ADD CONSTRAINT fk_invitations_invited_by FOREIGN KEY (invited_by) REFERENCES users (id) ON DELETE
+RESTRICT;

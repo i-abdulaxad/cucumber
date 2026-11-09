@@ -44,7 +44,9 @@ import static org.scenarioservice.support.ScenarioFixture.HAL;
 import static org.scenarioservice.support.ScenarioFixture.IVY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/** US-1 (T8, end to end on the real endpoint): create a feature from Gherkin text. */
+/**
+ * US-1 (T8, end to end on the real endpoint): create a feature from Gherkin text.
+ */
 @ScenarioServiceIntegrationTest
 class CreateFeatureTest {
 

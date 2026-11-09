@@ -28,7 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("QA: request and response fidelity through the gateway")
 class QaRequestFidelityTest extends GatewayIntegrationTest {
 
-    /** BUG-api-gateway-5 (variant of AC-1.3): on PUT/PATCH/DELETE the form body is moved into the query string and the body is emptied. */
+    /**
+     * BUG-api-gateway-5 (variant of AC-1.3): on PUT/PATCH/DELETE the form body is moved into the query string and the body is emptied.
+     */
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"PATCH", "PUT", "DELETE"})
     @Tag("BUG-api-gateway-5")
@@ -82,7 +84,9 @@ class QaRequestFidelityTest extends GatewayIntegrationTest {
         assertThat(forwarded.body()).contains("email=ana%40example.com", "password=Secret123");
     }
 
-    /** BUG-api-gateway-8 (variant of AC-1.3): the query string is decoded and re-encoded instead of being forwarded as sent. */
+    /**
+     * BUG-api-gateway-8 (variant of AC-1.3): the query string is decoded and re-encoded instead of being forwarded as sent.
+     */
     @Test
     @Tag("BUG-api-gateway-8")
     @DisplayName("BUG-api-gateway-8 (variant of AC-1.3): the raw query string is forwarded byte for byte")
@@ -98,7 +102,9 @@ class QaRequestFidelityTest extends GatewayIntegrationTest {
         assertThat(SCENARIO_SERVICE.requests().get(0).query()).isEqualTo(query);
     }
 
-    /** BUG-api-gateway-8 (variant of AC-1.3): ";charset=UTF-8" is appended to the client's Content-Type. */
+    /**
+     * BUG-api-gateway-8 (variant of AC-1.3): ";charset=UTF-8" is appended to the client's Content-Type.
+     */
     @Test
     @Tag("BUG-api-gateway-8")
     @DisplayName("BUG-api-gateway-8 (variant of AC-1.3): the Content-Type request header is forwarded unchanged")

@@ -54,12 +54,16 @@ public class ProjectAccessChecker {
         this.jsonMapper = jsonMapper;
     }
 
-    /** The caller's access, at least {@code minimum}; an archived project is allowed (reads, token list, revoke). */
+    /**
+     * The caller's access, at least {@code minimum}; an archived project is allowed (reads, token list, revoke).
+     */
     public ProjectAccess requireRead(UUID projectId, ProjectRole minimum) {
         return check(projectId, minimum, false);
     }
 
-    /** The caller's access, at least {@code minimum}, on a project that isn't archived (D7). */
+    /**
+     * The caller's access, at least {@code minimum}, on a project that isn't archived (D7).
+     */
     public ProjectAccess requireWrite(UUID projectId, ProjectRole minimum) {
         return check(projectId, minimum, true);
     }

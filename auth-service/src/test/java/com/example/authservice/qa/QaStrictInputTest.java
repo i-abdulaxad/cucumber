@@ -63,7 +63,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class QaStrictInputTest {
 
     private static final String EMOJI = "\uD83D\uDE00";
-    /** U+10400 DESERET CAPITAL LETTER LONG I: one code point, two UTF-16 units. */
+    /**
+     * U+10400 DESERET CAPITAL LETTER LONG I: one code point, two UTF-16 units.
+     */
     private static final String DESERET = "\uD801\uDC00";
 
     @Autowired
@@ -458,7 +460,9 @@ class QaStrictInputTest {
         return calls.as(actor, builder, body);
     }
 
-    /** A valid body for the request, in which {@code field} is the raw JSON value. */
+    /**
+     * A valid body for the request, in which {@code field} is the raw JSON value.
+     */
     private static String body(String request, String field, String json) {
         String email = field.equals("email") ? json : "\"fay@example.com\"";
         String password = field.equals("password") ? json : "\"Secret123!\"";
@@ -487,7 +491,9 @@ class QaStrictInputTest {
         };
     }
 
-    /** The text as a JSON string literal, with every non-ASCII or control UTF-16 unit escaped. */
+    /**
+     * The text as a JSON string literal, with every non-ASCII or control UTF-16 unit escaped.
+     */
     private static String json(String text) {
         StringBuilder out = new StringBuilder("\"");
         for (char c : text.toCharArray()) {

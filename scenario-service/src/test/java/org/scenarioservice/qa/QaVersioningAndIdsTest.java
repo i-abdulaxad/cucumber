@@ -364,7 +364,9 @@ class QaVersioningAndIdsTest {
         return body(result);
     }
 
-    /** Scenario ids by name (every scenario, outline and background with a name, in any container). */
+    /**
+     * Scenario ids by name (every scenario, outline and background with a name, in any container).
+     */
     private static Map<String, String> ids(String feature) {
         List<Map<String, Object>> scenarios = JsonPath.read(feature, "$..[?(@.steps)]");
         Map<String, String> ids = new java.util.LinkedHashMap<>();

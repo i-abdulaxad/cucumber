@@ -82,7 +82,9 @@ class ResolvedExceptionLoggingTest {
                 .andReturn();
     }
 
-    /** Adds devtools' web default exactly as devtools does: lowest precedence, below {@code application.yaml}. */
+    /**
+     * Adds devtools' web default exactly as devtools does: lowest precedence, below {@code application.yaml}.
+     */
     static class DevToolsPropertyDefaults implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
         @Override

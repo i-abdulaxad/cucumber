@@ -75,7 +75,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ex.code() == ErrorCode.UNAUTHENTICATED ? withBearerChallenge(response) : response;
     }
 
-    /** D8: 422 with {@code parseErrors}. */
+    /**
+     * D8: 422 with {@code parseErrors}.
+     */
     @ExceptionHandler(GherkinInvalidException.class)
     public ResponseEntity<ProblemDetail> handleGherkinInvalid(GherkinInvalidException ex, HttpServletRequest request) {
         ProblemDetail problem = Problems.of(ex.code(), ex.detail(), request);
@@ -83,7 +85,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 
-    /** D9: 409 with {@code currentVersion}. */
+    /**
+     * D9: 409 with {@code currentVersion}.
+     */
     @ExceptionHandler(VersionConflictException.class)
     public ResponseEntity<ProblemDetail> handleVersionConflict(VersionConflictException ex,
                                                                HttpServletRequest request) {
@@ -92,7 +96,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 
-    /** D19 #5: an invalid {@code tag} filter, as a field error like Bean Validation's. */
+    /**
+     * D19 #5: an invalid {@code tag} filter, as a field error like Bean Validation's.
+     */
     @ExceptionHandler(InvalidTagFilterException.class)
     public ResponseEntity<ProblemDetail> handleInvalidTagFilter(InvalidTagFilterException ex,
                                                                 HttpServletRequest request) {
@@ -102,7 +108,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.code().status()).body(problem);
     }
 
-    /** D21 #2: a text with too many elements, as a field error on {@code source} (order step 7a). */
+    /**
+     * D21 #2: a text with too many elements, as a field error on {@code source} (order step 7a).
+     */
     @ExceptionHandler(FeatureTooLargeException.class)
     public ResponseEntity<ProblemDetail> handleFeatureTooLarge(FeatureTooLargeException ex,
                                                                HttpServletRequest request) {

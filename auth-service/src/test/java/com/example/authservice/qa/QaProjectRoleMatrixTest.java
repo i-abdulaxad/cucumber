@@ -100,7 +100,9 @@ class QaProjectRoleMatrixTest {
         return cases.stream();
     }
 
-    /** D3, from the spec text: the effective project role, or empty for no access. */
+    /**
+     * D3, from the spec text: the effective project role, or empty for no access.
+     */
     static Optional<ProjectRole> effective(OrganizationRole orgRole, ProjectRole explicit) {
         if (orgRole == null) {
             return Optional.empty();
@@ -116,8 +118,20 @@ class QaProjectRoleMatrixTest {
 
     @ParameterizedTest(name = "org {0} × project {1} × {2}")
     @MethodSource("matrix")
-    @Tag("AC-2.1") @Tag("AC-2.2") @Tag("AC-3.1") @Tag("AC-3.4") @Tag("AC-3.7") @Tag("AC-4.1") @Tag("AC-4.3")
-    @Tag("AC-5.1") @Tag("AC-5.2") @Tag("AC-5.6") @Tag("AC-5.7") @Tag("AC-5.9") @Tag("AC-7.1") @Tag("AC-1.2")
+    @Tag("AC-2.1")
+    @Tag("AC-2.2")
+    @Tag("AC-3.1")
+    @Tag("AC-3.4")
+    @Tag("AC-3.7")
+    @Tag("AC-4.1")
+    @Tag("AC-4.3")
+    @Tag("AC-5.1")
+    @Tag("AC-5.2")
+    @Tag("AC-5.6")
+    @Tag("AC-5.7")
+    @Tag("AC-5.9")
+    @Tag("AC-7.1")
+    @Tag("AC-1.2")
     @DisplayName("qa D3/D4 matrix: organization role × explicit project role × operation")
     void everyOrganizationRoleTimesEveryProjectRoleTimesEveryOperation(String orgRoleName, String explicitName, Op op)
             throws Exception {

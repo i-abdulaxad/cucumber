@@ -27,7 +27,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @ExtendWith(OutputCaptureExtension.class)
 class JwtSecretStartupTest {
 
-    /** The standard Base64 of 32 bytes: too short for HS512. */
+    /**
+     * The standard Base64 of 32 bytes: too short for HS512.
+     */
     private static final String SHORT_SECRET = Base64.getEncoder().encodeToString(
             "thirty-two bytes of TEST secret!".getBytes(StandardCharsets.US_ASCII));
 

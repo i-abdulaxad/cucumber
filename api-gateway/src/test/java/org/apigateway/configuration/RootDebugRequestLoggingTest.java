@@ -34,7 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(OutputCaptureExtension.class)
 class RootDebugRequestLoggingTest extends GatewayIntegrationTest {
 
-    /** The loggers that log bodies, URLs with path secrets, headers or credentials at DEBUG (FU-2). */
+    /**
+     * The loggers that log bodies, URLs with path secrets, headers or credentials at DEBUG (FU-2).
+     */
     private static final List<String> REQUEST_LOGGERS = List.of(
             "org.springframework.web.servlet.DispatcherServlet",
             "org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor",
@@ -79,8 +81,8 @@ class RootDebugRequestLoggingTest extends GatewayIntegrationTest {
                             + "\"}"))).statusCode()).isEqualTo(200);
             AUTH_SERVICE.respondWith(StubResponse.json(201, "{\"user\":{\"email\":\"" + EMAIL + "\"}}"));
             assertThat(gateway.send(gateway.request("/api/auth/invitations/" + PATH_TOKEN + "/accept")
-                    .header("Content-Type", "application/json")
-                    .POST(BodyPublishers.ofString("{\"password\":\"" + PASSWORD + "\",\"fullName\":\"Gw Debug\"}")))
+                            .header("Content-Type", "application/json")
+                            .POST(BodyPublishers.ofString("{\"password\":\"" + PASSWORD + "\",\"fullName\":\"Gw Debug\"}")))
                     .statusCode()).isEqualTo(201);
             AUTH_SERVICE.respondWith(StubResponse.ok());
             assertThat(gateway.send(gateway.request("/api/orgs")
@@ -89,9 +91,9 @@ class RootDebugRequestLoggingTest extends GatewayIntegrationTest {
                     .GET()).statusCode()).isEqualTo(200);
             SCENARIO_SERVICE.respondWith(StubResponse.json(201, "{\"source\":\"" + GHERKIN + "\"}"));
             assertThat(gateway.send(gateway.request(features)
-                    .header("Authorization", "Bearer " + jwt)
-                    .header("Content-Type", "application/json")
-                    .POST(BodyPublishers.ofString("{\"path\":\"a.feature\",\"source\":\"" + GHERKIN + "\"}")))
+                            .header("Authorization", "Bearer " + jwt)
+                            .header("Content-Type", "application/json")
+                            .POST(BodyPublishers.ofString("{\"path\":\"a.feature\",\"source\":\"" + GHERKIN + "\"}")))
                     .statusCode()).isEqualTo(201);
         } finally {
             loggingSystem.setLogLevel(LoggingSystem.ROOT_LOGGER_NAME, rootLevel);

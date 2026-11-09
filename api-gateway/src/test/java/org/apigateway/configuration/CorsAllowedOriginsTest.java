@@ -39,7 +39,7 @@ class CorsAllowedOriginsTest {
         // Given
         Map<String, Object> environment = GatewayLauncher.testEnvironment();
         allowedOrigins.ifPresent(origins -> environment.put("CORS_ALLOWED_ORIGINS", origins));
-        String[] profiles = devProfile ? new String[] {"dev"} : new String[0];
+        String[] profiles = devProfile ? new String[]{"dev"} : new String[0];
 
         try (ConfigurableApplicationContext context = GatewayLauncher.run(environment, profiles)) {
             GatewayClient gateway = new GatewayClient(((WebServerApplicationContext) context).getWebServer().getPort());

@@ -8,16 +8,16 @@ The API contract is `docs/api/scenario-service.openapi.yaml`.
 The contract is `docs/api/scenario-service.openapi.yaml` (1.0.4). Every operation is project-scoped and needs a bearer
 token; through the gateway the base URL is `http://localhost:8080`, directly `http://localhost:8082`.
 
-| Operation | Method and path | Minimum project role |
-|---|---|---|
-| List features (`?archived=true`, `?tag=@x`) | `GET /api/projects/{projectId}/features` | `READER` |
-| Create a feature from Gherkin text | `POST /api/projects/{projectId}/features` | `MEMBER` |
-| View a feature (text and structure) | `GET /api/projects/{projectId}/features/{featureId}` | `READER` |
-| Save a new version, or change the path | `PUT /api/projects/{projectId}/features/{featureId}` (with `baseVersion`) | `MEMBER` |
-| Archive, restore | `POST /api/projects/{projectId}/features/{featureId}/archive`, `.../restore` | `MEMBER` |
-| Version history, one version's text | `GET .../features/{featureId}/versions`, `.../versions/{version}` | `READER` |
-| Test cases of the current version | `GET .../features/{featureId}/test-cases` | `READER` |
-| Tag catalogue | `GET /api/projects/{projectId}/tags` | `READER` |
+| Operation                                   | Method and path                                                              | Minimum project role |
+|---------------------------------------------|------------------------------------------------------------------------------|----------------------|
+| List features (`?archived=true`, `?tag=@x`) | `GET /api/projects/{projectId}/features`                                     | `READER`             |
+| Create a feature from Gherkin text          | `POST /api/projects/{projectId}/features`                                    | `MEMBER`             |
+| View a feature (text and structure)         | `GET /api/projects/{projectId}/features/{featureId}`                         | `READER`             |
+| Save a new version, or change the path      | `PUT /api/projects/{projectId}/features/{featureId}` (with `baseVersion`)    | `MEMBER`             |
+| Archive, restore                            | `POST /api/projects/{projectId}/features/{featureId}/archive`, `.../restore` | `MEMBER`             |
+| Version history, one version's text         | `GET .../features/{featureId}/versions`, `.../versions/{version}`            | `READER`             |
+| Test cases of the current version           | `GET .../features/{featureId}/test-cases`                                    | `READER`             |
+| Tag catalogue                               | `GET /api/projects/{projectId}/tags`                                         | `READER`             |
 
 - Every error is an RFC 9457 Problem with a stable `code` (for example `GHERKIN_INVALID` with `parseErrors`,
   `VERSION_CONFLICT` with `currentVersion`, `FEATURE_PATH_TAKEN`). The order of checks is in the contract.
@@ -27,14 +27,14 @@ token; through the gateway the base URL is `http://localhost:8080`, directly `ht
 
 ### Limits
 
-| Limit | Value | Answer when exceeded |
-|---|---|---|
-| `source` length | 1,000,000 code points | 400 `VALIDATION_FAILED` (`source`) |
-| Elements per feature: Rules, Backgrounds, Scenarios, Outlines, Examples blocks, steps, example rows, and each tag on each of them (data-table cells and doc-string text don't count) | 10,000 | 400 `VALIDATION_FAILED` (`source`), after parsing |
-| `path` length | 1,024 code points | 400 `VALIDATION_FAILED` (`path`) |
-| `message` length | 500 code points (counted before trimming) | 400 `VALIDATION_FAILED` (`message`) |
-| `tag` filter | one value, at most 1,000 code points | 400 `VALIDATION_FAILED` (`tag`) |
-| `# encoding:` pragma | UTF-8 only | 422 `GHERKIN_INVALID`, one parse error at 1:1 |
+| Limit                                                                                                                                                                                | Value                                     | Answer when exceeded                              |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|---------------------------------------------------|
+| `source` length                                                                                                                                                                      | 1,000,000 code points                     | 400 `VALIDATION_FAILED` (`source`)                |
+| Elements per feature: Rules, Backgrounds, Scenarios, Outlines, Examples blocks, steps, example rows, and each tag on each of them (data-table cells and doc-string text don't count) | 10,000                                    | 400 `VALIDATION_FAILED` (`source`), after parsing |
+| `path` length                                                                                                                                                                        | 1,024 code points                         | 400 `VALIDATION_FAILED` (`path`)                  |
+| `message` length                                                                                                                                                                     | 500 code points (counted before trimming) | 400 `VALIDATION_FAILED` (`message`)               |
+| `tag` filter                                                                                                                                                                         | one value, at most 1,000 code points      | 400 `VALIDATION_FAILED` (`tag`)                   |
+| `# encoding:` pragma                                                                                                                                                                 | UTF-8 only                                | 422 `GHERKIN_INVALID`, one parse error at 1:1     |
 
 Parsing and the element count happen before the database transaction; under the project's write lock only the
 inserts run, as JDBC batches (`hibernate.jdbc.batch_size` and the driver's `reWriteBatchedInserts`). A 10,000-element
@@ -86,13 +86,13 @@ SCENARIO_DB_URL='jdbc:postgresql://localhost:5432/scenario_service' SCENARIO_DB_
 
 ## Settings
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `spring.datasource.url` (`SCENARIO_DB_URL`) | none (the `dev` profile sets one) | JDBC URL of the scenario_service database, without credentials |
-| `spring.datasource.username` (`SCENARIO_DB_USERNAME`) | none (the `dev` profile sets one) | Database role |
-| `spring.datasource.password` (`SCENARIO_DB_PASSWORD`) | none (`.env` with the `dev` profile) | Database password; never logged |
-| `app.jwtSecret` (`JWT_SECRET`) | none (`.env` with the `dev` profile) | Shared HS512 secret, standard Base64 of at least 64 bytes; never logged |
-| `app.auth-service.base-url` (`AUTH_SERVICE_URL`) | `http://localhost:8081` | auth-service, called directly (not through the gateway) for the access check |
+| Setting                                               | Default                              | Meaning                                                                      |
+|-------------------------------------------------------|--------------------------------------|------------------------------------------------------------------------------|
+| `spring.datasource.url` (`SCENARIO_DB_URL`)           | none (the `dev` profile sets one)    | JDBC URL of the scenario_service database, without credentials               |
+| `spring.datasource.username` (`SCENARIO_DB_USERNAME`) | none (the `dev` profile sets one)    | Database role                                                                |
+| `spring.datasource.password` (`SCENARIO_DB_PASSWORD`) | none (`.env` with the `dev` profile) | Database password; never logged                                              |
+| `app.jwtSecret` (`JWT_SECRET`)                        | none (`.env` with the `dev` profile) | Shared HS512 secret, standard Base64 of at least 64 bytes; never logged      |
+| `app.auth-service.base-url` (`AUTH_SERVICE_URL`)      | `http://localhost:8081`              | auth-service, called directly (not through the gateway) for the access check |
 
 - A missing or blank `SCENARIO_DB_*` value stops start-up with a message that names the variable and never shows a
   value.

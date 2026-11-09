@@ -29,7 +29,9 @@ import static org.scenarioservice.support.ProblemAssertions.body;
 import static org.scenarioservice.support.ScenarioFixture.CHECKOUT;
 import static org.scenarioservice.support.ScenarioFixture.GUS;
 
-/** AC-1.19 (D21 #1, BUG-1; end to end): only UTF-8 encoding pragmas are accepted. */
+/**
+ * AC-1.19 (D21 #1, BUG-1; end to end): only UTF-8 encoding pragmas are accepted.
+ */
 @ScenarioServiceIntegrationTest
 class EncodingPragmaTest {
 

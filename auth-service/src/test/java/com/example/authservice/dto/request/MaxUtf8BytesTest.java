@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MaxUtf8BytesTest {
 
-    /** The euro sign is 3 bytes in UTF-8. */
+    /**
+     * The euro sign is 3 bytes in UTF-8.
+     */
     private static final String EURO = "€";
 
     private static ValidatorFactory factory;

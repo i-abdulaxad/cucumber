@@ -3,7 +3,8 @@
 -- PostgreSQL's default delete rule) and enum checks. Only the constraint names differ: they're readable (D4 "Names").
 -- Every later difference is its own migration (V2 onwards).
 
-CREATE TABLE users (
+CREATE TABLE users
+(
     id            uuid         NOT NULL,
     email         varchar(255) NOT NULL,
     password_hash varchar(255),
@@ -17,7 +18,8 @@ CREATE TABLE users (
     CONSTRAINT ck_users_status_values CHECK (status IN ('ACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'))
 );
 
-CREATE TABLE organizations (
+CREATE TABLE organizations
+(
     id         uuid NOT NULL,
     name       varchar(255),
     plan       varchar(255),
@@ -27,7 +29,8 @@ CREATE TABLE organizations (
     CONSTRAINT ck_organizations_plan_values CHECK (plan IN ('FREE', 'TEAM', 'ENTERPRISE'))
 );
 
-CREATE TABLE org_memberships (
+CREATE TABLE org_memberships
+(
     id         uuid NOT NULL,
     user_id    uuid NOT NULL,
     org_id     uuid NOT NULL,
@@ -40,7 +43,8 @@ CREATE TABLE org_memberships (
     CONSTRAINT fk_org_memberships_org_id FOREIGN KEY (org_id) REFERENCES organizations (id)
 );
 
-CREATE TABLE projects (
+CREATE TABLE projects
+(
     id          uuid NOT NULL,
     org_id      uuid NOT NULL,
     name        varchar(255),
@@ -50,7 +54,8 @@ CREATE TABLE projects (
     CONSTRAINT fk_projects_org_id FOREIGN KEY (org_id) REFERENCES organizations (id)
 );
 
-CREATE TABLE project_memberships (
+CREATE TABLE project_memberships
+(
     id         uuid NOT NULL,
     user_id    uuid NOT NULL,
     project_id uuid NOT NULL,
@@ -63,7 +68,8 @@ CREATE TABLE project_memberships (
     CONSTRAINT fk_project_memberships_project_id FOREIGN KEY (project_id) REFERENCES projects (id)
 );
 
-CREATE TABLE invitations (
+CREATE TABLE invitations
+(
     id         uuid NOT NULL,
     email      varchar(255),
     org_id     uuid NOT NULL,
@@ -81,7 +87,8 @@ CREATE TABLE invitations (
     CONSTRAINT fk_invitations_invited_by FOREIGN KEY (invited_by) REFERENCES users (id)
 );
 
-CREATE TABLE audit_log (
+CREATE TABLE audit_log
+(
     id             uuid NOT NULL,
     actor_id       uuid NOT NULL,
     action         varchar(255),

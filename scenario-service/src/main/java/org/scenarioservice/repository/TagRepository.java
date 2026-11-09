@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** The tag catalogue; lookups by name compare {@code md5(name)} (so the unique index is used) and the name itself. */
+/**
+ * The tag catalogue; lookups by name compare {@code md5(name)} (so the unique index is used) and the name itself.
+ */
 public interface TagRepository extends JpaRepository<Tag, UUID> {
 
     @Query(value = "SELECT * FROM tags WHERE project_id = :projectId AND md5(name) = md5(CAST(:name AS text)) "

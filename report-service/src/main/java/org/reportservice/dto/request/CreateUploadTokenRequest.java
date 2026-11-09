@@ -19,7 +19,9 @@ public record CreateUploadTokenRequest(
 
         Instant expiresAt) {
 
-    /** 1–100 code points, no control character or lone surrogate, not Unicode-blank. */
+    /**
+     * 1–100 code points, no control character or lone surrogate, not Unicode-blank.
+     */
     public static final String NAME_RULE = "(?=[\\s\\S]*[^\\p{javaWhitespace}\\p{javaSpaceChar}"
             + "\\u200B\\u200C\\u200D\\u2060\\uFEFF])[^\\p{Cc}\\p{Cs}]{1,100}";
 

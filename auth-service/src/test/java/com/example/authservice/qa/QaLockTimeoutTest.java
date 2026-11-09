@@ -248,7 +248,9 @@ class QaLockTimeoutTest {
                         .orElseThrow().getRole());
     }
 
-    /** Plain HTTP calls to an app started on a scratch database. */
+    /**
+     * Plain HTTP calls to an app started on a scratch database.
+     */
     private record Http(ConfigurableApplicationContext app) {
 
         private static final HttpClient CLIENT = HttpClient.newHttpClient();

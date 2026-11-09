@@ -143,7 +143,7 @@ class RequestCorrelationTest {
     @MethodSource("missingOrInvalidRequestIds")
     @Tag("AC-9.7")
     void aMissingOrInvalidRequestIdIsReplacedInTheLogsAndNeverEchoed(String row, String header,
-                                                                       CapturedOutput output) throws Exception {
+                                                                     CapturedOutput output) throws Exception {
         // Given
         String token = tokenOf(mockMvc, "ana@example.com");
         atDebug(ASPECT_LOGGER);

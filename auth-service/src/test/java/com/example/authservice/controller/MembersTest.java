@@ -368,9 +368,9 @@ class MembersTest {
     void anAcceptedMemberAppearsInTheMemberList() throws Exception {
         // Given Ben has invited Fay, and Fay has registered and accepted while logged in
         String token = JsonPath.read(mockMvc.perform(post("/api/orgs/" + acme.orgId() + "/invitations")
-                .header(HttpHeaders.AUTHORIZATION, bearer(tokenOf(mockMvc, "ben@example.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"fay@example.com\",\"role\":\"MEMBER\"}")).andReturn()
+                        .header(HttpHeaders.AUTHORIZATION, bearer(tokenOf(mockMvc, "ben@example.com")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"fay@example.com\",\"role\":\"MEMBER\"}")).andReturn()
                 .getResponse().getContentAsString(), "$.token");
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"fay@example.com\",\"password\":\"Secret123!\",\"fullName\":\"Fay Lin\"}"));
@@ -441,7 +441,9 @@ class MembersTest {
         };
     }
 
-    /** The user's role in Acme, or {@code null} if they aren't a member. */
+    /**
+     * The user's role in Acme, or {@code null} if they aren't a member.
+     */
     private OrganizationRole roleOf(User user) {
         return orgMembershipRepository.findByUserIdAndOrganizationId(user.getId(), acme.orgId())
                 .map(OrgMembership::getRole)

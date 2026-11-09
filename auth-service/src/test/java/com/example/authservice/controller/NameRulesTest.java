@@ -150,7 +150,9 @@ class NameRulesTest {
         return calls.as(actor, builder, body);
     }
 
-    /** A valid body for the request, in which {@code field} is the given JSON value. */
+    /**
+     * A valid body for the request, in which {@code field} is the given JSON value.
+     */
     private static String body(String request, String field, String jsonValue) {
         return switch (request) {
             case "REGISTER" -> "{\"email\":\"fay@example.com\",\"password\":\"Secret123!\",\"fullName\":" + jsonValue

@@ -132,7 +132,9 @@ class QaParameterDecodingTest {
         assertThat(log.lines()).noneMatch(line -> line.contains(MARKER));
     }
 
-    /** Sends the request line exactly as written; returns {status, body}. */
+    /**
+     * Sends the request line exactly as written; returns {status, body}.
+     */
     private static String[] raw(String method, String target, String body, List<String> headers) throws Exception {
         int port = Integer.parseInt(server.bean(org.springframework.core.env.Environment.class)
                 .getProperty("local.server.port"));

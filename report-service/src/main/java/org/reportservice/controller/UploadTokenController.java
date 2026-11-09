@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-/** Upload tokens (US-1, contract C1 tag "Upload tokens"). */
+/**
+ * Upload tokens (US-1, contract C1 tag "Upload tokens").
+ */
 @RestController
 @RequestMapping("/api/projects/{projectId}/upload-tokens")
 public class UploadTokenController {

@@ -15,7 +15,9 @@ public class InvalidFieldsException extends ApiException {
         this.fields = Map.copyOf(fields);
     }
 
-    /** Field name to reason. */
+    /**
+     * Field name to reason.
+     */
     public Map<String, String> fields() {
         return fields;
     }

@@ -42,7 +42,9 @@ class RootDebugRequestLoggingTest {
 
     private static final String PATH = "features/checkout/payment.feature";
 
-    /** The loggers that log bodies, URLs with path secrets, headers or credentials at DEBUG (FU-2). */
+    /**
+     * The loggers that log bodies, URLs with path secrets, headers or credentials at DEBUG (FU-2).
+     */
     private static final List<String> REQUEST_LOGGERS = List.of(
             "org.springframework.web.servlet.DispatcherServlet",
             "org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor",

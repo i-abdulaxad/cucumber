@@ -20,7 +20,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** A step of the current version (ERD {@code steps}) with at most one argument (ERD-D6). */
+/**
+ * A step of the current version (ERD {@code steps}) with at most one argument (ERD-D6).
+ */
 @Entity
 @Table(name = "steps")
 @Getter
@@ -72,7 +74,9 @@ public class Step extends AssignedIdEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    /** Without text or argument (P16). */
+    /**
+     * Without text or argument (P16).
+     */
     @Override
     public String toString() {
         return "Step[id=" + id + ", keyword=" + keyword + ", position=" + position + "]";

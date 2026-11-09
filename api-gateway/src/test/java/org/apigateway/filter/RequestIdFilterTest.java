@@ -166,7 +166,9 @@ class RequestIdFilterTest extends GatewayIntegrationTest {
         assertThat(MDC.get(RequestIdFilter.MDC_KEY)).isNull();
     }
 
-    /** All {@code X-Request-Id} values of the response, in any letter case; there must be exactly one. */
+    /**
+     * All {@code X-Request-Id} values of the response, in any letter case; there must be exactly one.
+     */
     private static String theOnlyRequestId(HttpResponse<String> response) {
         List<String> requestIds = response.headers().allValues("X-Request-Id");
         assertThat(requestIds).as("X-Request-Id values in any letter case").hasSize(1);

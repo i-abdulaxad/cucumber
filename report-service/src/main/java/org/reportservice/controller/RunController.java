@@ -25,7 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.UUID;
 
-/** Runs of a project (US-3 to US-5, contract C1 tags "Runs" and "Results"). */
+/**
+ * Runs of a project (US-3 to US-5, contract C1 tags "Runs" and "Results").
+ */
 @RestController
 @RequestMapping("/api/projects/{projectId}/runs")
 public class RunController {

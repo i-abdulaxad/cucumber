@@ -63,7 +63,7 @@ class QaTimeZoneTest {
                 HttpResponse<String> invited = call(app, "POST", "/api/orgs/" + org + "/invitations",
                         "{\"email\":\"kit@example.com\",\"role\":\"MEMBER\"}", ben);
                 HttpResponse<String> accepted = call(app, "POST", "/api/auth/invitations/"
-                        + JsonPath.read(invited.body(), "$.token") + "/accept",
+                                + JsonPath.read(invited.body(), "$.token") + "/accept",
                         "{\"password\":\"Secret123!\",\"fullName\":\"Kit Hale\"}", null);
                 HttpResponse<String> project = call(app, "POST", "/api/orgs/" + org + "/projects",
                         "{\"name\":\"Zone Project QA\"}", ben);

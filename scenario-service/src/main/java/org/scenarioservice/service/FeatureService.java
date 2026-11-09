@@ -10,7 +10,9 @@ import org.scenarioservice.dto.response.FeatureVersionSummaryResponse;
 import java.util.List;
 import java.util.UUID;
 
-/** Feature use cases (US-1 to US-3). Each starts with the access check (D5), before any transaction (P13). */
+/**
+ * Feature use cases (US-1 to US-3). Each starts with the access check (D5), before any transaction (P13).
+ */
 public interface FeatureService {
 
     /**
@@ -25,7 +27,9 @@ public interface FeatureService {
 
     FeatureResponse save(UUID projectId, UUID featureId, UUID userId, SaveFeatureRequest request);
 
-    /** Archives the feature (D11); archiving an archived feature changes nothing. */
+    /**
+     * Archives the feature (D11); archiving an archived feature changes nothing.
+     */
     FeatureResponse archive(UUID projectId, UUID featureId, UUID userId);
 
     /**
@@ -33,7 +37,9 @@ public interface FeatureService {
      */
     FeatureResponse restore(UUID projectId, UUID featureId, UUID userId);
 
-    /** The history, newest first (D9). */
+    /**
+     * The history, newest first (D9).
+     */
     List<FeatureVersionSummaryResponse> versions(UUID projectId, UUID featureId);
 
     FeatureVersionResponse version(UUID projectId, UUID featureId, int version);

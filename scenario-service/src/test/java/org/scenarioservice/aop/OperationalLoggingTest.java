@@ -238,7 +238,9 @@ class OperationalLoggingTest {
         return mockMvc.perform(request.header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
     }
 
-    /** The default levels of application.yaml (none set for these loggers), for the request only. */
+    /**
+     * The default levels of application.yaml (none set for these loggers), for the request only.
+     */
     private RequestLog withDefaultLevels(CapturedOutput output, Request request) throws Exception {
         Map<String, LogLevel> defaults = new LinkedHashMap<>();
         defaults.put(ASPECT_LOGGER, null);
@@ -246,7 +248,9 @@ class OperationalLoggingTest {
         return withLevels(defaults, output, request);
     }
 
-    /** Sets the levels right before the request and restores the levels found, in {@code finally} (W3). */
+    /**
+     * Sets the levels right before the request and restores the levels found, in {@code finally} (W3).
+     */
     private RequestLog withLevels(Map<String, LogLevel> levels, CapturedOutput output, Request request)
             throws Exception {
         Map<String, LogLevel> found = new LinkedHashMap<>();

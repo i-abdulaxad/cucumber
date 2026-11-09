@@ -18,23 +18,33 @@ public interface FeatureRepository extends JpaRepository<Feature, UUID> {
 
     Optional<Feature> findByIdAndProjectId(UUID id, UUID projectId);
 
-    /** The project's active features (D11). */
+    /**
+     * The project's active features (D11).
+     */
     List<Feature> findByProjectIdAndArchivedAtIsNull(UUID projectId);
 
-    /** The project's archived features (D11). */
+    /**
+     * The project's archived features (D11).
+     */
     List<Feature> findByProjectIdAndArchivedAtIsNotNull(UUID projectId);
 
-    /** The project's active features whose current version uses the tag anywhere (D12). */
+    /**
+     * The project's active features whose current version uses the tag anywhere (D12).
+     */
     @Query("SELECT DISTINCT f FROM Feature f, TagAssignment a WHERE a.featureId = f.id AND a.tagId = :tagId "
             + "AND f.projectId = :projectId AND f.archivedAt IS NULL")
     List<Feature> findActiveWithTag(@Param("projectId") UUID projectId, @Param("tagId") UUID tagId);
 
-    /** The project's archived features whose current version uses the tag anywhere (D12, D19 #4). */
+    /**
+     * The project's archived features whose current version uses the tag anywhere (D12, D19 #4).
+     */
     @Query("SELECT DISTINCT f FROM Feature f, TagAssignment a WHERE a.featureId = f.id AND a.tagId = :tagId "
             + "AND f.projectId = :projectId AND f.archivedAt IS NOT NULL")
     List<Feature> findArchivedWithTag(@Param("projectId") UUID projectId, @Param("tagId") UUID tagId);
 
-    /** Whether an active feature of the project has this path, ignoring case as the unique index does. */
+    /**
+     * Whether an active feature of the project has this path, ignoring case as the unique index does.
+     */
     @Query(value = """
             SELECT EXISTS (SELECT 1 FROM features
                 WHERE project_id = :projectId AND archived_at IS NULL
@@ -43,7 +53,9 @@ public interface FeatureRepository extends JpaRepository<Feature, UUID> {
             """, nativeQuery = true)
     boolean isPathTaken(@Param("projectId") UUID projectId, @Param("path") String path);
 
-    /** As {@link #isPathTaken}, ignoring the feature itself (a save or restore). */
+    /**
+     * As {@link #isPathTaken}, ignoring the feature itself (a save or restore).
+     */
     @Query(value = """
             SELECT EXISTS (SELECT 1 FROM features
                 WHERE project_id = :projectId AND archived_at IS NULL AND id <> :featureId

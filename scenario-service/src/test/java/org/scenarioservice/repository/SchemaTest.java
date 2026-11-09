@@ -255,7 +255,9 @@ class SchemaTest {
         assertThat(unindexed).isEmpty();
     }
 
-    /** Constraints of the given types ({@code pg_constraint.contype}), by name, as PostgreSQL prints them. */
+    /**
+     * Constraints of the given types ({@code pg_constraint.contype}), by name, as PostgreSQL prints them.
+     */
     private Map<String, String> constraints(String... types) {
         return jdbc.queryForList("SELECT conname, pg_get_constraintdef(oid) AS def FROM pg_constraint "
                         + "WHERE connamespace = 'public'::regnamespace AND contype::text IN ('"

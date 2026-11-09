@@ -7,8 +7,8 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "jwt")
 public record JwtProperties(
-    @NotBlank(message = "must be set through the JWT_SECRET environment variable")
-    String secret
+        @NotBlank(message = "must be set through the JWT_SECRET environment variable")
+        String secret
 ) {
 
     @Override

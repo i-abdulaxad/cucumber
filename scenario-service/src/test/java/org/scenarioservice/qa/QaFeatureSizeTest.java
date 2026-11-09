@@ -263,7 +263,9 @@ class QaFeatureSizeTest {
         assertThat(problem).doesNotContainKey("parseErrors");
     }
 
-    /** A valid text with exactly {@code elements} elements (D21), built from one element kind. */
+    /**
+     * A valid text with exactly {@code elements} elements (D21), built from one element kind.
+     */
     static String source(String kind, int elements) {
         StringBuilder text = new StringBuilder();
         switch (kind) {

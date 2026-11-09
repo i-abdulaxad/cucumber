@@ -161,7 +161,7 @@ class QaJwtAndLeakageTest {
         String token = TestTokens.withSubject(GUS.id().toString().toUpperCase(Locale.ROOT), GUS.email());
 
         MvcResult result = mockMvc.perform(post(features(CHECKOUT)).header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .contentType("application/json").content("{\"path\":\"features/a.feature\",\"source\":\"Feature: A\\n\"}"))
+                        .contentType("application/json").content("{\"path\":\"features/a.feature\",\"source\":\"Feature: A\\n\"}"))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).as(body(result)).isEqualTo(201);

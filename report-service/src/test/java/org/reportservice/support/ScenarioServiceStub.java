@@ -41,7 +41,9 @@ public final class ScenarioServiceStub {
     public static final UUID R_OLD5 = UUID.fromString("e0000000-0000-4000-8000-000000000004");
     public static final UUID S_ADDRESS = UUID.fromString("5c000000-0000-4000-8000-000000000005");
 
-    /** What a test can make one kind of call do. */
+    /**
+     * What a test can make one kind of call do.
+     */
     public enum Kind {
         LIST,
         TEST_CASES
@@ -74,7 +76,9 @@ public final class ScenarioServiceStub {
         return instance;
     }
 
-    /** Back to the fixture's answers, running, with no recorded request. */
+    /**
+     * Back to the fixture's answers, running, with no recorded request.
+     */
     public synchronized void reset() {
         received.clear();
         fixedAnswers.clear();
@@ -98,7 +102,9 @@ public final class ScenarioServiceStub {
         return List.copyOf(received);
     }
 
-    /** Answers every call of this kind with this status and body. */
+    /**
+     * Answers every call of this kind with this status and body.
+     */
     public void answer(Kind kind, int status, String body) {
         fixedAnswers.put(kind, new Answer(status, body));
     }
@@ -107,12 +113,16 @@ public final class ScenarioServiceStub {
         delay = wait;
     }
 
-    /** From the second feature list on, Payment's {@code currentVersion} is this (AC-3.6). */
+    /**
+     * From the second feature list on, Payment's {@code currentVersion} is this (AC-3.6).
+     */
     public void paymentVersionFromSecondList(int version) {
         paymentVersionFromSecondList = version;
     }
 
-    /** Payment gets this many more test cases (AC-3.5). */
+    /**
+     * Payment gets this many more test cases (AC-3.5).
+     */
     public void extraPaymentTestCases(int count) {
         extraPaymentTestCases = count;
     }
@@ -232,7 +242,9 @@ public final class ScenarioServiceStub {
                 + ",\"name\":\"" + name + "\",\"tags\":" + tags + ",\"line\":" + line + ",\"steps\":" + steps + "}";
     }
 
-    /** One request the stub received. */
+    /**
+     * One request the stub received.
+     */
     public record Received(String method, String path, String query, String authorization, String requestId) {
     }
 

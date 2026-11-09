@@ -254,7 +254,9 @@ class DatabaseRulesTest {
                 "fk_projects_org_id r indexed");
     }
 
-    /** All rows that depend on users, organizations or projects. */
+    /**
+     * All rows that depend on users, organizations or projects.
+     */
     private long dependents() {
         return jdbc.queryForObject("SELECT (SELECT count(*) FROM org_memberships) + (SELECT count(*) FROM projects)"
                 + " + (SELECT count(*) FROM project_memberships) + (SELECT count(*) FROM invitations)", Long.class);
@@ -272,7 +274,9 @@ class DatabaseRulesTest {
         }
     }
 
-    /** Inserts a project in the connection's open transaction; returns the SQLState it failed with, or null. */
+    /**
+     * Inserts a project in the connection's open transaction; returns the SQLState it failed with, or null.
+     */
     private static String insertProject(Connection connection, UUID orgId, String name) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "INSERT INTO projects (id, org_id, name, created_at) VALUES (gen_random_uuid(), ?, ?, now())")) {
@@ -307,7 +311,9 @@ class DatabaseRulesTest {
         }
     }
 
-    /** A fixture row: its table, a WHERE clause with placeholders, and the parameter values. */
+    /**
+     * A fixture row: its table, a WHERE clause with placeholders, and the parameter values.
+     */
     private record Row(String table, String where, Object... ids) {
     }
 }

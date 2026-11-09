@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-/** {@code GET /api/projects/{projectId}/features/{featureId}/test-cases} (contract C1, US-4). HTTP only (PL). */
+/**
+ * {@code GET /api/projects/{projectId}/features/{featureId}/test-cases} (contract C1, US-4). HTTP only (PL).
+ */
 @RestController
 @RequestMapping("/api/projects/{projectId}/features/{featureId}/test-cases")
 public class TestCaseController {

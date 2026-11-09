@@ -147,7 +147,9 @@ class ConnectionUnavailableTest {
                 : "/api/orgs";
     }
 
-    /** Takes every connection of the pool, so that the next request waits its connection-timeout and gets none. */
+    /**
+     * Takes every connection of the pool, so that the next request waits its connection-timeout and gets none.
+     */
     private static List<Connection> holdEveryConnection() throws SQLException {
         DataSource dataSource = server.bean(DataSource.class);
         List<Connection> held = new ArrayList<>();

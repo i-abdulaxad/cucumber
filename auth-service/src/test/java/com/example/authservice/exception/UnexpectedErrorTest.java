@@ -35,7 +35,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class UnexpectedErrorTest {
 
     private static final String INTERNAL_MESSAGE = "SELECT secret FROM x at db-host:5432";
-    /** Spring Boot's console pattern: timestamp, then the level. */
+    /**
+     * Spring Boot's console pattern: timestamp, then the level.
+     */
     private static final Pattern ERROR_ENTRY = Pattern.compile("(?m)^\\S+\\s+ERROR\\s");
 
     @Autowired

@@ -51,7 +51,9 @@ class ScenarioServiceRoutesTest extends GatewayIntegrationTest {
         stubsOtherThan(SCENARIO_SERVICE).forEach(other -> assertThat(other.requests()).as(other.name()).isEmpty());
     }
 
-    /** The query's decoded parameters, sorted; empty without a query. */
+    /**
+     * The query's decoded parameters, sorted; empty without a query.
+     */
     private static List<String> parameters(String query) {
         if (query == null) {
             return List.of();

@@ -91,7 +91,9 @@ class CommitTimeOutcomeTest {
                 .matches("Leaving OrganizationServiceImpl\\.createOrganization: threw \\w+ in \\d+ ms"));
     }
 
-    /** Fails the insert into {@code organizations}, which Hibernate runs when the transaction flushes at commit. */
+    /**
+     * Fails the insert into {@code organizations}, which Hibernate runs when the transaction flushes at commit.
+     */
     static class FailingOrganizationInsert implements StatementInspector {
 
         private volatile boolean failing;

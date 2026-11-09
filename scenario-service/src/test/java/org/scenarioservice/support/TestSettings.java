@@ -26,13 +26,17 @@ public final class TestSettings {
 
     private static final ServerSocket RESERVATION = reserve();
 
-    /** The access check stub's port, the same for the whole test JVM. */
+    /**
+     * The access check stub's port, the same for the whole test JVM.
+     */
     public static final int ACCESS_CHECK_PORT = RESERVATION.getLocalPort();
 
     private TestSettings() {
     }
 
-    /** {@code http://localhost:<the reserved port>}, published as {@code app.auth-service.base-url}. */
+    /**
+     * {@code http://localhost:<the reserved port>}, published as {@code app.auth-service.base-url}.
+     */
     public static String accessCheckBaseUrl() {
         return "http://localhost:" + ACCESS_CHECK_PORT;
     }

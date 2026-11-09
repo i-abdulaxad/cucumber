@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public final class HttpCalls {
 
-    /** Things a Problem body must never contain (D13): internals, stack traces, the server's identity. */
+    /**
+     * Things a Problem body must never contain (D13): internals, stack traces, the server's identity.
+     */
     private static final String[] INTERNAL_MARKERS = {
             "Exception", "at com.example", "at org.", "at java.", "jakarta.", "Tomcat", "Apache", "jdbc:", "SELECT "
     };
@@ -38,7 +40,9 @@ public final class HttpCalls {
         this.origin = "http://127.0.0.1:" + port;
     }
 
-    /** Sends the request; {@code headers} are name/value pairs, {@code body} {@code null} for none (JSON otherwise). */
+    /**
+     * Sends the request; {@code headers} are name/value pairs, {@code body} {@code null} for none (JSON otherwise).
+     */
     public Answer send(String method, String rawPath, String body, String... headers)
             throws IOException, InterruptedException {
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(origin + rawPath))
@@ -77,7 +81,9 @@ public final class HttpCalls {
                 response.body());
     }
 
-    /** The parts of a response the tests check. */
+    /**
+     * The parts of a response the tests check.
+     */
     public record Answer(int status, Optional<String> contentType, Optional<String> wwwAuthenticate,
                          Optional<String> retryAfter, String body) {
 
@@ -100,7 +106,9 @@ public final class HttpCalls {
             return json;
         }
 
-        /** Asserts that nothing internal (stack trace, exception, server version) is in the body, Problem or not. */
+        /**
+         * Asserts that nothing internal (stack trace, exception, server version) is in the body, Problem or not.
+         */
         public void assertNoInternals() {
             assertThat(body).doesNotContain(INTERNAL_MARKERS);
         }

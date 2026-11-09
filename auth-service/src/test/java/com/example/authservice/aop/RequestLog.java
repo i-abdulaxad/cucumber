@@ -26,17 +26,23 @@ public final class RequestLog {
         this.lines = Arrays.stream(text.split("\\R")).filter(line -> !line.isBlank()).toList();
     }
 
-    /** The output captured since {@code start}, a length of {@link CapturedOutput#getAll()} taken before the request. */
+    /**
+     * The output captured since {@code start}, a length of {@link CapturedOutput#getAll()} taken before the request.
+     */
     public static RequestLog since(CapturedOutput output, int start) {
         return new RequestLog(output.getAll().substring(start));
     }
 
-    /** Every non-blank line, including stack trace lines. */
+    /**
+     * Every non-blank line, including stack trace lines.
+     */
     public List<String> lines() {
         return lines;
     }
 
-    /** The lines that start a log entry (timestamp, then the level). */
+    /**
+     * The lines that start a log entry (timestamp, then the level).
+     */
     public List<String> entries() {
         return lines.stream().filter(line -> ENTRY.matcher(line).find()).toList();
     }
@@ -53,7 +59,9 @@ public final class RequestLog {
         return entries().stream().filter(line -> line.matches("^\\S+\\s+" + level + "\\s.*")).count();
     }
 
-    /** Whether the line right after an aspect line belongs to a stack trace or names an exception with its message. */
+    /**
+     * Whether the line right after an aspect line belongs to a stack trace or names an exception with its message.
+     */
     public boolean anAspectLineIsFollowedByAStackTrace() {
         for (int i = 0; i < lines.size() - 1; i++) {
             if (ASPECT_ENTRY.matcher(lines.get(i)).matches() && !ENTRY.matcher(lines.get(i + 1)).find()) {
@@ -67,7 +75,9 @@ public final class RequestLog {
         return lines.stream().anyMatch(line -> STACK_TRACE_LINE.matcher(line).find());
     }
 
-    /** A log entry of the aspect: its level, its message, and the whole line. */
+    /**
+     * A log entry of the aspect: its level, its message, and the whole line.
+     */
     public record AspectLine(String level, String message, String line) {
     }
 }

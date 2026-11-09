@@ -88,7 +88,7 @@ class PlanRunTest {
 
         List<Map<String, Object>> results = jdbc.queryForList("SELECT * FROM test_case_results ORDER BY position");
         assertThat(results).extracting(row -> row.get("scenario_name"), row -> row.get("scenario_id"),
-                row -> row.get("example_row_id"), row -> row.get("feature_id"), row -> row.get("feature_version"))
+                        row -> row.get("example_row_id"), row -> row.get("feature_id"), row -> row.get("feature_version"))
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("Pay by card", S_CARD, null, PAYMENT, 2),
                         org.assertj.core.groups.Tuple.tuple("Pay with voucher SAVE10", S_VOUCHER, R_SAVE10, PAYMENT, 2),

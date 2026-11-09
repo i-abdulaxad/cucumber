@@ -50,7 +50,9 @@ class InvitationServiceImplTest {
     @Mock
     private AuthService authService;
 
-    /** The real Bean Validation provider, observable by Mockito. */
+    /**
+     * The real Bean Validation provider, observable by Mockito.
+     */
     @Spy
     private Validator validator = VALIDATOR_FACTORY.getValidator();
 

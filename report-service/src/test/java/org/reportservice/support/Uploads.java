@@ -13,7 +13,9 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-/** CI uploads in tests (US-2): {@code POST /api/ci/runs} with a token and a body, and the spec's tokens T1–T3. */
+/**
+ * CI uploads in tests (US-2): {@code POST /api/ci/runs} with a token and a body, and the spec's tokens T1–T3.
+ */
 public final class Uploads {
 
     public static final String PATH = "/api/ci/runs";
@@ -21,7 +23,9 @@ public final class Uploads {
     private Uploads() {
     }
 
-    /** Uploads {@code body} as JSON with {@code Authorization: Bearer <token>} and the raw query (or "" for none). */
+    /**
+     * Uploads {@code body} as JSON with {@code Authorization: Bearer <token>} and the raw query (or "" for none).
+     */
     public static MvcResult upload(MockMvc mockMvc, String token, String query, String body) throws Exception {
         // A URI keeps the query exactly as written (a String would be encoded once more as a URI template)
         MockHttpServletRequestBuilder request = post(URI.create(PATH + (query.isEmpty() ? "" : "?" + query)))
@@ -32,7 +36,9 @@ public final class Uploads {
         return mockMvc.perform(request).andReturn();
     }
 
-    /** {@code {T1}}: an active Checkout token created by Cai; returns its text. */
+    /**
+     * {@code {T1}}: an active Checkout token created by Cai; returns its text.
+     */
     public static String activeToken(JdbcTemplate jdbc, UUID projectId) {
         String token = ReportData.randomToken();
         ReportData.token(jdbc, projectId, "T1", token, ReportsFixture.CAI.id(), Instant.now(), null, null);

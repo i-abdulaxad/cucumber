@@ -56,7 +56,9 @@ public class RunQueryServiceImpl implements RunQueryService {
     static final int DEFAULT_RESULT_PAGE_SIZE = 100;
     static final int MAX_RESULT_PAGE_SIZE = 500;
 
-    /** One row of the first page: enough for the total of an empty far page (RE13). */
+    /**
+     * One row of the first page: enough for the total of an empty far page (RE13).
+     */
     private static final PageRequest FIRST_ROW = PageRequest.of(0, 1);
 
     private final ProjectAccessChecker accessChecker;
@@ -174,7 +176,9 @@ public class RunQueryServiceImpl implements RunQueryService {
         return runs.findByIdAndProjectId(runId, projectId).orElseThrow(RunNotFoundException::new);
     }
 
-    /** Page and size, defaulted and checked (AC-5.4), and the status filter when given; otherwise 400. */
+    /**
+     * Page and size, defaulted and checked (AC-5.4), and the status filter when given; otherwise 400.
+     */
     private static int[] paging(Integer page, Integer size, int defaultSize, int maxSize, String status) {
         Map<String, String> invalid = new TreeMap<>();
         int pageNumber = page == null ? 0 : page;

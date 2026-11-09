@@ -11,7 +11,9 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Where a run executed (ERD {@code environments}, D11): matched by exact name, created on first use. */
+/**
+ * Where a run executed (ERD {@code environments}, D11): matched by exact name, created on first use.
+ */
 @Entity
 @Table(name = "environments")
 @Getter

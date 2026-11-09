@@ -48,13 +48,19 @@ import java.util.regex.Pattern;
 @Component
 public class GherkinAdapter {
 
-    /** D8, D19 #8: the error for a text the parser accepts but that has no Feature. */
+    /**
+     * D8, D19 #8: the error for a text the parser accepts but that has no Feature.
+     */
     public static final String NO_FEATURE = "The text has no Feature";
 
-    /** D21 #1: the error for an encoding pragma that names any charset other than UTF-8. */
+    /**
+     * D21 #1: the error for an encoding pragma that names any charset other than UTF-8.
+     */
     public static final String ONLY_UTF_8 = "Only UTF-8 encoding is supported";
 
-    /** gherkin 28's own pragma rules ({@code EncodingParser}): leading comment or blank lines, case-insensitive. */
+    /**
+     * gherkin 28's own pragma rules ({@code EncodingParser}): leading comment or blank lines, case-insensitive.
+     */
     private static final Pattern COMMENT_OR_EMPTY_LINE = Pattern.compile("^\\s*#|^\\s*$");
     private static final Pattern ENCODING_PRAGMA =
             Pattern.compile("^\\s*#\\s*encoding\\s*:\\s*([0-9a-zA-Z\\-]+)", Pattern.CASE_INSENSITIVE);
@@ -66,7 +72,9 @@ public class GherkinAdapter {
 
     private final GherkinDialectProvider dialects = new GherkinDialectProvider();
 
-    /** Valid Gherkin with a Feature, or every error with its 1-based line and column, sorted (D8). */
+    /**
+     * Valid Gherkin with a Feature, or every error with its 1-based line and column, sorted (D8).
+     */
     public GherkinParseResult parse(String source) {
         if (!utf8Only(source)) {
             return new GherkinParseResult.Invalid(List.of(new GherkinParseError(1, 1, ONLY_UTF_8)));
@@ -198,7 +206,9 @@ public class GherkinAdapter {
                 step.getDocString().map(GherkinAdapter::docString).orElse(null))).toList();
     }
 
-    /** The normalised type from the dialect's keyword lists (keywords there keep their trailing space). */
+    /**
+     * The normalised type from the dialect's keyword lists (keywords there keep their trailing space).
+     */
     private static StepKeyword keywordType(String keyword, GherkinDialect dialect) {
         if (ASTERISK.equals(keyword)) {
             return StepKeyword.ASTERISK;
@@ -233,7 +243,9 @@ public class GherkinAdapter {
         return row.getCells().stream().map(TableCell::getValue).toList();
     }
 
-    /** Each tag once, at its first position (D19 #11). */
+    /**
+     * Each tag once, at its first position (D19 #11).
+     */
     private static List<String> tags(List<Tag> tags) {
         return List.copyOf(new LinkedHashSet<>(tags.stream().map(Tag::getName).toList()));
     }
@@ -268,7 +280,9 @@ public class GherkinAdapter {
         return new CompiledStep(index.keyword(step.getAstNodeIds().get(0)), step.getText(), dataTable, docString);
     }
 
-    /** The AST's node ids, mapped to text-order positions, lines and step keywords. */
+    /**
+     * The AST's node ids, mapped to text-order positions, lines and step keywords.
+     */
     private static final class AstIndex {
 
         private final Map<String, Integer> scenarioIndexes = new HashMap<>();

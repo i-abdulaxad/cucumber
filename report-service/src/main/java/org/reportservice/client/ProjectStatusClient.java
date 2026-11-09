@@ -49,7 +49,9 @@ public class ProjectStatusClient {
         this.jsonMapper = jsonMapper;
     }
 
-    /** Whether the project is archived, as C7 answers it now. */
+    /**
+     * Whether the project is archived, as C7 answers it now.
+     */
     public boolean isArchived(UUID projectId) {
         Answer answer;
         try {

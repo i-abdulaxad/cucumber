@@ -1,6 +1,8 @@
 package org.reportservice.exception;
 
-/** scenario-service couldn't be read (D6, AC-3.7): planning fails closed with 503. */
+/**
+ * scenario-service couldn't be read (D6, AC-3.7): planning fails closed with 503.
+ */
 public class ScenarioServiceUnavailableException extends ApiException {
 
     public ScenarioServiceUnavailableException() {

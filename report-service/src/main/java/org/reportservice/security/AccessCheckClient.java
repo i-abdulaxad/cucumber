@@ -18,7 +18,9 @@ import java.util.UUID;
 @Component
 public class AccessCheckClient {
 
-    /** C5's answer is a small JSON object; anything larger is not one. */
+    /**
+     * C5's answer is a small JSON object; anything larger is not one.
+     */
     static final int MAX_BODY_BYTES = 16 * 1024;
 
     private final RestClient restClient;
@@ -27,7 +29,9 @@ public class AccessCheckClient {
         this.restClient = restClient;
     }
 
-    /** Calls C5; I/O failures and timeouts surface as Spring's {@code RestClientException}s. */
+    /**
+     * Calls C5; I/O failures and timeouts surface as Spring's {@code RestClientException}s.
+     */
     public Answer fetch(UUID projectId, String token, String requestId) {
         return restClient.get()
                 .uri("/internal/projects/{projectId}/access", projectId)
@@ -46,7 +50,9 @@ public class AccessCheckClient {
                 });
     }
 
-    /** The status and body (null when it is too large) that C5 answered. */
+    /**
+     * The status and body (null when it is too large) that C5 answered.
+     */
     public record Answer(int status, String body) {
 
         @Override

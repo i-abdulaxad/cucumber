@@ -9,7 +9,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Assertions on the Problem format (D16, contract C3): {@code type}, {@code title}, {@code status} and so on. */
+/**
+ * Assertions on the Problem format (D16, contract C3): {@code type}, {@code title}, {@code status} and so on.
+ */
 public final class ProblemAssertions {
 
     private ProblemAssertions() {

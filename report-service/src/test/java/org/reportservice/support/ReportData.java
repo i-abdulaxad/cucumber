@@ -28,7 +28,9 @@ public final class ReportData {
         jdbc.update("DELETE FROM environments");
     }
 
-    /** Stores a token of the project with the given state and returns its id; the token text is {@code token}. */
+    /**
+     * Stores a token of the project with the given state and returns its id; the token text is {@code token}.
+     */
     public static UUID token(JdbcTemplate jdbc, UUID projectId, String name, String token, UUID createdBy,
                              Instant createdAt, Instant expiresAt, Instant revokedAt) {
         UUID id = UUID.randomUUID();
@@ -41,7 +43,9 @@ public final class ReportData {
         return id;
     }
 
-    /** The lower-case SHA-256 hex of the text, as {@code upload_tokens.token_hash} holds it (D4). */
+    /**
+     * The lower-case SHA-256 hex of the text, as {@code upload_tokens.token_hash} holds it (D4).
+     */
     public static String sha256Hex(String text) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
@@ -51,7 +55,9 @@ public final class ReportData {
         }
     }
 
-    /** A random token in D4's format (for rows stored directly). */
+    /**
+     * A random token in D4's format (for rows stored directly).
+     */
     public static String randomToken() {
         String hex = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
         return "rct_" + hex.substring(0, 43);

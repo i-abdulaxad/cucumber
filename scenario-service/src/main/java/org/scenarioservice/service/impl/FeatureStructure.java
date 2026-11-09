@@ -55,7 +55,9 @@ import java.util.stream.Collectors;
 @Component
 public class FeatureStructure {
 
-    /** The Feature itself as a container of scenarios. */
+    /**
+     * The Feature itself as a container of scenarios.
+     */
     private static final Container FEATURE = new Container(null, 0);
 
     private final RuleRepository rules;
@@ -78,7 +80,9 @@ public class FeatureStructure {
         this.tagAssignments = tagAssignments;
     }
 
-    /** Stores the structure of a new feature's first version, and returns the rows written. */
+    /**
+     * Stores the structure of a new feature's first version, and returns the rows written.
+     */
     public Written create(UUID projectId, UUID featureId, ParsedFeature parsed, Instant now) {
         return write(projectId, featureId, parsed, now, Previous.NONE);
     }
@@ -128,7 +132,9 @@ public class FeatureStructure {
         return new Written(writer.rules, writer.scenarios, writer.steps, writer.examples, writer.rows);
     }
 
-    /** The previous version's scenario ids by match key, and its example rows by outline and header. */
+    /**
+     * The previous version's scenario ids by match key, and its example rows by outline and header.
+     */
     private Previous previous(UUID featureId) {
         List<Rule> oldRules = rules.findByFeatureId(featureId).stream()
                 .sorted(Comparator.comparingInt(Rule::getPosition)).toList();
@@ -165,7 +171,9 @@ public class FeatureStructure {
         return new Previous(scenarioIds, rowPools);
     }
 
-    /** The scenario's match key, counting its occurrence among same-kind, same-name scenarios of the container. */
+    /**
+     * The scenario's match key, counting its occurrence among same-kind, same-name scenarios of the container.
+     */
     private static ScenarioKey key(Container container, ScenarioKind kind, String name,
                                    Map<Named, Integer> occurrences) {
         return new ScenarioKey(container, kind, name, next(occurrences, new Named(kind, name)));
@@ -175,7 +183,9 @@ public class FeatureStructure {
         return occurrences.merge(key, 1, Integer::sum);
     }
 
-    /** D21 #3: structured match keys; values are never joined into strings. */
+    /**
+     * D21 #3: structured match keys; values are never joined into strings.
+     */
     private record Container(String ruleName, int ruleOccurrence) {
     }
 
@@ -191,7 +201,9 @@ public class FeatureStructure {
     private record OldRow(UUID id, List<String> cells) {
     }
 
-    /** The rows one write stored, in insert order, so a response can be built without reading them back. */
+    /**
+     * The rows one write stored, in insert order, so a response can be built without reading them back.
+     */
     public record Written(List<Rule> rules, List<Scenario> scenarios, List<Step> steps, List<Examples> examples,
                           List<ExampleRow> rows) {
     }
@@ -205,7 +217,9 @@ public class FeatureStructure {
             return kept != null ? kept : UUID.randomUUID();
         }
 
-        /** The id of the first unused old row of this outline and header with these cells, or a new id. */
+        /**
+         * The id of the first unused old row of this outline and header with these cells, or a new id.
+         */
         UUID rowId(UUID outlineId, List<String> header, List<String> cells) {
             List<OldRow> pool = rowPools.get(new RowPool(outlineId, header));
             if (pool != null) {
@@ -219,7 +233,9 @@ public class FeatureStructure {
         }
     }
 
-    /** The rows of one write, collected in insert order (parents before children). */
+    /**
+     * The rows of one write, collected in insert order (parents before children).
+     */
     private final class Writer {
 
         private final UUID projectId;
@@ -286,7 +302,9 @@ public class FeatureStructure {
             }
         }
 
-        /** A tag the project doesn't have yet: created now and inserted with the others in one batch. */
+        /**
+         * A tag the project doesn't have yet: created now and inserted with the others in one batch.
+         */
         private Tag catalogueTag(String name) {
             Tag tag = Tag.builder().id(UUID.randomUUID()).projectId(projectId).name(name).createdAt(now).updatedAt(now)
                     .build();

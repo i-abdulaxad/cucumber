@@ -23,7 +23,9 @@ public final class TestTokens {
     public static final String SECRET =
             "YXBpLWdhdGV3YXkgVEVTVCBPTkxZIGhzNTEyIHNpZ25pbmcgc2VjcmV0OyBuZXZlciB1c2VkIGluIGEgcmVhbCBlbnZpcm9ubWVudA==";
 
-    /** The {@code sub} of {valid token} in the spec. */
+    /**
+     * The {@code sub} of {valid token} in the spec.
+     */
     public static final String USER_ID = "7f1c2a9e-0000-4000-8000-000000000001";
     public static final String EMAIL = "ana@example.com";
     public static final String FORGED_USER_ID = "00000000-0000-0000-0000-000000000666";
@@ -39,7 +41,9 @@ public final class TestTokens {
     private TestTokens() {
     }
 
-    /** {valid token}: HS512 with the shared secret, sub = {@link #USER_ID}, exp 1 hour after issue. */
+    /**
+     * {valid token}: HS512 with the shared secret, sub = {@link #USER_ID}, exp 1 hour after issue.
+     */
     public static String valid() {
         return claims(Instant.now().plus(ONE_HOUR)).subject(USER_ID).signWith(KEY, Jwts.SIG.HS512).compact();
     }
@@ -60,7 +64,9 @@ public final class TestTokens {
         return claims(Instant.now().plus(ONE_HOUR)).subject(USER_ID).signWith(KEY, Jwts.SIG.HS256).compact();
     }
 
-    /** HS512 with the shared secret, exp 1 hour after issue, and the given {@code sub}. */
+    /**
+     * HS512 with the shared secret, exp 1 hour after issue, and the given {@code sub}.
+     */
     public static String withSubject(String subject) {
         return claims(Instant.now().plus(ONE_HOUR)).subject(subject).signWith(KEY, Jwts.SIG.HS512).compact();
     }
@@ -73,14 +79,18 @@ public final class TestTokens {
         return Jwts.builder().subject(USER_ID).claim("email", EMAIL).signWith(KEY, Jwts.SIG.HS512).compact();
     }
 
-    /** The valid token's claims with header {@code alg: none} and no signature. */
+    /**
+     * The valid token's claims with header {@code alg: none} and no signature.
+     */
     public static String unsigned() {
         String[] parts = valid().split("\\.");
         String header = BASE64_URL.encodeToString("{\"alg\":\"none\"}".getBytes(StandardCharsets.UTF_8));
         return header + "." + parts[1] + ".";
     }
 
-    /** A valid token whose payload's sub was changed after signing; the original signature is kept. */
+    /**
+     * A valid token whose payload's sub was changed after signing; the original signature is kept.
+     */
     public static String withAlteredSubject(String subject) {
         String[] parts = valid().split("\\.");
         String payload = new String(BASE64_URL_DECODER.decode(parts[1]), StandardCharsets.UTF_8);

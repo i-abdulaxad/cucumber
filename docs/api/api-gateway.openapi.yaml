@@ -217,7 +217,7 @@ servers:
   - url: http://localhost:8080
     description: Local development (gateway port 8080; override with `SERVER_PORT`)
 security:
-  - bearerAuth: []
+  - bearerAuth: [ ]
 tags:
   - name: Gateway
     description: Operations served by the gateway itself.
@@ -234,7 +234,7 @@ paths:
 
         The media type follows the `Accept` header: `application/json` when the client asks for it, otherwise
         `application/vnd.spring-boot.actuator.v3+json`. The body is the same in both cases.
-      security: []
+      security: [ ]
       parameters:
         - $ref: '#/components/parameters/XRequestId'
       responses:
@@ -521,7 +521,7 @@ x-routes:
     service: auth-service
     baseUrlSetting: AUTH_SERVICE_URL
     defaultBaseUrl: http://localhost:8081
-    publicOperations: []
+    publicOperations: [ ]
     status: active
     contract: auth-service.openapi.yaml
     contractNote: Published (follow-up C4 done), version 1.0.0 (auth-service phase 1). The runtime /v3/api-docs on port 8081 is not the contract.
@@ -534,7 +534,7 @@ x-routes:
     service: scenario-service
     baseUrlSetting: SCENARIO_SERVICE_URL
     defaultBaseUrl: http://localhost:8082
-    publicOperations: []
+    publicOperations: [ ]
     status: active
     contract: scenario-service.openapi.yaml
     contractNote: Version 1.0.3 (scenario-service spec D2). /api/scenarios/** is kept for existing gateway tests; scenario-service answers it with 404.
@@ -576,7 +576,7 @@ x-downstream-request-headers:
     rule: The validated token's sub. Client-supplied values are always removed. Informational only; do not authorize on it.
 x-cors:
   allowedOriginsSetting: CORS_ALLOWED_ORIGINS
-  allowedOriginsDefault: []
+  allowedOriginsDefault: [ ]
   allowedOriginsDevProfile:
     - http://localhost:3000
     - http://localhost:5173

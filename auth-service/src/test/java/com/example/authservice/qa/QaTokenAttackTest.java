@@ -82,7 +82,9 @@ class QaTokenAttackTest {
         return Instant.now().plus(Duration.ofHours(1)).getEpochSecond();
     }
 
-    /** Each row builds an Authorization header value from Ana's id and a valid login token of Ana. */
+    /**
+     * Each row builds an Authorization header value from Ana's id and a valid login token of Ana.
+     */
     static Stream<Arguments> forgedAuthorizations() {
         return Stream.of(
                 row("HS384 with the shared secret", (id, token) -> bearer(Jwts.builder().subject(id)
@@ -203,7 +205,7 @@ class QaTokenAttackTest {
         String oldToken = tokenOf(mockMvc, "eve@example.com");
         userRepository.deleteById(acme.eve().getId());
         MvcResult registered = mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"eve@example.com\",\"password\":\"Other123!\",\"fullName\":\"New Eve\"}"))
+                        .content("{\"email\":\"eve@example.com\",\"password\":\"Other123!\",\"fullName\":\"New Eve\"}"))
                 .andReturn();
         assertThat(registered.getResponse().getStatus()).isEqualTo(201);
 

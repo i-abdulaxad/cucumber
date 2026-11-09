@@ -156,7 +156,9 @@ class UniqueIndexTest {
         assertThat(count("SELECT count(*) FROM tags WHERE project_id = ?", project)).isEqualTo(2);
     }
 
-    /** {@code count} code points, cycling through {@code first..last} (inclusive). */
+    /**
+     * {@code count} code points, cycling through {@code first..last} (inclusive).
+     */
     private static String cycle(int first, int last, int count) {
         StringBuilder text = new StringBuilder();
         IntStream.range(0, count).forEach(i -> text.appendCodePoint(first + i % (last - first + 1)));
@@ -190,7 +192,9 @@ class UniqueIndexTest {
         }
     }
 
-    /** Runs the insert under a savepoint and returns the name of the unique index it violated. */
+    /**
+     * Runs the insert under a savepoint and returns the name of the unique index it violated.
+     */
     private String uniqueViolation(SqlAction insert) throws SQLException {
         Savepoint savepoint = connection.setSavepoint();
         SQLException failure = catchThrowableOfType(SQLException.class, insert::run);

@@ -8,7 +8,8 @@
 -- tags exceed PostgreSQL's 2,704-byte B-tree entry limit (user decision 2026-10-18, option A). Equal values have
 -- equal hashes, so uniqueness is never weaker; lookups compare the same md5 expression plus the value itself.
 
-CREATE TABLE features (
+CREATE TABLE features
+(
     id              uuid                     NOT NULL,
     project_id      uuid                     NOT NULL,
     path            varchar(1024)            NOT NULL,
@@ -27,12 +28,12 @@ CREATE TABLE features (
 -- Paths are unique per project among active features, compared by ICU root lower case (D10): the builtin C.UTF-8
 -- lower() maps U+0130 differently from Java's toLowerCase(Locale.ROOT); und-x-icu agrees with it.
 CREATE UNIQUE INDEX uk_features_project_id_path_lower
-    ON features (project_id, md5(lower(path COLLATE "und-x-icu")))
-    WHERE archived_at IS NULL;
+    ON features (project_id, md5(lower(path COLLATE "und-x-icu"))) WHERE archived_at IS NULL;
 -- The feature list per project, archived features included (the partial unique index covers active ones only).
 CREATE INDEX ix_features_project_id ON features (project_id);
 
-CREATE TABLE feature_versions (
+CREATE TABLE feature_versions
+(
     id           uuid                     NOT NULL,
     feature_id   uuid                     NOT NULL,
     version      integer                  NOT NULL,
@@ -46,7 +47,8 @@ CREATE TABLE feature_versions (
     CONSTRAINT fk_feature_versions_feature_id FOREIGN KEY (feature_id) REFERENCES features (id) ON DELETE RESTRICT
 );
 
-CREATE TABLE rules (
+CREATE TABLE rules
+(
     id           uuid                     NOT NULL,
     feature_id   uuid                     NOT NULL,
     keyword_text text                     NOT NULL,
@@ -62,7 +64,8 @@ CREATE TABLE rules (
 
 CREATE INDEX ix_rules_feature_id ON rules (feature_id);
 
-CREATE TABLE scenarios (
+CREATE TABLE scenarios
+(
     id           uuid                     NOT NULL,
     feature_id   uuid                     NOT NULL,
     rule_id      uuid,
@@ -83,7 +86,8 @@ CREATE TABLE scenarios (
 CREATE INDEX ix_scenarios_feature_id ON scenarios (feature_id);
 CREATE INDEX ix_scenarios_rule_id ON scenarios (rule_id);
 
-CREATE TABLE steps (
+CREATE TABLE steps
+(
     id                    uuid                     NOT NULL,
     scenario_id           uuid                     NOT NULL,
     position              integer                  NOT NULL,
@@ -105,7 +109,8 @@ CREATE TABLE steps (
 
 CREATE INDEX ix_steps_scenario_id ON steps (scenario_id);
 
-CREATE TABLE examples (
+CREATE TABLE examples
+(
     id           uuid                     NOT NULL,
     scenario_id  uuid                     NOT NULL,
     keyword_text text                     NOT NULL,
@@ -122,7 +127,8 @@ CREATE TABLE examples (
 
 CREATE INDEX ix_examples_scenario_id ON examples (scenario_id);
 
-CREATE TABLE example_rows (
+CREATE TABLE example_rows
+(
     id          uuid                     NOT NULL,
     examples_id uuid                     NOT NULL,
     position    integer                  NOT NULL,
@@ -136,7 +142,8 @@ CREATE TABLE example_rows (
 
 CREATE INDEX ix_example_rows_examples_id ON example_rows (examples_id);
 
-CREATE TABLE tags (
+CREATE TABLE tags
+(
     id         uuid                     NOT NULL,
     project_id uuid                     NOT NULL,
     name       text                     NOT NULL,
@@ -148,7 +155,8 @@ CREATE TABLE tags (
 -- Tags are unique per project, compared exactly (case-sensitive, D12); its leading project_id also serves lookups.
 CREATE UNIQUE INDEX uk_tags_project_id_name ON tags (project_id, md5(name));
 
-CREATE TABLE tag_assignments (
+CREATE TABLE tag_assignments
+(
     id          uuid                     NOT NULL,
     tag_id      uuid                     NOT NULL,
     feature_id  uuid                     NOT NULL,

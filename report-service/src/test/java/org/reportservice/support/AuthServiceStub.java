@@ -49,7 +49,9 @@ public final class AuthServiceStub {
         this.port = port;
     }
 
-    /** The JVM's stub, started on first use. */
+    /**
+     * The JVM's stub, started on first use.
+     */
     public static synchronized AuthServiceStub get() {
         if (instance == null) {
             instance = new AuthServiceStub(TestSettings.releaseAuthServicePort());
@@ -58,7 +60,9 @@ public final class AuthServiceStub {
         return instance;
     }
 
-    /** Back to the fixture's answers, running, with no recorded request. */
+    /**
+     * Back to the fixture's answers, running, with no recorded request.
+     */
     public synchronized void reset() {
         received.clear();
         roleOverrides.clear();
@@ -70,7 +74,9 @@ public final class AuthServiceStub {
         }
     }
 
-    /** Stops listening: nothing accepts connections on the port until {@link #reset()}. */
+    /**
+     * Stops listening: nothing accepts connections on the port until {@link #reset()}.
+     */
     public synchronized void stop() {
         if (server != null) {
             server.stop(0);
@@ -78,32 +84,44 @@ public final class AuthServiceStub {
         }
     }
 
-    /** Every request received since the last reset, in order. */
+    /**
+     * Every request received since the last reset, in order.
+     */
     public List<Received> received() {
         return List.copyOf(received);
     }
 
-    /** Answers every request with this status and body, whatever the fixture says. */
+    /**
+     * Answers every request with this status and body, whatever the fixture says.
+     */
     public void answer(int status, String body) {
         fixedAnswer = new Answer(status, body);
     }
 
-    /** Waits this long before answering. */
+    /**
+     * Waits this long before answering.
+     */
     public void delay(Duration wait) {
         delay = wait;
     }
 
-    /** From now on, the user has this role in the project ({@code null} for none: 403). */
+    /**
+     * From now on, the user has this role in the project ({@code null} for none: 403).
+     */
     public void role(UUID userId, UUID projectId, String role) {
         roleOverrides.put(userId + "|" + projectId, Optional.ofNullable(role));
     }
 
-    /** From now on, auth-service rejects the user's token (401), for example after a suspension. */
+    /**
+     * From now on, auth-service rejects the user's token (401), for example after a suspension.
+     */
     public void rejectToken(UUID userId) {
         rejectedUsers.put(userId, Boolean.TRUE);
     }
 
-    /** The 200 body for this project and role, as C5 answers it. */
+    /**
+     * The 200 body for this project and role, as C5 answers it.
+     */
     public static String accessBody(UUID projectId, String role) {
         return "{\"projectId\":\"" + projectId + "\",\"orgId\":\"" + ReportsFixture.ACME + "\",\"role\":\"" + role
                 + "\",\"archived\":" + ReportsFixture.archived(projectId) + "}";
@@ -178,7 +196,9 @@ public final class AuthServiceStub {
                 .orElseGet(() -> new Answer(403, problem(403, "FORBIDDEN")));
     }
 
-    /** C7: the right key and a fixture project give its status; a wrong key 401; another project 404. */
+    /**
+     * C7: the right key and a fixture project give its status; a wrong key 401; another project 404.
+     */
     private static Answer statusAnswer(HttpExchange exchange, String projectId) {
         if (!TestSettings.INTERNAL_SERVICE_KEY.equals(exchange.getRequestHeaders().getFirst("X-Service-Key"))) {
             return new Answer(401, problem(401, "UNAUTHENTICATED"));
@@ -190,13 +210,17 @@ public final class AuthServiceStub {
         return new Answer(200, statusBody(project));
     }
 
-    /** The 200 body of C7 for this project, as auth-service 1.5.0 answers it. */
+    /**
+     * The 200 body of C7 for this project, as auth-service 1.5.0 answers it.
+     */
     public static String statusBody(UUID projectId) {
         return "{\"projectId\":\"" + projectId + "\",\"orgId\":\"" + ReportsFixture.ACME + "\",\"archived\":"
                 + ReportsFixture.archived(projectId) + "}";
     }
 
-    /** The {@code sub} of a bearer token, read without verification (the stub trusts the service under test). */
+    /**
+     * The {@code sub} of a bearer token, read without verification (the stub trusts the service under test).
+     */
     private static Optional<UUID> subject(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             return Optional.empty();
@@ -214,7 +238,9 @@ public final class AuthServiceStub {
         return "{\"type\":\"about:blank\",\"status\":" + status + ",\"code\":\"" + code + "\"}";
     }
 
-    /** One request the stub received; {@code serviceKey} is the {@code X-Service-Key} header (C7 only). */
+    /**
+     * One request the stub received; {@code serviceKey} is the {@code X-Service-Key} header (C7 only).
+     */
     public record Received(String method, String path, String authorization, String requestId, String serviceKey) {
 
         public Received(String method, String path, String authorization, String requestId) {

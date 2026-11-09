@@ -58,9 +58,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class LockFailureTest {
 
     private static final String INVITE_FAY = "{\"email\":\"fay@example.com\",\"role\":\"MEMBER\"}";
-    /** Spring Boot's console pattern: timestamp, then the level. */
+    /**
+     * Spring Boot's console pattern: timestamp, then the level.
+     */
     private static final Pattern ERROR_ENTRY = Pattern.compile("(?m)^\\S+\\s+ERROR\\s");
-    /** The handler's single WARN entry for a lock failure. */
+    /**
+     * The handler's single WARN entry for a lock failure.
+     */
     private static final Pattern LOCK_WARN_ENTRY =
             Pattern.compile("(?m)^\\S+\\s+WARN\\s.*Request rejected because a lock could not be acquired");
     private static final Pattern STACK_FRAME = Pattern.compile("(?m)^\\s+at\\s+[\\w$.]+\\(");

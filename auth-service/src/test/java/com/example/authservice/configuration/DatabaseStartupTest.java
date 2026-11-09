@@ -257,7 +257,9 @@ class DatabaseStartupTest {
         }
     }
 
-    /** Valid settings for the scratch database, with the AC-1.6 marker as a (wrong) password. */
+    /**
+     * Valid settings for the scratch database, with the AC-1.6 marker as a (wrong) password.
+     */
     private static Map<String, String> settings(ScratchDatabase scratch) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("AUTH_DB_URL", scratch.url());
@@ -286,7 +288,9 @@ class DatabaseStartupTest {
         }
     }
 
-    /** Starts auth-service without the process environment, with the given AUTH_DB_* values. */
+    /**
+     * Starts auth-service without the process environment, with the given AUTH_DB_* values.
+     */
     private static ConfigurableApplicationContext startWithoutEnvironment(Map<String, String> values) {
         List<String> arguments = new ArrayList<>(List.of("--server.port=0", "--spring.profiles.active=",
                 "--app.jwtSecret=" + TestJwt.SECRET));
@@ -304,7 +308,9 @@ class DatabaseStartupTest {
                         "--AUTH_DB_PASSWORD=" + scratch.password());
     }
 
-    /** The versions of the migration files on the classpath, in version order. */
+    /**
+     * The versions of the migration files on the classpath, in version order.
+     */
     private static List<String> migrationVersions() throws Exception {
         Resource[] files = new PathMatchingResourcePatternResolver().getResources("classpath:db/migration/V*__*.sql");
         return Arrays.stream(files)
@@ -315,7 +321,9 @@ class DatabaseStartupTest {
                 .toList();
     }
 
-    /** One line per migration history row, in installed order: version, checksum, success. */
+    /**
+     * One line per migration history row, in installed order: version, checksum, success.
+     */
     private static List<String> history(ScratchDatabase scratch) throws SQLException {
         return query(scratch, "SELECT version || ' ' || checksum || ' ' || success FROM flyway_schema_history "
                 + "ORDER BY installed_rank");

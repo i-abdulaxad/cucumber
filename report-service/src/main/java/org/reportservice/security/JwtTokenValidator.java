@@ -30,7 +30,9 @@ public class JwtTokenValidator {
         this.parser = Jwts.parser().verifyWith(Keys.hmacShaKeyFor(secret.secret())).build();
     }
 
-    /** The caller's user id, or {@link InvalidTokenException} naming the rule the token breaks. */
+    /**
+     * The caller's user id, or {@link InvalidTokenException} naming the rule the token breaks.
+     */
     public UUID userIdOf(String token) {
         Jws<Claims> jws;
         try {

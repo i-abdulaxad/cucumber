@@ -10,7 +10,9 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-/** Manual run planning in tests (US-3): {@code POST /api/projects/{p}/runs}. */
+/**
+ * Manual run planning in tests (US-3): {@code POST /api/projects/{p}/runs}.
+ */
 public final class Plans {
 
     private Plans() {
@@ -25,7 +27,9 @@ public final class Plans {
                 .contentType(MediaType.APPLICATION_JSON).content(json)).andReturn();
     }
 
-    /** {"name":name,"featureIds":[ids…]} plus an optional extra member text (for example {@code ,"tag":"@smoke"}). */
+    /**
+     * {"name":name,"featureIds":[ids…]} plus an optional extra member text (for example {@code ,"tag":"@smoke"}).
+     */
     public static String body(String name, String extra, UUID... featureIds) {
         StringBuilder ids = new StringBuilder();
         for (UUID id : featureIds) {

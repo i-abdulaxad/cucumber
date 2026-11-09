@@ -213,7 +213,9 @@ class ReadRunsTest {
         assertProblem(Runs.read(mockMvc, DAN, CHECKOUT, path), 404, code);
     }
 
-    /** The AC-2.1 upload; returns the run id. */
+    /**
+     * The AC-2.1 upload; returns the run id.
+     */
     private String upload() throws Exception {
         String token = Uploads.activeToken(jdbc, CHECKOUT);
         MvcResult result = Uploads.upload(mockMvc, token,

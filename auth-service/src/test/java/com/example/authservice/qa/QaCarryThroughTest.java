@@ -324,7 +324,9 @@ class QaCarryThroughTest {
         assertInvariant();
     }
 
-    /** No row for a non-member of the project's organization; no organization READER above project READER. */
+    /**
+     * No row for a non-member of the project's organization; no organization READER above project READER.
+     */
     private void assertInvariant() {
         for (ProjectMembership membership : projectMembershipRepository.findAll()) {
             Project project = projectRepository.findById(membership.getProject().getId()).orElseThrow();

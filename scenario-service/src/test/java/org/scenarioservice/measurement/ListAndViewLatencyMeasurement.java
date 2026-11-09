@@ -129,7 +129,9 @@ class ListAndViewLatencyMeasurement {
         return sorted[(int) Math.ceil(share * sorted.length) - 1] / 1_000_000.0;
     }
 
-    /** A feature of about 100 lines: tags, a description, a Background, 12 Scenarios and an Outline with 6 rows. */
+    /**
+     * A feature of about 100 lines: tags, a description, a Background, 12 Scenarios and an Outline with 6 rows.
+     */
     private static String source(int number) {
         StringBuilder text = new StringBuilder("@area" + (number % 7) + " @smoke\nFeature: Feature " + number + "\n"
                 + "  Customers do things in area " + (number % 7) + ".\n\n  Background:\n"

@@ -1,6 +1,8 @@
 package org.reportservice.exception;
 
-/** A write on an archived project (D7): 409; reads still work. */
+/**
+ * A write on an archived project (D7): 409; reads still work.
+ */
 public class ProjectArchivedException extends ApiException {
 
     public ProjectArchivedException() {

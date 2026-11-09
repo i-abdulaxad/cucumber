@@ -12,7 +12,9 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-/** Answers an unauthenticated request with the 401 Problem and {@code WWW-Authenticate: Bearer} (D6). */
+/**
+ * Answers an unauthenticated request with the 401 Problem and {@code WWW-Authenticate: Bearer} (D6).
+ */
 @Component
 public class ProblemAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

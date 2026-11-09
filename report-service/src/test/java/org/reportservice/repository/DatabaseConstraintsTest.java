@@ -120,14 +120,14 @@ class DatabaseConstraintsTest {
 
     private void token(String hash) {
         jdbc.update("INSERT INTO upload_tokens (id, project_id, name, token_hash, token_prefix, created_by, "
-                + "created_at, updated_at) VALUES (?, ?, 'CI', ?, 'rct_abcdefgh', ?, " + NOW + ", " + NOW + ")",
+                        + "created_at, updated_at) VALUES (?, ?, 'CI', ?, 'rct_abcdefgh', ?, " + NOW + ", " + NOW + ")",
                 UUID.randomUUID(), project, hash, UUID.randomUUID());
     }
 
     private UUID run(UUID environment) {
         UUID id = UUID.randomUUID();
         jdbc.update("INSERT INTO test_runs (id, project_id, name, source, status, environment_id, created_at, "
-                + "updated_at) VALUES (?, ?, 'R', 'MANUAL', 'PLANNED', ?, " + NOW + ", " + NOW + ")",
+                        + "updated_at) VALUES (?, ?, 'R', 'MANUAL', 'PLANNED', ?, " + NOW + ", " + NOW + ")",
                 id, project, environment);
         return id;
     }
@@ -142,7 +142,7 @@ class DatabaseConstraintsTest {
 
     private void step(UUID result, int position, String kind) {
         jdbc.update("INSERT INTO step_results (id, test_case_result_id, position, kind, status, created_at, "
-                + "updated_at) VALUES (?, ?, ?, ?, 'UNKNOWN', " + NOW + ", " + NOW + ")",
+                        + "updated_at) VALUES (?, ?, ?, ?, 'UNKNOWN', " + NOW + ", " + NOW + ")",
                 UUID.randomUUID(), result, position, kind);
     }
 }

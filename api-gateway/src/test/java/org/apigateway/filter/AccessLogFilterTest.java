@@ -174,7 +174,9 @@ class AccessLogFilterTest extends GatewayIntegrationTest {
         assertThat(AccessLogFilter.maskedPath("/api/scenarios/42/")).isEqualTo("/api/scenarios/42/");
     }
 
-    /** Waits for the entry (it is written after the response is sent) and checks that there is only one. */
+    /**
+     * Waits for the entry (it is written after the response is sent) and checks that there is only one.
+     */
     private static String theOnlyAccessEntry(CapturedOutput output, String requestId) {
         await().atMost(Duration.ofSeconds(5)).until(() -> !accessEntries(output, requestId).isEmpty());
         await().during(Duration.ofMillis(300)).atMost(Duration.ofSeconds(2))

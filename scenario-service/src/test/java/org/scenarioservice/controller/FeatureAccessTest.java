@@ -39,7 +39,9 @@ import static org.scenarioservice.support.ScenarioFixture.HAL;
 import static org.scenarioservice.support.ScenarioFixture.LEGACY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/** US-7, AC-7.1 to AC-7.8 (T8, end to end on the real endpoints, against the access check stub). */
+/**
+ * US-7, AC-7.1 to AC-7.8 (T8, end to end on the real endpoints, against the access check stub).
+ */
 @ScenarioServiceIntegrationTest
 class FeatureAccessTest {
 

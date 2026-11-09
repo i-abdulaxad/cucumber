@@ -21,7 +21,9 @@ abstract class QaCommittedResponseGatewayTest extends GatewayIntegrationTest {
 
     static final RawStubServer RAW_SCENARIO_SERVICE = RawStubServer.start();
 
-    /** The AC-4.7 detail of the 502 Problem (gateway contract, components.responses.BadGateway). */
+    /**
+     * The AC-4.7 detail of the 502 Problem (gateway contract, components.responses.BadGateway).
+     */
     static final String BAD_RESPONSE_DETAIL = "The service handling this request returned an invalid response.";
 
     @LocalServerPort

@@ -237,7 +237,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private long seatsUsed(UUID orgId, Instant now) {
         return orgMembershipRepository.countByOrganizationId(orgId)
                 + invitationRepository.countByOrganizationIdAndStatusAndExpiresAtAfter(
-                        orgId, InvitationStatus.PENDING, now);
+                orgId, InvitationStatus.PENDING, now);
     }
 
     private static MemberResponse toMember(OrgMembership membership) {

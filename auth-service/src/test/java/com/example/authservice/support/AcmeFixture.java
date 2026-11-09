@@ -29,7 +29,9 @@ public class AcmeFixture {
     public static final String PASSWORD = "Secret123!";
     public static final String ACME_NAME = "Acme QA";
     public static final int FREE_SEAT_LIMIT = 5;
-    /** {unknown id}: matches no row. */
+    /**
+     * {unknown id}: matches no row.
+     */
     public static final UUID UNKNOWN_ID = UUID.fromString("3b9d5c1e-0000-4000-8000-0000000000ff");
 
     private final UserRepository userRepository;
@@ -42,7 +44,9 @@ public class AcmeFixture {
 
     private String passwordHash;
 
-    /** Deletes every row, children first. */
+    /**
+     * Deletes every row, children first.
+     */
     public void reset() {
         invitationRepository.deleteAllInBatch();
         projectMembershipRepository.deleteAllInBatch();
@@ -52,7 +56,9 @@ public class AcmeFixture {
         userRepository.deleteAllInBatch();
     }
 
-    /** Resets the database and seeds the Acme fixture. */
+    /**
+     * Resets the database and seeds the Acme fixture.
+     */
     public Acme seed() {
         reset();
         User ana = user("ana@example.com", "Ana Lima");
@@ -99,7 +105,9 @@ public class AcmeFixture {
         return orgMembershipRepository.save(membership);
     }
 
-    /** Seeds a user's status directly, for states the API can't produce in phase 1 (for example SUSPENDED). */
+    /**
+     * Seeds a user's status directly, for states the API can't produce in phase 1 (for example SUSPENDED).
+     */
     public void setStatus(User user, UserStatus status) {
         User stored = userRepository.findById(user.getId()).orElseThrow();
         stored.setStatus(status);

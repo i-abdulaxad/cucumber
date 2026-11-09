@@ -43,7 +43,9 @@ final class QaSupport {
 
     // ---- tokens ------------------------------------------------------------------------------------------
 
-    /** HS512 with the shared secret, exp in 1 hour, the given subject (null = no sub claim). */
+    /**
+     * HS512 with the shared secret, exp in 1 hour, the given subject (null = no sub claim).
+     */
     static String hs512WithSubject(String subject) {
         var builder = Jwts.builder().claim("email", TestTokens.EMAIL)
                 .issuedAt(new Date()).expiration(Date.from(Instant.now().plus(Duration.ofHours(1))));
@@ -59,7 +61,9 @@ final class QaSupport {
                 .signWith(SHARED_KEY, Jwts.SIG.HS384).compact();
     }
 
-    /** Expired {@code age} ago (A3: no clock-skew allowance). */
+    /**
+     * Expired {@code age} ago (A3: no clock-skew allowance).
+     */
     static String expiredAgo(Duration age) {
         Instant exp = Instant.now().minus(age);
         return Jwts.builder().subject(TestTokens.USER_ID)
@@ -67,7 +71,9 @@ final class QaSupport {
                 .signWith(SHARED_KEY, Jwts.SIG.HS512).compact();
     }
 
-    /** A token with an arbitrary JOSE header and claims, and the given (possibly empty) signature part. */
+    /**
+     * A token with an arbitrary JOSE header and claims, and the given (possibly empty) signature part.
+     */
     static String handMade(String headerJson, String claimsJson, String signature) {
         return BASE64_URL.encodeToString(headerJson.getBytes(StandardCharsets.UTF_8)) + "."
                 + BASE64_URL.encodeToString(claimsJson.getBytes(StandardCharsets.UTF_8)) + "." + signature;
@@ -95,19 +101,25 @@ final class QaSupport {
         }
     }
 
-    /** Claims JSON with exp 1 hour from now and the given raw JSON value for {@code sub}. */
+    /**
+     * Claims JSON with exp 1 hour from now and the given raw JSON value for {@code sub}.
+     */
     static String claimsWithRawSubject(String subJsonValue) {
         long now = Instant.now().getEpochSecond();
         return "{\"sub\":" + subJsonValue + ",\"iat\":" + now + ",\"exp\":" + (now + 3600) + "}";
     }
 
-    /** The valid token's header and payload with its signature removed (the last dot kept). */
+    /**
+     * The valid token's header and payload with its signature removed (the last dot kept).
+     */
     static String signatureStripped() {
         String[] parts = TestTokens.valid().split("\\.");
         return parts[0] + "." + parts[1] + ".";
     }
 
-    /** An expired token whose payload was edited to expire in the future; the original signature is kept. */
+    /**
+     * An expired token whose payload was edited to expire in the future; the original signature is kept.
+     */
     static String expiredWithExtendedExp() {
         String[] parts = TestTokens.expired().split("\\.");
         String payload = new String(BASE64_URL_DECODER.decode(parts[1]), StandardCharsets.UTF_8);
@@ -116,7 +128,9 @@ final class QaSupport {
         return parts[0] + "." + BASE64_URL.encodeToString(extended.getBytes(StandardCharsets.UTF_8)) + "." + parts[2];
     }
 
-    /** Header and payload of one valid token with the signature of another valid token for a different subject. */
+    /**
+     * Header and payload of one valid token with the signature of another valid token for a different subject.
+     */
     static String splicedSignature() {
         String[] victim = TestTokens.valid().split("\\.");
         String[] other = hs512WithSubject("qa-other-user").split("\\.");
@@ -125,7 +139,9 @@ final class QaSupport {
 
     // ---- Problem Details (D6, contract components.schemas.Problem) ----------------------------------------
 
-    /** Status, content type, the exact field set, field values and requestId == X-Request-Id. */
+    /**
+     * Status, content type, the exact field set, field values and requestId == X-Request-Id.
+     */
     static void assertProblem(int actualStatus, String contentType, String requestIdHeader, String body,
                               int status, String title, String instance) {
         assertThat(actualStatus).as("status").isEqualTo(status);
@@ -145,7 +161,9 @@ final class QaSupport {
 
     // ---- access log (D7) ---------------------------------------------------------------------------------
 
-    /** Waits until the access entry for {@code requestId} is written, then checks it is the only one. */
+    /**
+     * Waits until the access entry for {@code requestId} is written, then checks it is the only one.
+     */
     static String onlyAccessEntry(CapturedOutput output, String requestId) {
         await().atMost(Duration.ofSeconds(5)).until(() -> !accessEntries(output, requestId).isEmpty());
         await().during(Duration.ofMillis(300)).atMost(Duration.ofSeconds(2))

@@ -24,7 +24,9 @@ public class StrictParameterBinding {
         binder.registerCustomEditor(ArchivedFilter.class, new ArchivedFilterEditor());
     }
 
-    /** 8-4-4-4-12 hexadecimal digits, either case; the value is the UUID (printed in lower case). */
+    /**
+     * 8-4-4-4-12 hexadecimal digits, either case; the value is the UUID (printed in lower case).
+     */
     static final class CanonicalUuidEditor extends PropertyEditorSupport {
 
         private static final Pattern CANONICAL =
@@ -39,7 +41,9 @@ public class StrictParameterBinding {
         }
     }
 
-    /** {@code ^[1-9][0-9]{0,9}$} and at most 2147483647. */
+    /**
+     * {@code ^[1-9][0-9]{0,9}$} and at most 2147483647.
+     */
     static final class VersionNumberEditor extends PropertyEditorSupport {
 
         private static final Pattern POSITIVE = Pattern.compile("[1-9][0-9]{0,9}");
@@ -53,7 +57,9 @@ public class StrictParameterBinding {
         }
     }
 
-    /** Exactly {@code true} or {@code false}, in lower case. */
+    /**
+     * Exactly {@code true} or {@code false}, in lower case.
+     */
     static final class ArchivedFilterEditor extends PropertyEditorSupport {
 
         @Override

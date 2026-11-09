@@ -10,7 +10,9 @@ import java.util.List;
  */
 public class CucumberJsonException extends RuntimeException {
 
-    /** The four outcomes; the upload service maps each to its Problem. */
+    /**
+     * The four outcomes; the upload service maps each to its Problem.
+     */
     public enum Reason {
         MALFORMED,
         INVALID,

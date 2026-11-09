@@ -49,7 +49,9 @@ public class GatewayErrorController implements ErrorController {
             return status;
         }
 
-        /** The original request's path as sent (raw), or {@code null} when the container didn't record one. */
+        /**
+         * The original request's path as sent (raw), or {@code null} when the container didn't record one.
+         */
         String originalPath() {
             return originalPath;
         }

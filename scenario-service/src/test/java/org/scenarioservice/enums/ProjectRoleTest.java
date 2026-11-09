@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** D4 (as auth-service E30): roles compare by explicit rank, ADMIN 4 > MEMBER 3 > TESTER 2 > READER 1. */
+/**
+ * D4 (as auth-service E30): roles compare by explicit rank, ADMIN 4 > MEMBER 3 > TESTER 2 > READER 1.
+ */
 class ProjectRoleTest {
 
     @Test

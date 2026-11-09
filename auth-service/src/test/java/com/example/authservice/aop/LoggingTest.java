@@ -220,7 +220,9 @@ class LoggingTest {
         return appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
     }
 
-    /** A join point on {@link SampleService} whose {@code proceed()} runs the given body. */
+    /**
+     * A join point on {@link SampleService} whose {@code proceed()} runs the given body.
+     */
     private static ProceedingJoinPoint call(String method, Body body) throws Throwable {
         ProceedingJoinPoint call = mock(ProceedingJoinPoint.class);
         Signature signature = mock(Signature.class);

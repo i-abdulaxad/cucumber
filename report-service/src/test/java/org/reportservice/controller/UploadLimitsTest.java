@@ -152,7 +152,9 @@ class UploadLimitsTest {
         assertThat(p95).as("upload timings in ms: %s", millis).isLessThanOrEqualTo(5000);
     }
 
-    /** The JSON text padded with trailing spaces (valid JSON) to exactly {@code size} bytes. */
+    /**
+     * The JSON text padded with trailing spaces (valid JSON) to exactly {@code size} bytes.
+     */
     private static byte[] padded(String json, int size) {
         byte[] text = json.getBytes(StandardCharsets.UTF_8);
         byte[] body = Arrays.copyOf(text, size);
@@ -160,7 +162,9 @@ class UploadLimitsTest {
         return body;
     }
 
-    /** One feature with {@code count} scenarios of 3 steps; the failing step has an error of {@code errorChars}. */
+    /**
+     * One feature with {@code count} scenarios of 3 steps; the failing step has an error of {@code errorChars}.
+     */
     private static String scenarios(int count, int errorChars) {
         String error = "e".repeat(errorChars);
         StringBuilder json = new StringBuilder("[{\"uri\":\"features/load.feature\",\"name\":\"Load\",\"elements\":[");

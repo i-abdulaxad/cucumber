@@ -17,7 +17,9 @@ public class JwtSecretCheck {
         this.secret = SecretSettings.decode(properties.jwtSecret(), "app.jwtSecret", "JWT_SECRET", MINIMUM_BYTES);
     }
 
-    /** The decoded secret, a copy. */
+    /**
+     * The decoded secret, a copy.
+     */
     public byte[] secret() {
         return secret.clone();
     }

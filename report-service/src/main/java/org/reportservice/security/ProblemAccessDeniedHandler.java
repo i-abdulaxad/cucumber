@@ -10,7 +10,9 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-/** Answers a request the security chain denies with the 403 Problem (D13). */
+/**
+ * Answers a request the security chain denies with the 403 Problem (D13).
+ */
 @Component
 public class ProblemAccessDeniedHandler implements AccessDeniedHandler {
 

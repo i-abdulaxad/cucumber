@@ -141,7 +141,9 @@ class QaParameterDecodingTest {
         assertThat(log.lines()).noneMatch(line -> line.contains(MARKER));
     }
 
-    /** GET with the request line exactly as written; returns {status, body}. */
+    /**
+     * GET with the request line exactly as written; returns {status, body}.
+     */
     private static String[] raw(String target, String authorization) throws Exception {
         StringBuilder request = new StringBuilder("GET " + target + " HTTP/1.1\r\nHost: 127.0.0.1:" + port
                 + "\r\nConnection: close\r\n");

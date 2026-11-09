@@ -28,7 +28,9 @@ public class FeatureData {
         return count == null ? 0 : count;
     }
 
-    /** "Nothing is stored": the number of features, versions and tags. */
+    /**
+     * "Nothing is stored": the number of features, versions and tags.
+     */
     public String stored() {
         return count("features") + " features, " + count("feature_versions") + " versions, " + count("tags")
                 + " tags";

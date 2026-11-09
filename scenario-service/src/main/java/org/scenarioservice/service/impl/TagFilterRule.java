@@ -17,7 +17,9 @@ final class TagFilterRule {
     private TagFilterRule() {
     }
 
-    /** The one tag to filter by, or {@code null} when the parameter is absent. */
+    /**
+     * The one tag to filter by, or {@code null} when the parameter is absent.
+     */
     static String tag(List<String> rawValues) {
         if (rawValues == null || rawValues.isEmpty()) {
             return null;

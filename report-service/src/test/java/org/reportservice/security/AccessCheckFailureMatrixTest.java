@@ -77,7 +77,7 @@ class AccessCheckFailureMatrixTest {
         assertProblem(result, 503, "ACCESS_CHECK_UNAVAILABLE");
         RequestLog log = RequestLog.since(output, logStart);
         assertThat(log.entries()).filteredOn(line -> line.contains(" WARN ")
-                        && line.contains("Access check unavailable")).singleElement();
+                && line.contains("Access check unavailable")).singleElement();
         assertThat(log.count("ERROR")).isZero();
         assertThat(log.hasStackTraceLine()).isFalse();
         assertThat(log.lines()).noneMatch(line -> line.contains(DAN.token())

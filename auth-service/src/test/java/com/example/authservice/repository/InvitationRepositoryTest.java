@@ -76,8 +76,8 @@ class InvitationRepositoryTest {
     void theInvitationsTableHasARequiredOrgIdAndNoProjectId() {
         // When
         List<String> columns = jdbcTemplate.queryForList("""
-                SELECT LOWER(COLUMN_NAME) || ' ' || IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE LOWER(TABLE_NAME) = 'invitations' AND LOWER(COLUMN_NAME) IN ('org_id', 'project_id')""",
+                        SELECT LOWER(COLUMN_NAME) || ' ' || IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE LOWER(TABLE_NAME) = 'invitations' AND LOWER(COLUMN_NAME) IN ('org_id', 'project_id')""",
                 String.class);
 
         // Then

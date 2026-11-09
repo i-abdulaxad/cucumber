@@ -41,7 +41,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ReportServiceIntegrationTest
 class SingleAccessCheckAttemptTest {
 
-    /** The AC-6.3 bound: 1 s connect and 2 s read timeouts, no retry. */
+    /**
+     * The AC-6.3 bound: 1 s connect and 2 s read timeouts, no retry.
+     */
     private static final Duration FAIL_CLOSED_WITHIN = Duration.ofSeconds(3);
 
     private final AuthServiceStub stub = AuthServiceStub.get();
@@ -116,7 +118,9 @@ class SingleAccessCheckAttemptTest {
                 .header(HttpHeaders.AUTHORIZATION, DAN.bearer())).andReturn();
     }
 
-    /** Reads up to the end of the request head; whether a complete head arrived. */
+    /**
+     * Reads up to the end of the request head; whether a complete head arrived.
+     */
     private static boolean readRequestHead(InputStream in) throws IOException {
         int matched = 0;
         byte[] end = {'\r', '\n', '\r', '\n'};
@@ -138,7 +142,9 @@ class SingleAccessCheckAttemptTest {
         }
     }
 
-    /** One connection handler of the raw server. */
+    /**
+     * One connection handler of the raw server.
+     */
     @FunctionalInterface
     private interface Handler {
         void handle(Socket socket) throws IOException;

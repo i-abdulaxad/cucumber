@@ -126,7 +126,7 @@ servers:
   - url: http://localhost:8083
     description: Direct to report-service (local development and tests).
 security:
-  - bearerAuth: []
+  - bearerAuth: [ ]
 tags:
   - name: Upload tokens
     description: Create, list and revoke a project's CI upload tokens (US-1). Project `ADMIN` only.
@@ -356,7 +356,7 @@ paths:
 
         **Which error wins:** see "Which error wins (D13)", the CI upload.
       security:
-        - uploadToken: []
+        - uploadToken: [ ]
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - name: name
@@ -434,7 +434,7 @@ paths:
             example:
               - uri: features/checkout/address.feature
                 name: Address
-                tags: []
+                tags: [ ]
                 elements:
                   - type: scenario
                     name: Change address
@@ -1304,7 +1304,7 @@ components:
             $ref: '#/components/schemas/CucumberTag'
         elements:
           type: array
-          default: []
+          default: [ ]
           items:
             $ref: '#/components/schemas/CucumberElement'
     CucumberTag:

@@ -120,7 +120,9 @@ class ServiceClockTest {
     @TestConfiguration
     static class ServiceClockConfiguration {
 
-        /** Replaces the service {@code Clock} bean by type. */
+        /**
+         * Replaces the service {@code Clock} bean by type.
+         */
         @Bean
         @Primary
         AdjustableClock adjustableClock() {

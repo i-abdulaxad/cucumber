@@ -24,7 +24,9 @@ import java.util.concurrent.Executors;
  */
 final class RawStubServer implements AutoCloseable {
 
-    /** Writes the scripted answer for one request; the connection is closed afterwards. */
+    /**
+     * Writes the scripted answer for one request; the connection is closed afterwards.
+     */
     @FunctionalInterface
     interface Script {
         void answer(OutputStream out) throws IOException, InterruptedException;
@@ -58,7 +60,9 @@ final class RawStubServer implements AutoCloseable {
         return "http://localhost:" + serverSocket.getLocalPort();
     }
 
-    /** Scripts the answer for requests whose path (without query) equals {@code path}. */
+    /**
+     * Scripts the answer for requests whose path (without query) equals {@code path}.
+     */
     void on(String path, Script script) {
         scriptsByPath.put(path, script);
     }
@@ -67,7 +71,9 @@ final class RawStubServer implements AutoCloseable {
         return List.copyOf(requestLines);
     }
 
-    /** Values of one request header, in any letter case, for every request received so far, in arrival order. */
+    /**
+     * Values of one request header, in any letter case, for every request received so far, in arrival order.
+     */
     List<List<String>> requestHeaderValues(String name) {
         return requestHeads.stream().map(head -> head.lines().skip(1)
                         .filter(line -> line.indexOf(':') > 0

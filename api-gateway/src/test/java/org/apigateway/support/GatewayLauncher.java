@@ -31,7 +31,9 @@ public final class GatewayLauncher {
     private GatewayLauncher() {
     }
 
-    /** Environment variables every launched gateway needs, unless a test replaces them. */
+    /**
+     * Environment variables every launched gateway needs, unless a test replaces them.
+     */
     public static Map<String, Object> testEnvironment() {
         return new HashMap<>(Map.of(
                 "SERVER_PORT", "0",
@@ -39,7 +41,9 @@ public final class GatewayLauncher {
                 "JWT_SECRET", TestTokens.SECRET));
     }
 
-    /** Starts the gateway with exactly these environment variables; the caller closes the context. */
+    /**
+     * Starts the gateway with exactly these environment variables; the caller closes the context.
+     */
     public static ConfigurableApplicationContext run(Map<String, Object> environmentVariables, String... profiles) {
         return new SpringApplicationBuilder(ApiGatewayApplication.class)
                 .environment(environmentWith(environmentVariables))
@@ -48,7 +52,9 @@ public final class GatewayLauncher {
                 .run();
     }
 
-    /** Resolves the gateway's configuration files against these environment variables without starting it. */
+    /**
+     * Resolves the gateway's configuration files against these environment variables without starting it.
+     */
     public static ConfigurableEnvironment resolveConfiguration(Map<String, Object> environmentVariables) {
         ConfigurableEnvironment environment = environmentWith(environmentVariables);
         ConfigDataEnvironmentPostProcessor.applyTo(environment);

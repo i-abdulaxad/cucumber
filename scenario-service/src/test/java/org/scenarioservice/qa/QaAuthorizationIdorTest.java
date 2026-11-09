@@ -253,7 +253,9 @@ class QaAuthorizationIdorTest {
         assertThat(data.count("features")).isEqualTo(2);
     }
 
-    /** The feature as Ana (ADMIN of Checkout and Billing in the fixture) sees it. */
+    /**
+     * The feature as Ana (ADMIN of Checkout and Billing in the fixture) sees it.
+     */
     private Map<String, Object> currentState(UUID projectId, UUID featureId) throws Exception {
         return JsonPath.read(body(view(mockMvc, ANA, projectId, featureId)), "$");
     }

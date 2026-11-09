@@ -125,7 +125,7 @@ class OrganizationChangesCarryThroughTest {
     @CsvSource({"gus, ADMIN, MEMBER, ADMIN", "dan, MEMBER, READER, READER", "hal, READER, READER, READER"})
     @Tag("AC-6.4")
     void otherOrganizationRoleChangesKeepExplicitProjectRoles(String person, String orgRole, String projectRole,
-                                                             String effectiveRole) throws Exception {
+                                                              String effectiveRole) throws Exception {
         // Given
         User user = switch (person) {
             case "gus" -> projects.gus();

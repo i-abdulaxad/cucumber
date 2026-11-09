@@ -20,7 +20,9 @@ public class ErrorDispatchException extends RuntimeException {
         return status;
     }
 
-    /** The original request's path as sent (raw), or {@code null} when the container didn't record one. */
+    /**
+     * The original request's path as sent (raw), or {@code null} when the container didn't record one.
+     */
     public String originalPath() {
         return originalPath;
     }

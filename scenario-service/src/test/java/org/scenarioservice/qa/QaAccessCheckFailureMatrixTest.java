@@ -237,7 +237,9 @@ class QaAccessCheckFailureMatrixTest {
         }
     }
 
-    /** One connection handler of the raw server. */
+    /**
+     * One connection handler of the raw server.
+     */
     @FunctionalInterface
     interface Handler {
         void handle(Socket socket) throws IOException;

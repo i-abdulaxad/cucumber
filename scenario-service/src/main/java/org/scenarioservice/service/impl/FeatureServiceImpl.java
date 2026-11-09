@@ -52,7 +52,9 @@ import java.util.stream.Collectors;
 public class FeatureServiceImpl implements FeatureService {
 
     /** A5: features by path, lower-cased with Locale.ROOT, then id. The one place that orders the list. */
-    /** D21 #2: the most elements one feature may have. */
+    /**
+     * D21 #2: the most elements one feature may have.
+     */
     static final int MAX_ELEMENTS = 10_000;
 
     private static final Comparator<Feature> LIST_ORDER = Comparator
@@ -257,7 +259,9 @@ public class FeatureServiceImpl implements FeatureService {
                 .orElseThrow(() -> new IllegalStateException("A feature has no current version")).getSource();
     }
 
-    /** D21 #2: at most {@value #MAX_ELEMENTS} elements per feature (order step 7a). */
+    /**
+     * D21 #2: at most {@value #MAX_ELEMENTS} elements per feature (order step 7a).
+     */
     private static ParsedFeature withinLimit(ParsedFeature parsed) {
         if (parsed.elementCount() > MAX_ELEMENTS) {
             throw new FeatureTooLargeException(MAX_ELEMENTS);
@@ -265,7 +269,9 @@ public class FeatureServiceImpl implements FeatureService {
         return parsed;
     }
 
-    /** Parses and counts now; the returned supplier gives the feature or throws the parse or size failure later. */
+    /**
+     * Parses and counts now; the returned supplier gives the feature or throws the parse or size failure later.
+     */
     private Supplier<ParsedFeature> parsedOrFailure(String source) {
         try {
             ParsedFeature parsed = withinLimit(parse(source));
@@ -287,7 +293,9 @@ public class FeatureServiceImpl implements FeatureService {
         return ((GherkinParseResult.Valid) result).feature();
     }
 
-    /** D19 #9: trimmed of Unicode-blank characters; nothing left is no message. */
+    /**
+     * D19 #9: trimmed of Unicode-blank characters; nothing left is no message.
+     */
     private static String message(String message) {
         if (message == null) {
             return null;
@@ -302,7 +310,9 @@ public class FeatureServiceImpl implements FeatureService {
                 .contentHash(sha256(source)).message(message).createdBy(userId).createdAt(now).build();
     }
 
-    /** SHA-256 hex of the text's UTF-8 bytes (D8). */
+    /**
+     * SHA-256 hex of the text's UTF-8 bytes (D8).
+     */
     private static String sha256(String text) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")

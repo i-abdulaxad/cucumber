@@ -16,12 +16,16 @@ public final class UnicodeBlank {
                 || codePoint == 0xFEFF;
     }
 
-    /** True when every code point is Unicode-blank (so also for the empty string). */
+    /**
+     * True when every code point is Unicode-blank (so also for the empty string).
+     */
     public static boolean isBlank(CharSequence text) {
         return text.codePoints().allMatch(UnicodeBlank::isBlank);
     }
 
-    /** The text without Unicode-blank code points at either end (D19 #9). */
+    /**
+     * The text without Unicode-blank code points at either end (D19 #9).
+     */
     public static String trim(String text) {
         int start = 0;
         int end = text.length();

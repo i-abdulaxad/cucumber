@@ -63,7 +63,9 @@ class QaDownstreamRobustnessTest extends GatewayIntegrationTest {
         assertProblemResponse(response, 502, "Bad Gateway", "/api/scenarios/garbage");
     }
 
-    /** BUG-api-gateway-7 (variant of AC-4.5): the invalid status code is relayed to the client as-is. */
+    /**
+     * BUG-api-gateway-7 (variant of AC-4.5): the invalid status code is relayed to the client as-is.
+     */
     @Test
     @Tag("BUG-api-gateway-7")
     @DisplayName("BUG-api-gateway-7 (D6, variant of AC-4.5): a reply with an invalid status code (999) produces the 502 Problem")
@@ -79,7 +81,9 @@ class QaDownstreamRobustnessTest extends GatewayIntegrationTest {
         assertProblemResponse(response, 502, "Bad Gateway", "/api/scenarios/invalid-status");
     }
 
-    /** BUG-api-gateway-4 (variant of AC-4.5): the failure while copying the body is answered 500. */
+    /**
+     * BUG-api-gateway-4 (variant of AC-4.5): the failure while copying the body is answered 500.
+     */
     @Test
     @Tag("BUG-api-gateway-4")
     @DisplayName("BUG-api-gateway-4 (D6, variant of AC-4.5): a connection dropped in the middle of the body produces the 502 Problem")

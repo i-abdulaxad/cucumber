@@ -7,7 +7,8 @@
 -- uuid columns without a foreign key.
 
 -- Where a run executed (D11): matched by exact, case-sensitive name, created on first use.
-CREATE TABLE environments (
+CREATE TABLE environments
+(
     id          uuid                     NOT NULL,
     project_id  uuid                     NOT NULL,
     name        varchar(100)             NOT NULL,
@@ -19,7 +20,8 @@ CREATE TABLE environments (
 );
 
 -- The build under test (D11): matched by exact name; branch, commit and CI URL come from the first run that names it.
-CREATE TABLE builds (
+CREATE TABLE builds
+(
     id         uuid                     NOT NULL,
     project_id uuid                     NOT NULL,
     name       varchar(255)             NOT NULL,
@@ -33,7 +35,8 @@ CREATE TABLE builds (
 );
 
 -- CI upload tokens (D4): only the SHA-256 hex of the token is stored; the token text never is.
-CREATE TABLE upload_tokens (
+CREATE TABLE upload_tokens
+(
     id           uuid                     NOT NULL,
     project_id   uuid                     NOT NULL,
     name         varchar(100)             NOT NULL,
@@ -53,7 +56,8 @@ CREATE TABLE upload_tokens (
 CREATE INDEX ix_upload_tokens_project_id ON upload_tokens (project_id);
 
 -- One execution of a set of test cases (D8): MANUAL runs are planned by people, AUTOMATED runs come from a CI upload.
-CREATE TABLE test_runs (
+CREATE TABLE test_runs
+(
     id              uuid                     NOT NULL,
     project_id      uuid                     NOT NULL,
     name            varchar(255)             NOT NULL,
@@ -85,7 +89,8 @@ CREATE INDEX ix_test_runs_build_id ON test_runs (build_id);
 CREATE INDEX ix_test_runs_upload_token_id ON test_runs (upload_token_id);
 
 -- The result of one test case in one run (D6): a snapshot, so history survives edits in scenario-service.
-CREATE TABLE test_case_results (
+CREATE TABLE test_case_results
+(
     id              uuid                     NOT NULL,
     test_run_id     uuid                     NOT NULL,
     position        integer                  NOT NULL,
@@ -110,7 +115,7 @@ CREATE TABLE test_case_results (
     CONSTRAINT pk_test_case_results PRIMARY KEY (id),
     CONSTRAINT uk_test_case_results_test_run_id_position UNIQUE (test_run_id, position),
     CONSTRAINT ck_test_case_results_status_values CHECK (status IN ('PASSED', 'FAILED', 'SKIPPED', 'PENDING',
-        'UNDEFINED', 'AMBIGUOUS', 'UNKNOWN')),
+                                                                    'UNDEFINED', 'AMBIGUOUS', 'UNKNOWN')),
     CONSTRAINT fk_test_case_results_test_run_id FOREIGN KEY (test_run_id) REFERENCES test_runs (id)
         ON DELETE RESTRICT
 );
@@ -119,7 +124,8 @@ CREATE TABLE test_case_results (
 CREATE INDEX ix_test_case_results_scenario_id ON test_case_results (scenario_id);
 
 -- Steps and hooks of a test case result, in execution order (D9, D10).
-CREATE TABLE step_results (
+CREATE TABLE step_results
+(
     id                  uuid                     NOT NULL,
     test_case_result_id uuid                     NOT NULL,
     position            integer                  NOT NULL,
@@ -138,7 +144,7 @@ CREATE TABLE step_results (
     CONSTRAINT uk_step_results_test_case_result_id_position UNIQUE (test_case_result_id, position),
     CONSTRAINT ck_step_results_kind_values CHECK (kind IN ('STEP', 'BEFORE_HOOK', 'AFTER_HOOK')),
     CONSTRAINT ck_step_results_status_values CHECK (status IN ('PASSED', 'FAILED', 'SKIPPED', 'PENDING', 'UNDEFINED',
-        'AMBIGUOUS', 'UNKNOWN')),
+                                                               'AMBIGUOUS', 'UNKNOWN')),
     CONSTRAINT fk_step_results_test_case_result_id FOREIGN KEY (test_case_result_id)
         REFERENCES test_case_results (id) ON DELETE RESTRICT
 );

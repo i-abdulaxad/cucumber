@@ -45,9 +45,13 @@ class QaInputEdgeCasesTest {
 
     private static final String REGISTER = "/api/auth/register";
     private static final String LOGIN = "/api/auth/login";
-    /** 3 bytes in UTF-8. */
+    /**
+     * 3 bytes in UTF-8.
+     */
     private static final String EURO = "€";
-    /** 4 bytes in UTF-8, 2 UTF-16 code units. */
+    /**
+     * 4 bytes in UTF-8, 2 UTF-16 code units.
+     */
     private static final String EMOJI = "😀";
 
     @Autowired
@@ -109,7 +113,7 @@ class QaInputEdgeCasesTest {
     void theAcceptPasswordHasTheSameByteLimit() throws Exception {
         // Given
         String token = JsonPath.read(mockMvc.perform(json(as(post(invitations()), acme.ben()),
-                "{\"email\":\"fay@example.com\",\"role\":\"MEMBER\"}")).andReturn().getResponse().getContentAsString(),
+                        "{\"email\":\"fay@example.com\",\"role\":\"MEMBER\"}")).andReturn().getResponse().getContentAsString(),
                 "$.token");
         String path = "/api/auth/invitations/" + token + "/accept";
 
@@ -187,7 +191,7 @@ class QaInputEdgeCasesTest {
     void organizationCreationIgnoresServerOwnedFields() throws Exception {
         // When
         MvcResult result = mockMvc.perform(json(as(post("/api/orgs"), acme.eve()), "{\"name\":\"Globex QA\","
-                + "\"plan\":\"ENTERPRISE\",\"seatLimit\":1000,\"id\":\"" + acme.orgId() + "\",\"myRole\":\"READER\"}"))
+                        + "\"plan\":\"ENTERPRISE\",\"seatLimit\":1000,\"id\":\"" + acme.orgId() + "\",\"myRole\":\"READER\"}"))
                 .andReturn();
 
         // Then
@@ -348,7 +352,9 @@ class QaInputEdgeCasesTest {
         };
     }
 
-    /** A syntactically valid address of exactly {@code length} characters: 64-character local part, labels of 63. */
+    /**
+     * A syntactically valid address of exactly {@code length} characters: 64-character local part, labels of 63.
+     */
     private static String email(int length) {
         String local = "a".repeat(64);
         int domainLength = length - local.length() - 1;

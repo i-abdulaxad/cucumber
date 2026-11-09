@@ -46,12 +46,16 @@ public final class RunningReportService implements AutoCloseable {
         return http;
     }
 
-    /** The port on {@code 127.0.0.1}. */
+    /**
+     * The port on {@code 127.0.0.1}.
+     */
     public int port() {
         return Integer.parseInt(app.getEnvironment().getProperty("local.server.port"));
     }
 
-    /** A bean of the running application, for test data in its scratch database. */
+    /**
+     * A bean of the running application, for test data in its scratch database.
+     */
     public <T> T bean(Class<T> type) {
         return app.getBean(type);
     }

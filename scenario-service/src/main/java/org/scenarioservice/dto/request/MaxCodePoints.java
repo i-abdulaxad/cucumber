@@ -11,7 +11,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** At most {@code value} code points (D8: every length counts code points, pattern item 18). Null is valid. */
+/**
+ * At most {@code value} code points (D8: every length counts code points, pattern item 18). Null is valid.
+ */
 @Documented
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
 @Retention(RetentionPolicy.RUNTIME)

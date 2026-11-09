@@ -20,7 +20,9 @@ public class InternalServiceKeyCheck {
         this.key = properties.internalServiceKey();
     }
 
-    /** The key exactly as configured, for the {@code X-Service-Key} header. Never log it. */
+    /**
+     * The key exactly as configured, for the {@code X-Service-Key} header. Never log it.
+     */
     public String key() {
         return key;
     }

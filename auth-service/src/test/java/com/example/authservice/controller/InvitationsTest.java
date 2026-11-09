@@ -266,7 +266,7 @@ class InvitationsTest {
     })
     @Tag("AC-5.10")
     void revokingIsLimitedToAdminsAndToPendingInvitationsOfTheSameOrganization(String actor, String target,
-                                                                              int status, String code)
+                                                                               int status, String code)
             throws Exception {
         // Given
         String i = JsonPath.read(invite(BEN, "{\"email\":\"fay@example.com\",\"role\":\"MEMBER\"}")

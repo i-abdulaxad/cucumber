@@ -138,7 +138,7 @@ class QaCrossProjectTest {
     @DisplayName("D7 qa: X-User-Id can't make Dan a tester; the result keeps no executedBy")
     void headersDontRaiseRoles() throws Exception {
         MvcResult result = mockMvc.perform(put(Plans.runs(CHECKOUT) + "/" + runA.id() + "/results/"
-                        + runA.results().get(0)).header(HttpHeaders.AUTHORIZATION, DAN.bearer())
+                + runA.results().get(0)).header(HttpHeaders.AUTHORIZATION, DAN.bearer())
                 .header("X-User-Id", HAL.id().toString()).header("X-User-Role", "ADMIN")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PASSED\"}")).andReturn();
         assertProblem(result, 403, "FORBIDDEN");

@@ -13,7 +13,9 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
-/** One Gherkin file of a project (ERD {@code features}). {@code projectId} references auth-service by id only. */
+/**
+ * One Gherkin file of a project (ERD {@code features}). {@code projectId} references auth-service by id only.
+ */
 @Entity
 @Table(name = "features")
 @Getter
@@ -58,7 +60,9 @@ public class Feature extends AssignedIdEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    /** Ids and version only: path, name and description are user content (P16). */
+    /**
+     * Ids and version only: path, name and description are user content (P16).
+     */
     @Override
     public String toString() {
         return "Feature[id=" + id + ", projectId=" + projectId + ", currentVersion=" + currentVersion + "]";

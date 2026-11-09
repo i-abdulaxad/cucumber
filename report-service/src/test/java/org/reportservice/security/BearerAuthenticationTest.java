@@ -115,7 +115,9 @@ class BearerAuthenticationTest {
                 .satisfies(received -> assertThat(received.authorization()).isEqualTo("Bearer " + token));
     }
 
-    /** Stores an active upload token of Checkout the way D4 describes, and returns its text. */
+    /**
+     * Stores an active upload token of Checkout the way D4 describes, and returns its text.
+     */
     private String activeToken() throws Exception {
         byte[] random = new byte[32];
         new SecureRandom().nextBytes(random);

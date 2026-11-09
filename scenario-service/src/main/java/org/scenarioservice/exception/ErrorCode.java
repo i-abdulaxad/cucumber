@@ -2,7 +2,9 @@ package org.scenarioservice.exception;
 
 import org.springframework.http.HttpStatus;
 
-/** The stable error codes of contract C1 (spec D16), each with its HTTP status. */
+/**
+ * The stable error codes of contract C1 (spec D16), each with its HTTP status.
+ */
 public enum ErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST),
     MALFORMED_REQUEST(HttpStatus.BAD_REQUEST),

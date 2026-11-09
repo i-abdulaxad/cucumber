@@ -35,15 +35,15 @@ AUTH_DB_URL='jdbc:postgresql://localhost:5432/auth_service' AUTH_DB_USERNAME='au
 
 ## Settings
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `app.jwtSecret` (`JWT_SECRET`) | none (`.env` with the `dev` profile) | Shared HS512 secret, standard Base64 of at least 64 bytes |
-| `app.jwtExpirationInMs` | `86400000` (24 h) | Lifetime of issued tokens |
-| `app.orgs.free-seat-limit` | `5` | Seat limit of every organization created in phase 1 (plan `FREE`); must be positive |
-| `spring.datasource.url` (`AUTH_DB_URL`) | none (the `dev` profile sets one) | JDBC URL of the auth_service database, without credentials |
-| `spring.datasource.username` (`AUTH_DB_USERNAME`) | none (the `dev` profile sets one) | Database role |
-| `spring.datasource.password` (`AUTH_DB_PASSWORD`) | none (`.env` with the `dev` profile) | Database password; never logged |
-| `app.internal-service-key` (`INTERNAL_SERVICE_KEY`) | empty (disabled) | Key other services send as `X-Service-Key` to `GET /internal/service/projects/{projectId}` (C7, report-service spec D5). Empty: every `/internal/service/**` request is 401. When set: standard Base64 of at least 32 bytes, else start-up fails naming the variable; compared in constant time; never logged |
+| Setting                                             | Default                              | Meaning                                                                                                                                                                                                                                                                                                       |
+|-----------------------------------------------------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `app.jwtSecret` (`JWT_SECRET`)                      | none (`.env` with the `dev` profile) | Shared HS512 secret, standard Base64 of at least 64 bytes                                                                                                                                                                                                                                                     |
+| `app.jwtExpirationInMs`                             | `86400000` (24 h)                    | Lifetime of issued tokens                                                                                                                                                                                                                                                                                     |
+| `app.orgs.free-seat-limit`                          | `5`                                  | Seat limit of every organization created in phase 1 (plan `FREE`); must be positive                                                                                                                                                                                                                           |
+| `spring.datasource.url` (`AUTH_DB_URL`)             | none (the `dev` profile sets one)    | JDBC URL of the auth_service database, without credentials                                                                                                                                                                                                                                                    |
+| `spring.datasource.username` (`AUTH_DB_USERNAME`)   | none (the `dev` profile sets one)    | Database role                                                                                                                                                                                                                                                                                                 |
+| `spring.datasource.password` (`AUTH_DB_PASSWORD`)   | none (`.env` with the `dev` profile) | Database password; never logged                                                                                                                                                                                                                                                                               |
+| `app.internal-service-key` (`INTERNAL_SERVICE_KEY`) | empty (disabled)                     | Key other services send as `X-Service-Key` to `GET /internal/service/projects/{projectId}` (C7, report-service spec D5). Empty: every `/internal/service/**` request is 401. When set: standard Base64 of at least 32 bytes, else start-up fails naming the variable; compared in constant time; never logged |
 
 A missing or blank `AUTH_DB_*` value stops start-up with a message that names the variable and never shows a value.
 
@@ -124,10 +124,10 @@ Projects belong to one organization and live under `/api/orgs/{orgId}/projects` 
 - **Project roles**, with an explicit rank: `ADMIN` 4 > `MEMBER` 3 > `TESTER` 2 > `READER` 1. Each role includes
   the ones below it. Code compares roles only with `ProjectRole.isAtLeast`, never by declaration order.
 - **Effective role**, computed from the database on every request (no cache), in `ProjectRoleService` only:
-  - not a member of the project's organization: no access;
-  - organization `OWNER` or `ADMIN`: project `ADMIN` on every project of the organization (implicit admin, no
-    membership row);
-  - otherwise the explicit project role, or no access.
+    - not a member of the project's organization: no access;
+    - organization `OWNER` or `ADMIN`: project `ADMIN` on every project of the organization (implicit admin, no
+      membership row);
+    - otherwise the explicit project role, or no access.
 
   An organization `READER` can only hold project `READER` (the cap). `myRole` in project responses is the
   effective role. A removal or demotion applies to the next request.
@@ -155,11 +155,11 @@ user's effective role in a project (contract C5).
   401 `UNAUTHENTICATED` for a missing or invalid token; 403 `FORBIDDEN` for no access or an unknown project; 400
   `MALFORMED_REQUEST` for an id that isn't a UUID.
 - **Consumer rules:**
-  - compare `role` by rank (`ADMIN` > `MEMBER` > `TESTER` > `READER`), never by string order;
-  - refuse content writes when `archived` is true;
-  - treat a timeout or a 5xx as "deny" (fail closed);
-  - don't cache the answer, unless your service's spec accepts a staleness window of at most 30 s, documented as a
-    known delay for removals.
+    - compare `role` by rank (`ADMIN` > `MEMBER` > `TESTER` > `READER`), never by string order;
+    - refuse content writes when `archived` is true;
+    - treat a timeout or a 5xx as "deny" (fail closed);
+    - don't cache the answer, unless your service's spec accepts a staleness window of at most 30 s, documented as a
+      known delay for removals.
 - **Stability:** fields are only ever added; a breaking change gets a new path.
 - **Not yet available:** calls without an end user (CI uploads, background jobs) need a service credential, which
   comes with the result-ingestion spec.
@@ -187,12 +187,15 @@ Start both services with the `dev` profile (they share the dev secret):
 
 Then, against `http://localhost:8080` (expected status in brackets):
 
-1. Register Ana: `POST /api/auth/register` `{"email":"ana@example.com","password":"Secret123!","fullName":"Ana Lima"}` [201]
-2. Log in as Ana: `POST /api/auth/login` `{"email":"ana@example.com","password":"Secret123!"}` [200]; keep `accessToken`.
+1. Register Ana: `POST /api/auth/register`
+   `{"email":"ana@example.com","password":"Secret123!","fullName":"Ana Lima"}` [201]
+2. Log in as Ana: `POST /api/auth/login` `{"email":"ana@example.com","password":"Secret123!"}` [200]; keep
+   `accessToken`.
 3. Create "Acme QA": `POST /api/orgs` `{"name":"Acme QA"}` with Ana's token [201]; keep `id`.
 4. Invite Fay: `POST /api/orgs/{id}/invitations` `{"email":"fay@example.com","role":"MEMBER"}` with Ana's token
    [201]; keep `token` (shown only here).
-5. Accept anonymously: `POST /api/auth/invitations/{token}/accept` `{"password":"Secret123!","fullName":"Fay Lin"}` [201]; keep `user.id`.
+5. Accept anonymously: `POST /api/auth/invitations/{token}/accept`
+   `{"password":"Secret123!","fullName":"Fay Lin"}` [201]; keep `user.id`.
 6. Log in as Fay [200].
 7. Ana changes Fay to `READER`: `PATCH /api/orgs/{id}/members/{fayId}` `{"role":"READER"}` [200].
 8. Ana removes Fay: `DELETE /api/orgs/{id}/members/{fayId}` [204].

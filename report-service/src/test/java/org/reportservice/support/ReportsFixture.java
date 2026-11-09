@@ -44,7 +44,9 @@ public final class ReportsFixture {
         return ROLES.containsKey(userId);
     }
 
-    /** The user's effective role in the project, or empty for "none". */
+    /**
+     * The user's effective role in the project, or empty for "none".
+     */
     public static Optional<String> role(UUID userId, UUID projectId) {
         return Optional.ofNullable(ROLES.getOrDefault(userId, Map.of()).get(projectId));
     }
@@ -53,24 +55,32 @@ public final class ReportsFixture {
         return ARCHIVED.contains(projectId);
     }
 
-    /** From now on, C5 answers the project with {@code archived: true}. */
+    /**
+     * From now on, C5 answers the project with {@code archived: true}.
+     */
     public static void archive(UUID projectId) {
         ARCHIVED.add(projectId);
     }
 
-    /** No project is archived. */
+    /**
+     * No project is archived.
+     */
     public static void reset() {
         ARCHIVED.clear();
     }
 
-    /** A fixture user: {@code name@example.com} and a fixed id. */
+    /**
+     * A fixture user: {@code name@example.com} and a fixed id.
+     */
     public record User(String name, UUID id) {
 
         public String email() {
             return name + "@example.com";
         }
 
-        /** {@code {token of X}}. */
+        /**
+         * {@code {token of X}}.
+         */
         public String token() {
             return TestTokens.valid(id, email());
         }

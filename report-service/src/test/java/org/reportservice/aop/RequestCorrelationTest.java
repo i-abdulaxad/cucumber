@@ -56,11 +56,11 @@ class RequestCorrelationTest {
             logging.setLogLevel(SERVICE_LOGGERS, LogLevel.DEBUG);
 
             assertThat(mockMvc.perform(get("/api/projects/" + CHECKOUT + "/probe")
-                    .header(HttpHeaders.AUTHORIZATION, DAN.bearer()).header("X-Request-Id", "r-77"))
+                            .header(HttpHeaders.AUTHORIZATION, DAN.bearer()).header("X-Request-Id", "r-77"))
                     .andReturn().getResponse().getStatus()).isEqualTo(200);
             assertThat(mockMvc.perform(post("/api/projects/" + CHECKOUT + "/probe")
-                    .header(HttpHeaders.AUTHORIZATION, GUS.bearer()).header("X-Request-Id", "r-77")
-                    .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Release secret-QA\"}"))
+                            .header(HttpHeaders.AUTHORIZATION, GUS.bearer()).header("X-Request-Id", "r-77")
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Release secret-QA\"}"))
                     .andReturn().getResponse().getStatus()).isEqualTo(200);
         } finally {
             // Log levels are JVM-global: put back what the test found

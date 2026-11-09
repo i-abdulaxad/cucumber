@@ -1,6 +1,8 @@
 package org.scenarioservice.exception;
 
-/** A save based on an outdated version (D9): 409 with the Problem member {@code currentVersion}. */
+/**
+ * A save based on an outdated version (D9): 409 with the Problem member {@code currentVersion}.
+ */
 public class VersionConflictException extends ApiException {
 
     private final int currentVersion;

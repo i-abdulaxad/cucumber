@@ -41,7 +41,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @ExtendWith(OutputCaptureExtension.class)
 class DatabaseStartupTest {
 
-    /** Marks values that must never be printed: a (wrong) password and a username. */
+    /**
+     * Marks values that must never be printed: a (wrong) password and a username.
+     */
     private static final String MARKER_PASSWORD = "Scenario-Db-Pw-Marker-QA";
     private static final String MARKER_USERNAME = "scenario_user_marker_qa";
 
@@ -148,7 +150,9 @@ class DatabaseStartupTest {
         assertThat(output.getAll().substring(logStart)).contains(" DEBUG ").doesNotContain(password);
     }
 
-    /** Valid settings for the scratch database, except for marker values that must never be printed. */
+    /**
+     * Valid settings for the scratch database, except for marker values that must never be printed.
+     */
     private static Map<String, String> markerSettings(ScratchDatabase scratch) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("SCENARIO_DB_URL", scratch.url());
@@ -164,7 +168,9 @@ class DatabaseStartupTest {
         }
     }
 
-    /** Starts scenario-service without the process environment and without a profile, with the given settings. */
+    /**
+     * Starts scenario-service without the process environment and without a profile, with the given settings.
+     */
     private static ConfigurableApplicationContext start(Map<String, String> settings, List<String> extra) {
         List<String> arguments = new ArrayList<>(List.of("--server.port=0", "--spring.profiles.active=",
                 "--JWT_SECRET=" + TestSettings.JWT_SECRET));
@@ -181,7 +187,9 @@ class DatabaseStartupTest {
         return configuration == null ? null : configuration.getConfiguredLevel();
     }
 
-    /** One line per migration history row, in installed order: version and success. */
+    /**
+     * One line per migration history row, in installed order: version and success.
+     */
     private static List<String> history(ScratchDatabase scratch) throws SQLException {
         List<String> rows = new ArrayList<>();
         try (Connection connection = scratch.connect();

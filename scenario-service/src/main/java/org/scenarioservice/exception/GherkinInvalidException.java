@@ -19,7 +19,9 @@ public class GherkinInvalidException extends ApiException {
         return parseErrors;
     }
 
-    /** One {@code parseErrors} entry: 1-based line and column, and the parser's message. */
+    /**
+     * One {@code parseErrors} entry: 1-based line and column, and the parser's message.
+     */
     public record ParseErrorEntry(int line, int column, String message) {
 
         @Override

@@ -42,7 +42,9 @@ public final class Problems {
         return problem;
     }
 
-    /** The request's {@code X-Request-Id}, when it matches {@code ^[A-Za-z0-9._-]{1,128}$}. */
+    /**
+     * The request's {@code X-Request-Id}, when it matches {@code ^[A-Za-z0-9._-]{1,128}$}.
+     */
     public static Optional<String> requestId(HttpServletRequest request) {
         String requestId = request.getHeader(REQUEST_ID_HEADER);
         if (requestId == null || !VALID_REQUEST_ID.matcher(requestId).matches()) {

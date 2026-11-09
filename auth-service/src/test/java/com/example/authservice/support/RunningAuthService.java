@@ -26,7 +26,9 @@ public final class RunningAuthService implements AutoCloseable {
         this.http = new HttpCalls(Integer.parseInt(app.getEnvironment().getProperty("local.server.port")));
     }
 
-    /** Starts the application; {@code extraArguments} are further {@code --name=value} settings. */
+    /**
+     * Starts the application; {@code extraArguments} are further {@code --name=value} settings.
+     */
     public static RunningAuthService start(String... extraArguments) throws SQLException {
         ScratchDatabase database = ScratchDatabase.create();
         try {

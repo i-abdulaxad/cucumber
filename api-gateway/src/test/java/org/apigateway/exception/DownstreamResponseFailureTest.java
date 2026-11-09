@@ -93,7 +93,7 @@ class DownstreamResponseFailureTest extends GatewayIntegrationTest {
     @MethodSource("incompleteOrInvalidReplies")
     @Tag("AC-4.7")
     void anIncompleteOrInvalidDownstreamResponseProduces502(String description, RawSocketStub.Reply reply,
-                                                             CapturedOutput output) {
+                                                            CapturedOutput output) {
         // Given
         RAW_SCENARIO_SERVICE.respondWith(reply);
 

@@ -32,7 +32,9 @@ public class ProjectFixture {
     private final ProjectRepository projectRepository;
     private final ProjectMembershipRepository projectMembershipRepository;
 
-    /** Resets the database and seeds the Projects fixture. */
+    /**
+     * Resets the database and seeds the Projects fixture.
+     */
     public Projects seed() {
         Acme acme = acmeFixture.seed();
         Organization acmeOrg = organizationRepository.findById(acme.orgId()).orElseThrow();
@@ -77,14 +79,18 @@ public class ProjectFixture {
                 .build());
     }
 
-    /** Seeds an archived state directly, for tests that run before the archive operation exists (T12). */
+    /**
+     * Seeds an archived state directly, for tests that run before the archive operation exists (T12).
+     */
     public void archive(UUID projectId) {
         Project project = projectRepository.findById(projectId).orElseThrow();
         project.setArchivedAt(Instant.now());
         projectRepository.save(project);
     }
 
-    /** Deletes an explicit membership directly, for tests that run before the remove operation exists (T13). */
+    /**
+     * Deletes an explicit membership directly, for tests that run before the remove operation exists (T13).
+     */
     public void removeMember(UUID projectId, User user) {
         projectMembershipRepository.delete(
                 projectMembershipRepository.findByUserIdAndProjectId(user.getId(), projectId).orElseThrow());

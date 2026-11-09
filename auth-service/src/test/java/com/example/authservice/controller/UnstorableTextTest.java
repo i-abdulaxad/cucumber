@@ -177,7 +177,9 @@ class UnstorableTextTest {
         return calls.as(actor, request, body);
     }
 
-    /** A valid body for the request, in which {@code field} is the given JSON string value. */
+    /**
+     * A valid body for the request, in which {@code field} is the given JSON string value.
+     */
     private static String body(String request, String field, String jsonValue) {
         String value = "\"" + jsonValue + "\"";
         return switch (request) {
@@ -213,7 +215,9 @@ class UnstorableTextTest {
         return "/api/orgs/" + projects.acme().orgId() + "/invitations";
     }
 
-    /** The value as an encoder that can't represent a control character or a lone surrogate would print it. */
+    /**
+     * The value as an encoder that can't represent a control character or a lone surrogate would print it.
+     */
     private static String printed(String decoded) {
         StringBuilder printed = new StringBuilder();
         decoded.chars().forEach(c -> printed.append(Character.isISOControl(c) || Character.isSurrogate((char) c)

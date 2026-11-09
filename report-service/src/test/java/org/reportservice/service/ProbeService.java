@@ -24,17 +24,23 @@ public class ProbeService {
         this.accessChecker = accessChecker;
     }
 
-    /** "Require read": the access check with a minimum role, allowed on an archived project. */
+    /**
+     * "Require read": the access check with a minimum role, allowed on an archived project.
+     */
     public ProjectAccess read(UUID projectId, ProjectRole minimum) {
         return accessChecker.requireRead(projectId, minimum);
     }
 
-    /** "Require write": the access check with a minimum role, then 409 on an archived project. */
+    /**
+     * "Require write": the access check with a minimum role, then 409 on an archived project.
+     */
     public ProjectAccess write(UUID projectId, ProbeBody body) {
         return accessChecker.requireWrite(projectId, ProjectRole.MEMBER);
     }
 
-    /** Fails the way the named failure would reach the advice from a real use case. */
+    /**
+     * Fails the way the named failure would reach the advice from a real use case.
+     */
     public void fail(String kind) {
         switch (kind) {
             case "unique" -> throw new DataIntegrityViolationException(
@@ -44,7 +50,9 @@ public class ProbeService {
         }
     }
 
-    /** A request body with one string, for strict JSON (D13). */
+    /**
+     * A request body with one string, for strict JSON (D13).
+     */
     public record ProbeBody(@NotBlank String name) {
     }
 }

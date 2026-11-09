@@ -65,7 +65,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @Import(ProjectFixture.class)
 class QaProjectIdorTest {
 
-    enum Write { VIEW, LIST_MEMBERS, RENAME, ARCHIVE, RESTORE, ADD_MEMBER, CHANGE_ROLE, REMOVE_MEMBER }
+    enum Write {VIEW, LIST_MEMBERS, RENAME, ARCHIVE, RESTORE, ADD_MEMBER, CHANGE_ROLE, REMOVE_MEMBER}
 
     @Autowired
     private MockMvc mockMvc;

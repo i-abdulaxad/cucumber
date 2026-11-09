@@ -139,7 +139,9 @@ class RegistrationAndLoginTest {
         assertThat(userRepository.findByEmail(email.toLowerCase())).isEmpty();
     }
 
-    /** 64-character local part, "@", and a 190-character domain of labels of at most 63 characters. */
+    /**
+     * 64-character local part, "@", and a 190-character domain of labels of at most 63 characters.
+     */
     private static String emailOf255Characters() {
         String domain = "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(58) + ".com";
         String email = "a".repeat(64) + "@" + domain;

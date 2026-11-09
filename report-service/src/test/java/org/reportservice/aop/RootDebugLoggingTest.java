@@ -40,7 +40,9 @@ import static org.reportservice.support.ReportsFixture.CHECKOUT;
 @ExtendWith(OutputCaptureExtension.class)
 class RootDebugLoggingTest {
 
-    /** The loggers RE8 and FU-2 pin to INFO in {@code application.yaml}. */
+    /**
+     * The loggers RE8 and FU-2 pin to INFO in {@code application.yaml}.
+     */
     static final List<String> PINNED = List.of("org.hibernate.orm.core",
             "org.springframework.web.servlet.DispatcherServlet",
             "org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor",
@@ -133,7 +135,9 @@ class RootDebugLoggingTest {
         assertThat(log.lines().filter(line -> line.contains("jdk.internal.httpclient.debug"))).isEmpty();
     }
 
-    /** One feature, one scenario: a hidden Before hook, a step with a table, one with a doc string, a failure. */
+    /**
+     * One feature, one scenario: a hidden Before hook, a step with a table, one with a doc string, a failure.
+     */
     private static String sample() {
         return """
                 [{"uri": "features/checkout/payment.feature", "name": "Payment", "elements": [

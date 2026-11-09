@@ -512,7 +512,9 @@ class QaFixRoundTest {
         MvcResult run() throws Exception;
     }
 
-    /** Holds SELECT … FOR UPDATE on one row from another connection while the call runs; returns the call's log. */
+    /**
+     * Holds SELECT … FOR UPDATE on one row from another connection while the call runs; returns the call's log.
+     */
     private MvcResult whileRowIsLocked(String table, UUID id, CapturedOutput output, String[] log, Call call)
             throws Exception {
         try (Connection holder = dataSource.getConnection()) {

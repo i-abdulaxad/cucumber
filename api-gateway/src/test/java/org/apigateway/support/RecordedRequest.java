@@ -8,7 +8,8 @@ import java.util.TreeMap;
 /**
  * A request as received by a {@link StubServer}. Header names are case-insensitive.
  */
-public record RecordedRequest(String method, String path, String query, Map<String, List<String>> headers, String body) {
+public record RecordedRequest(String method, String path, String query, Map<String, List<String>> headers,
+                              String body) {
 
     public RecordedRequest {
         Map<String, List<String>> caseInsensitive = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

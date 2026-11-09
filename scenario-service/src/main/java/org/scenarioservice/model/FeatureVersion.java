@@ -13,7 +13,9 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
-/** An immutable version of a feature's text (ERD {@code feature_versions}); never updated or deleted (D9). */
+/**
+ * An immutable version of a feature's text (ERD {@code feature_versions}); never updated or deleted (D9).
+ */
 @Entity
 @Table(name = "feature_versions")
 @Getter
@@ -47,7 +49,9 @@ public class FeatureVersion extends AssignedIdEntity {
     @Column(nullable = false)
     private Instant createdAt;
 
-    /** Without source or message (P16). */
+    /**
+     * Without source or message (P16).
+     */
     @Override
     public String toString() {
         return "FeatureVersion[id=" + id + ", featureId=" + featureId + ", version=" + version + "]";

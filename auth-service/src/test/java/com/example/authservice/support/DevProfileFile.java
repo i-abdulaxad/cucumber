@@ -23,7 +23,9 @@ public final class DevProfileFile {
     private DevProfileFile() {
     }
 
-    /** The property sources of {@code application-dev.yaml}; its {@code spring.config.import} is not processed. */
+    /**
+     * The property sources of {@code application-dev.yaml}; its {@code spring.config.import} is not processed.
+     */
     public static List<PropertySource<?>> load() {
         try {
             return new YamlPropertySourceLoader().load(FILE, new ClassPathResource(FILE));
@@ -32,7 +34,9 @@ public final class DevProfileFile {
         }
     }
 
-    /** The level that the dev profile sets for {@code logger}. */
+    /**
+     * The level that the dev profile sets for {@code logger}.
+     */
     public static LogLevel level(String logger) {
         String key = "logging.level." + logger;
         Object level = load().stream().map(source -> source.getProperty(key)).filter(Objects::nonNull).findFirst()

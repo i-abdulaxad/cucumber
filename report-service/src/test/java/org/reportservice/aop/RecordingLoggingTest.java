@@ -68,8 +68,8 @@ class RecordingLoggingTest {
 
             assertThat(mockMvc.perform(put("/api/projects/" + CHECKOUT + "/runs/" + run.id() + "/results/"
                             + run.results().get(0)).header(HttpHeaders.AUTHORIZATION, HAL.bearer())
-                    .header("X-Request-Id", "r-77").contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"status\":\"FAILED\",\"comment\":\"" + COMMENT + "\"}")).andReturn().getResponse()
+                            .header("X-Request-Id", "r-77").contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"FAILED\",\"comment\":\"" + COMMENT + "\"}")).andReturn().getResponse()
                     .getStatus()).isEqualTo(200);
         } finally {
             // Log levels are JVM-global: put back what the test found
@@ -80,7 +80,7 @@ class RecordingLoggingTest {
         assertThat(log.entries()).filteredOn(line -> line.contains("org.reportservice")
                 || line.contains("o.r.")).isNotEmpty().allSatisfy(line -> assertThat(line).contains("requestId=r-77"));
         assertThat(log.aspectLines()).filteredOn(line -> line.message().startsWith("Leaving ")).extracting(
-                line -> line.message().replaceAll(" in \\d+ ms$", ""))
+                        line -> line.message().replaceAll(" in \\d+ ms$", ""))
                 .containsExactly("Leaving RunRecordingServiceImpl.record: returned");
         assertThat(log.lines()).noneMatch(line -> line.contains("QA-comment-8841") || line.contains(HAL.token()));
     }

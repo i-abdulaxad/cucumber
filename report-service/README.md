@@ -12,14 +12,14 @@ scenario-service features, and run summaries (spec: `docs/specs/report-service.m
 All paths are project-scoped and need a user JWT, except the CI upload, which needs an upload token. Through the
 gateway use `http://localhost:8080`; directly, port 8083.
 
-| Operation | Method and path | Minimum project role |
-|---|---|---|
-| Upload tokens | `POST`, `GET /api/projects/{projectId}/upload-tokens`; `POST .../upload-tokens/{tokenId}/revoke` | `ADMIN` |
-| CI upload | `POST /api/ci/runs?name=&environment=&build=&branch=&commit=&ciUrl=` with `Authorization: Bearer <upload token>` | an active token of the project |
-| Plan a manual run | `POST /api/projects/{projectId}/runs` | `MEMBER` |
-| Record a result | `PUT /api/projects/{projectId}/runs/{runId}/results/{resultId}` | `TESTER` |
-| Complete / cancel | `POST .../runs/{runId}/complete` (`TESTER`), `POST .../runs/{runId}/cancel` (`MEMBER`) | see left |
-| Read | `GET .../runs?page=&size=`, `GET .../runs/{runId}`, `GET .../runs/{runId}/results?status=&page=&size=`, `GET .../runs/{runId}/results/{resultId}` | `READER` |
+| Operation         | Method and path                                                                                                                                   | Minimum project role           |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|
+| Upload tokens     | `POST`, `GET /api/projects/{projectId}/upload-tokens`; `POST .../upload-tokens/{tokenId}/revoke`                                                  | `ADMIN`                        |
+| CI upload         | `POST /api/ci/runs?name=&environment=&build=&branch=&commit=&ciUrl=` with `Authorization: Bearer <upload token>`                                  | an active token of the project |
+| Plan a manual run | `POST /api/projects/{projectId}/runs`                                                                                                             | `MEMBER`                       |
+| Record a result   | `PUT /api/projects/{projectId}/runs/{runId}/results/{resultId}`                                                                                   | `TESTER`                       |
+| Complete / cancel | `POST .../runs/{runId}/complete` (`TESTER`), `POST .../runs/{runId}/cancel` (`MEMBER`)                                                            | see left                       |
+| Read              | `GET .../runs?page=&size=`, `GET .../runs/{runId}`, `GET .../runs/{runId}/results?status=&page=&size=`, `GET .../runs/{runId}/results/{resultId}` | `READER`                       |
 
 - An archived project is read-only: writes are 409 `PROJECT_ARCHIVED`, except token list and revoke.
 - Path ids are lower-case canonical UUIDs. Errors are RFC 9457 Problems with a stable `code` (contract C1).
@@ -38,6 +38,7 @@ gateway use `http://localhost:8080`; directly, port 8083.
    ```
 
    The answer is 201 with the completed run and its summary.
+
 - **Limits:** `application/json` in UTF-8 without content coding (otherwise 415); at most 20 MiB (otherwise 413; a
   larger `Content-Length` is answered before the body is read, so send `Expect: 100-continue`, as curl does for large
   bodies); at most 5,000 test cases. Unknown JSON fields are ignored; what is read is checked strictly (422
@@ -101,16 +102,16 @@ REPORT_DB_URL='jdbc:postgresql://localhost:5432/report_service' REPORT_DB_USERNA
 
 ## Settings
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `spring.datasource.url` (`REPORT_DB_URL`) | none (the `dev` profile sets one) | JDBC URL of the report_service database, without credentials |
-| `spring.datasource.username` (`REPORT_DB_USERNAME`) | none (the `dev` profile sets one) | Database role |
-| `spring.datasource.password` (`REPORT_DB_PASSWORD`) | none (`.env` with the `dev` profile) | Database password; never logged |
-| `app.jwtSecret` (`JWT_SECRET`) | none (`.env` with the `dev` profile) | Shared HS512 secret, standard Base64 of at least 64 bytes; never logged |
-| `app.internal-service-key` (`INTERNAL_SERVICE_KEY`) | none (`.env` with the `dev` profile) | Key for auth-service's project status (C7), standard Base64 of at least 32 bytes; never logged |
-| `app.auth-service.base-url` (`AUTH_SERVICE_URL`) | `http://localhost:8081` | auth-service, called directly (not through the gateway) for the access check (C5) and project status (C7); connect 1 s, read 2 s |
-| `app.scenario-service.base-url` (`SCENARIO_SERVICE_URL`) | `http://localhost:8082` | scenario-service, called directly for manual-run planning; connect 1 s, read 5 s |
-| `app.logging.enabled`, `app.logging.slow-call-threshold` | `true`, `500ms` | The service logging aspect (D17) |
+| Setting                                                  | Default                              | Meaning                                                                                                                          |
+|----------------------------------------------------------|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `spring.datasource.url` (`REPORT_DB_URL`)                | none (the `dev` profile sets one)    | JDBC URL of the report_service database, without credentials                                                                     |
+| `spring.datasource.username` (`REPORT_DB_USERNAME`)      | none (the `dev` profile sets one)    | Database role                                                                                                                    |
+| `spring.datasource.password` (`REPORT_DB_PASSWORD`)      | none (`.env` with the `dev` profile) | Database password; never logged                                                                                                  |
+| `app.jwtSecret` (`JWT_SECRET`)                           | none (`.env` with the `dev` profile) | Shared HS512 secret, standard Base64 of at least 64 bytes; never logged                                                          |
+| `app.internal-service-key` (`INTERNAL_SERVICE_KEY`)      | none (`.env` with the `dev` profile) | Key for auth-service's project status (C7), standard Base64 of at least 32 bytes; never logged                                   |
+| `app.auth-service.base-url` (`AUTH_SERVICE_URL`)         | `http://localhost:8081`              | auth-service, called directly (not through the gateway) for the access check (C5) and project status (C7); connect 1 s, read 2 s |
+| `app.scenario-service.base-url` (`SCENARIO_SERVICE_URL`) | `http://localhost:8082`              | scenario-service, called directly for manual-run planning; connect 1 s, read 5 s                                                 |
+| `app.logging.enabled`, `app.logging.slow-call-threshold` | `true`, `500ms`                      | The service logging aspect (D17)                                                                                                 |
 
 - A missing or blank `REPORT_DB_*` value stops start-up with a message that names the variable and never shows a
   value. `REPORT_DB_*` values must not contain `${`: Spring would treat it as a placeholder.

@@ -16,7 +16,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** One Examples block of an outline (ERD {@code examples}); {@code header} is {@code []} without a table. */
+/**
+ * One Examples block of an outline (ERD {@code examples}); {@code header} is {@code []} without a table.
+ */
 @Entity
 @Table(name = "examples")
 @Getter

@@ -1,0 +1,390 @@
+/* The only stylesheet (DS-12). Tokens per DS-1 to DS-6; components use the Tailwind utilities generated from them. */
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* tokens:light */
+:root {
+    color-scheme: light;
+    --surface: #fafafa;
+    --surface-raised: #ffffff;
+    --surface-overlay: #ffffff;
+    --surface-hover: #f4f4f5;
+    --surface-inverse: #18181b;
+    --border: #e4e4e7;
+    --border-control: #71717a;
+    --text: #18181b;
+    --text-muted: #52525b;
+    --text-inverse: #fafafa;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-soft: #eef2ff;
+    --on-primary: #ffffff;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --on-danger: #ffffff;
+    --danger-soft: #fef2f2;
+    --warning: #b45309;
+    --success: #15803d;
+    --info: #0369a1;
+    --focus-ring: #6366f1;
+    --scrim: #09090b66;
+    --status-passed-fg: #15803d;
+    --status-passed-bg: #f0fdf4;
+    --status-failed-fg: #b91c1c;
+    --status-failed-bg: #fef2f2;
+    --status-skipped-fg: #0369a1;
+    --status-skipped-bg: #f0f9ff;
+    --status-pending-fg: #b45309;
+    --status-pending-bg: #fffbeb;
+    --status-undefined-fg: #7e22ce;
+    --status-undefined-bg: #faf5ff;
+    --status-ambiguous-fg: #c2410c;
+    --status-ambiguous-bg: #fff7ed;
+    --status-unknown-fg: #475569;
+    --status-unknown-bg: #f1f5f9;
+    --avatar-1: #4f46e5;
+    --avatar-2: #0369a1;
+    --avatar-3: #15803d;
+    --avatar-4: #b45309;
+    --avatar-5: #be185d;
+    --avatar-6: #7e22ce;
+    --on-avatar: #ffffff;
+    --elevation-xs: 0 1px 2px rgb(0 0 0 / 0.05);
+    --elevation-sm: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.04);
+    --elevation-md: 0 4px 12px rgb(0 0 0 / 0.1);
+    --elevation-lg: 0 12px 32px rgb(0 0 0 / 0.16);
+}
+
+/* tokens:dark */
+:root[data-theme='dark'] {
+    color-scheme: dark;
+    --surface: #09090b;
+    --surface-raised: #18181b;
+    --surface-overlay: #27272a;
+    --surface-hover: #27272a;
+    --surface-inverse: #fafafa;
+    --border: #27272a;
+    --border-control: #71717a;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-inverse: #18181b;
+    --primary: #818cf8;
+    --primary-hover: #a5b4fc;
+    --primary-soft: #1e1b4b;
+    --on-primary: #09090b;
+    --danger: #f87171;
+    --danger-hover: #fca5a5;
+    --on-danger: #09090b;
+    --danger-soft: #450a0a99;
+    --warning: #fbbf24;
+    --success: #4ade80;
+    --info: #38bdf8;
+    --focus-ring: #818cf8;
+    --scrim: #000000a6;
+    --status-passed-fg: #86efac;
+    --status-passed-bg: #052e1699;
+    --status-failed-fg: #fca5a5;
+    --status-failed-bg: #450a0a99;
+    --status-skipped-fg: #7dd3fc;
+    --status-skipped-bg: #082f4999;
+    --status-pending-fg: #fcd34d;
+    --status-pending-bg: #451a0399;
+    --status-undefined-fg: #d8b4fe;
+    --status-undefined-bg: #3b076499;
+    --status-ambiguous-fg: #fdba74;
+    --status-ambiguous-bg: #43140799;
+    --status-unknown-fg: #cbd5e1;
+    --status-unknown-bg: #1e293b;
+    --avatar-1: #4f46e5;
+    --avatar-2: #0369a1;
+    --avatar-3: #15803d;
+    --avatar-4: #b45309;
+    --avatar-5: #be185d;
+    --avatar-6: #7e22ce;
+    --on-avatar: #ffffff;
+    --elevation-xs: 0 1px 2px rgb(0 0 0 / 0.1);
+    --elevation-sm: 0 1px 3px rgb(0 0 0 / 0.16), 0 1px 2px rgb(0 0 0 / 0.08);
+    --elevation-md: 0 4px 12px rgb(0 0 0 / 0.2);
+    --elevation-lg: 0 12px 32px rgb(0 0 0 / 0.32);
+}
+
+@theme inline {
+    --color-surface: var(--surface);
+    --color-surface-raised: var(--surface-raised);
+    --color-surface-overlay: var(--surface-overlay);
+    --color-surface-hover: var(--surface-hover);
+    --color-surface-inverse: var(--surface-inverse);
+    --color-border: var(--border);
+    --color-border-control: var(--border-control);
+    --color-text: var(--text);
+    --color-text-muted: var(--text-muted);
+    --color-text-inverse: var(--text-inverse);
+    --color-primary: var(--primary);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-soft: var(--primary-soft);
+    --color-on-primary: var(--on-primary);
+    --color-danger: var(--danger);
+    --color-danger-hover: var(--danger-hover);
+    --color-danger-soft: var(--danger-soft);
+    --color-on-danger: var(--on-danger);
+    --color-warning: var(--warning);
+    --color-success: var(--success);
+    --color-info: var(--info);
+    --color-focus-ring: var(--focus-ring);
+    --color-scrim: var(--scrim);
+    --color-status-passed-fg: var(--status-passed-fg);
+    --color-status-passed-bg: var(--status-passed-bg);
+    --color-status-failed-fg: var(--status-failed-fg);
+    --color-status-failed-bg: var(--status-failed-bg);
+    --color-status-skipped-fg: var(--status-skipped-fg);
+    --color-status-skipped-bg: var(--status-skipped-bg);
+    --color-status-pending-fg: var(--status-pending-fg);
+    --color-status-pending-bg: var(--status-pending-bg);
+    --color-status-undefined-fg: var(--status-undefined-fg);
+    --color-status-undefined-bg: var(--status-undefined-bg);
+    --color-status-ambiguous-fg: var(--status-ambiguous-fg);
+    --color-status-ambiguous-bg: var(--status-ambiguous-bg);
+    --color-status-unknown-fg: var(--status-unknown-fg);
+    --color-status-unknown-bg: var(--status-unknown-bg);
+    --color-avatar-1: var(--avatar-1);
+    --color-avatar-2: var(--avatar-2);
+    --color-avatar-3: var(--avatar-3);
+    --color-avatar-4: var(--avatar-4);
+    --color-avatar-5: var(--avatar-5);
+    --color-avatar-6: var(--avatar-6);
+    --color-on-avatar: var(--on-avatar);
+    --shadow-xs: var(--elevation-xs);
+    --shadow-sm: var(--elevation-sm);
+    --shadow-md: var(--elevation-md);
+    --shadow-lg: var(--elevation-lg);
+}
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1rem;
+    --text-sm: 0.8125rem;
+    --text-sm--line-height: 1.25rem;
+    --text-base: 0.875rem;
+    --text-base--line-height: 1.25rem;
+    --text-md: 1rem;
+    --text-md--line-height: 1.5rem;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.75rem;
+    --text-xl: 1.25rem;
+    --text-xl--line-height: 1.75rem;
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: 2rem;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --animate-shimmer: shimmer 1.6s var(--ease-standard) infinite;
+    --animate-spin: spin 0.8s linear infinite;
+    --animate-pop-in: pop-in 180ms var(--ease-standard);
+    --animate-fade-in: fade-in 240ms var(--ease-standard);
+    --animate-slide-in: slide-in 240ms var(--ease-standard);
+
+    @keyframes shimmer {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.45;
+        }
+    }
+    @keyframes pop-in {
+        from {
+            opacity: 0;
+            transform: scale(0.97) translateY(-2px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    @keyframes slide-in {
+        from {
+            transform: translateX(-100%);
+        }
+        to {
+            transform: none;
+        }
+    }
+}
+
+/* The loading region keeps its size, so content doesn't jump in (AC-9.2). */
+@utility region {
+    min-height: 6rem;
+}
+
+@layer base {
+    html {
+        background-color: var(--surface);
+        color: var(--text);
+        font-family: var(--font-sans);
+        font-size: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+        margin: 0;
+        font-size: var(--text-base);
+        line-height: var(--text-base--line-height);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+    }
+
+    h1:focus,
+    main:focus {
+        outline: none;
+    }
+
+    h1:focus-visible {
+        outline: 2px solid var(--focus-ring);
+    }
+
+    ::selection {
+        background-color: var(--primary-soft);
+    }
+}
+
+/* DS-5: with reduced motion, nothing moves; the Skeleton becomes a static tint. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* DS-7: the feature workspace fills the viewport below the top bar and the page header (lg and up). */
+@utility workspace-height {
+    height: calc(100dvh - 11.5rem);
+    min-height: 28rem;
+}
+
+/* F3: the Gherkin editor (CodeMirror 6) takes its colours from the DS-1 tokens in both themes. Three classes beat
+   CodeMirror's injected base theme without !important. */
+.gherkin-editor .cm-editor.cm-editor {
+    height: 100%;
+    background-color: var(--surface-raised);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+}
+
+.gherkin-editor .cm-editor.cm-focused {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.gherkin-editor .cm-editor .cm-scroller {
+    font-family: var(--font-mono);
+    line-height: 1.6;
+}
+
+.gherkin-editor .cm-editor .cm-content {
+    caret-color: var(--text);
+    padding: 0.75rem 0;
+}
+
+.gherkin-editor .cm-editor .cm-cursor {
+    border-left-color: var(--text);
+}
+
+.gherkin-editor .cm-editor .cm-gutters {
+    background-color: var(--surface-raised);
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+}
+
+.gherkin-editor .cm-editor .cm-activeLine,
+.gherkin-editor .cm-editor .cm-activeLineGutter {
+    background-color: var(--surface-hover);
+}
+
+.gherkin-editor .cm-editor .cm-selectionBackground,
+.gherkin-editor .cm-editor.cm-focused .cm-selectionBackground,
+.gherkin-editor .cm-editor .cm-content ::selection {
+    background-color: var(--primary-soft);
+}
+
+.gherkin-editor .cm-editor .cm-gherkin-keyword {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.gherkin-editor .cm-editor .cm-gherkin-tag {
+    color: var(--info);
+}
+
+.gherkin-editor .cm-editor .cm-gherkin-comment {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.gherkin-editor .cm-editor .cm-gherkin-string {
+    color: var(--success);
+}
+
+.gherkin-editor .cm-editor .cm-gherkin-variable {
+    color: var(--warning);
+}
+
+.gherkin-editor .cm-editor .cm-lintRange-error {
+    background-image: none;
+    text-decoration: underline wavy var(--danger);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+}
+
+.gherkin-editor .cm-editor .cm-panels {
+    background-color: var(--surface-raised);
+    color: var(--text);
+    border-top: 1px solid var(--border);
+}
+
+.gherkin-editor .cm-editor .cm-panel.cm-panel-lint ul {
+    max-height: 8rem;
+}
+
+.gherkin-editor .cm-editor .cm-panel.cm-panel-lint ul [aria-selected] {
+    background-color: var(--surface-hover);
+    color: var(--text);
+}
+
+.gherkin-editor .cm-editor .cm-panel.cm-panel-lint button {
+    color: var(--text-muted);
+}
+
+.gherkin-editor .cm-editor .cm-diagnostic {
+    padding: 0.25rem 0.75rem;
+    font-family: var(--font-mono);
+}
+
+.gherkin-editor .cm-editor .cm-diagnostic-error {
+    border-left: 4px solid var(--danger);
+}
+
+.gherkin-editor .cm-editor .cm-tooltip {
+    background-color: var(--surface-overlay);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--elevation-md);
+}

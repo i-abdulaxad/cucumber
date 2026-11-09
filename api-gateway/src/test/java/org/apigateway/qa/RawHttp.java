@@ -40,7 +40,9 @@ final class RawHttp {
         return sendBytes(port, request.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    /** Sends raw bytes as they are and reads the whole response. */
+    /**
+     * Sends raw bytes as they are and reads the whole response.
+     */
     static Response sendBytes(int port, byte[] rawRequest) {
         try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), port)) {
             socket.setSoTimeout(READ_TIMEOUT_MILLIS);
@@ -63,7 +65,9 @@ final class RawHttp {
         return buffer.toByteArray();
     }
 
-    /** A parsed HTTP/1.1 response. Header names keep their wire case; lookups ignore case. */
+    /**
+     * A parsed HTTP/1.1 response. Header names keep their wire case; lookups ignore case.
+     */
     record Response(int status, List<Map.Entry<String, String>> headers, String body) {
 
         List<String> headerValues(String name) {

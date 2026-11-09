@@ -10,13 +10,19 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Test runs and the project write lock (D14). */
+/**
+ * Test runs and the project write lock (D14).
+ */
 public interface TestRunRepository extends JpaRepository<TestRun, UUID> {
 
-    /** The run, if it belongs to the project; a run of another project is "not found" (D13). */
+    /**
+     * The run, if it belongs to the project; a run of another project is "not found" (D13).
+     */
     Optional<TestRun> findByIdAndProjectId(UUID id, UUID projectId);
 
-    /** The project's runs, newest first ({@code createdAt}, then {@code id}, both descending; AC-5.1). */
+    /**
+     * The project's runs, newest first ({@code createdAt}, then {@code id}, both descending; AC-5.1).
+     */
     Page<TestRun> findByProjectIdOrderByCreatedAtDescIdDesc(UUID projectId, Pageable pageable);
 
     /**

@@ -116,7 +116,9 @@ class StrictJsonTypesTest {
         return calls.as(actor, builder, body);
     }
 
-    /** A valid body for the request, in which {@code field} is the raw JSON value. */
+    /**
+     * A valid body for the request, in which {@code field} is the raw JSON value.
+     */
     private static String body(String request, String field, String json) {
         String email = field.equals("email") ? json : "\"fay@example.com\"";
         String password = field.equals("password") ? json : "\"Secret123!\"";

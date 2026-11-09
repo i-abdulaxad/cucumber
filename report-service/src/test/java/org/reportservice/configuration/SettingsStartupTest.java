@@ -38,13 +38,19 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @ExtendWith(OutputCaptureExtension.class)
 class SettingsStartupTest {
 
-    /** Values that must never be printed: a (wrong) database password and username. */
+    /**
+     * Values that must never be printed: a (wrong) database password and username.
+     */
     private static final String MARKER_PASSWORD = "Report-Db-Pw-Marker-QA";
     private static final String MARKER_USERNAME = "report_user_marker_qa";
 
-    /** Standard Base64 of 32 bytes: a usable service key, but too short for an HS512 JWT secret. */
+    /**
+     * Standard Base64 of 32 bytes: a usable service key, but too short for an HS512 JWT secret.
+     */
     private static final String BASE64_32_BYTES = base64("thirty-two bytes of TEST secret!");
-    /** Standard Base64 of 16 bytes: too short for the service key. */
+    /**
+     * Standard Base64 of 16 bytes: too short for the service key.
+     */
     private static final String BASE64_16_BYTES = base64("16 bytes of TEST");
 
     @ParameterizedTest(name = "AC-7.1 {0} {1}")
@@ -118,7 +124,9 @@ class SettingsStartupTest {
         }
     }
 
-    /** Valid settings for the scratch database, except for database credentials that must never be printed. */
+    /**
+     * Valid settings for the scratch database, except for database credentials that must never be printed.
+     */
     private static Map<String, String> validSettings(ScratchDatabase scratch) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("REPORT_DB_URL", scratch.url());
@@ -129,7 +137,9 @@ class SettingsStartupTest {
         return values;
     }
 
-    /** Starts report-service without the process environment and without a profile, on 127.0.0.1. */
+    /**
+     * Starts report-service without the process environment and without a profile, on 127.0.0.1.
+     */
     private static ConfigurableApplicationContext start(Map<String, String> settings) {
         List<String> arguments = new ArrayList<>(List.of("--server.address=127.0.0.1", "--server.port=0",
                 "--spring.profiles.active="));
@@ -140,7 +150,9 @@ class SettingsStartupTest {
                 .run(arguments.toArray(String[]::new));
     }
 
-    /** One line per migration history row, in installed order: version and success. */
+    /**
+     * One line per migration history row, in installed order: version and success.
+     */
     private static List<String> history(ScratchDatabase scratch) throws SQLException {
         List<String> rows = new ArrayList<>();
         try (Connection connection = scratch.connect();

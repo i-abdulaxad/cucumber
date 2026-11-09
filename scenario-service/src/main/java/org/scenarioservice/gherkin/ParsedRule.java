@@ -2,7 +2,9 @@ package org.scenarioservice.gherkin;
 
 import java.util.List;
 
-/** A Gherkin Rule with its Background and scenarios, in text order. {@link #toString()} shows no content (P16). */
+/**
+ * A Gherkin Rule with its Background and scenarios, in text order. {@link #toString()} shows no content (P16).
+ */
 public record ParsedRule(String keyword, String name, String description, int line, List<String> tags,
                          List<ParsedScenario> children) implements ParsedChild {
 

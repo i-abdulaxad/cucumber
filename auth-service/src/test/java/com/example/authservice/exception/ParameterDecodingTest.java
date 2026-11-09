@@ -94,7 +94,9 @@ class ParameterDecodingTest {
         assertCleanLog(output, logStart);
     }
 
-    /** The endpoint's normal answer, or 400 MALFORMED_REQUEST if it decodes the parameter; never a 500. */
+    /**
+     * The endpoint's normal answer, or 400 MALFORMED_REQUEST if it decodes the parameter; never a 500.
+     */
     private static void assertNormalOrMalformed(Answer answer, int normalStatus) {
         assertThat(answer.status()).as("status").isIn(normalStatus, 400);
         if (answer.status() == 400) {

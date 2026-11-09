@@ -1,6 +1,8 @@
 package org.scenarioservice.exception;
 
-/** No such version of the feature (D16): 404. */
+/**
+ * No such version of the feature (D16): 404.
+ */
 public class VersionNotFoundException extends ApiException {
 
     public VersionNotFoundException() {

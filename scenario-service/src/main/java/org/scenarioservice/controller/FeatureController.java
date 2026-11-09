@@ -41,7 +41,9 @@ public class FeatureController {
         this.featureService = featureService;
     }
 
-    /** {@code query} carries the raw {@code tag} values, so a repeated or comma-containing tag isn't rewritten. */
+    /**
+     * {@code query} carries the raw {@code tag} values, so a repeated or comma-containing tag isn't rewritten.
+     */
     @GetMapping
     public ResponseEntity<List<FeatureSummaryResponse>> list(@PathVariable UUID projectId,
                                                              @RequestParam(required = false) ArchivedFilter archived,

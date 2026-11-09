@@ -36,7 +36,9 @@ import static org.scenarioservice.support.ScenarioFixture.HAL;
 import static org.scenarioservice.support.ScenarioFixture.IVY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/** US-4 (T10, end to end): test cases derived from the current version, never stored (D13). */
+/**
+ * US-4 (T10, end to end): test cases derived from the current version, never stored (D13).
+ */
 @ScenarioServiceIntegrationTest
 class TestCasesTest {
 

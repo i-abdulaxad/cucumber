@@ -29,7 +29,9 @@ class LongLoginPasswordTest {
     private static final String A72 = "a72@example.com";
     private static final String EURO72 = "euro72@example.com";
     private static final String SEVENTY_TWO_A = "A".repeat(72);
-    /** 24 euro signs are 72 UTF-8 bytes. */
+    /**
+     * 24 euro signs are 72 UTF-8 bytes.
+     */
     private static final String TWENTY_FOUR_EUROS = "€".repeat(24);
     private static final String LOGIN = "/api/auth/login";
 

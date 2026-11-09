@@ -12,7 +12,9 @@ final class SecretSettings {
     private SecretSettings() {
     }
 
-    /** The decoded secret, or {@link IllegalStateException} naming the setting. */
+    /**
+     * The decoded secret, or {@link IllegalStateException} naming the setting.
+     */
     static byte[] decode(String value, String property, String variable, int minimumBytes) {
         if (value == null || value.isBlank() || value.contains("${")) {
             throw new IllegalStateException(property + " must be set through the " + variable

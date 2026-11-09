@@ -84,7 +84,9 @@ class ApiExceptionHandlerTest {
         assertThat(problem.getProperties().get("errors")).asInstanceOf(LIST).isNotEmpty();
     }
 
-    /** What Spring MVC's {@code @Valid @RequestBody} produces for the request, through the same advice. */
+    /**
+     * What Spring MVC's {@code @Valid @RequestBody} produces for the request, through the same advice.
+     */
     private ProblemDetail springProblem(AcceptInvitationRequest request, MockHttpServletRequest servletRequest)
             throws Exception {
         BeanPropertyBindingResult errors = new BeanPropertyBindingResult(request, "acceptInvitationRequest");
@@ -98,7 +100,9 @@ class ApiExceptionHandlerTest {
         return (ProblemDetail) response.getBody();
     }
 
-    /** What the service throws for the same request (the mapping in {@code InvitationServiceImpl}). */
+    /**
+     * What the service throws for the same request (the mapping in {@code InvitationServiceImpl}).
+     */
     private static RequestValidationException serviceException(AcceptInvitationRequest request) {
         return new RequestValidationException(VALIDATOR.validate(request).stream()
                 .map(violation -> new FieldViolation(violation.getPropertyPath().toString(), violation.getMessage()))

@@ -13,7 +13,9 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
-/** A Gherkin Rule of the current version (ERD {@code rules}); {@code position} is among the Feature's children. */
+/**
+ * A Gherkin Rule of the current version (ERD {@code rules}); {@code position} is among the Feature's children.
+ */
 @Entity
 @Table(name = "rules")
 @Getter

@@ -332,7 +332,7 @@ servers:
   - url: http://localhost:8082
     description: Direct to scenario-service (local development and tests).
 security:
-  - bearerAuth: []
+  - bearerAuth: [ ]
 tags:
   - name: Features
     description: Create, list, view, save, archive and restore features (US-1, US-2, US-3, US-6).
@@ -1007,9 +1007,9 @@ paths:
                     - keyword: Given
                       text: 'a basket with these items:'
                       dataTable:
-                        - [item, price]
-                        - [Mug, '8.00']
-                        - [Shirt, '20.00']
+                        - [ item, price ]
+                        - [ Mug, '8.00' ]
+                        - [ Shirt, '20.00' ]
                       docString: null
                     - keyword: When
                       text: the customer pays by card
@@ -1033,9 +1033,9 @@ paths:
                     - keyword: Given
                       text: 'a basket with these items:'
                       dataTable:
-                        - [item, price]
-                        - [Mug, '8.00']
-                        - [Shirt, '20.00']
+                        - [ item, price ]
+                        - [ Mug, '8.00' ]
+                        - [ Shirt, '20.00' ]
                       docString: null
                     - keyword: When
                       text: the customer pays with voucher "OLD5"
@@ -1702,9 +1702,9 @@ components:
         items:
           type: string
       example:
-        - [item, price]
-        - [Mug, '8.00']
-        - [Shirt, '20.00']
+        - [ item, price ]
+        - [ Mug, '8.00' ]
+        - [ Shirt, '20.00' ]
     DocString:
       type: object
       required:
@@ -2307,7 +2307,7 @@ components:
             name: ''
             description: ''
             line: 5
-            tags: []
+            tags: [ ]
             steps:
               - id: 6e8a0c2e-4f5b-4d7a-9c1e-3b5d7f9a1c01
                 keyword: Given
@@ -2315,11 +2315,11 @@ components:
                 text: 'a basket with these items:'
                 line: 6
                 dataTable:
-                  - [item, price]
-                  - [Mug, '8.00']
-                  - [Shirt, '20.00']
+                  - [ item, price ]
+                  - [ Mug, '8.00' ]
+                  - [ Shirt, '20.00' ]
                 docString: null
-            examples: []
+            examples: [ ]
           - id: a3c5e7f9-1b2d-4f6a-8c0e-2d4f6a8c0e11
             kind: SCENARIO
             keyword: Scenario
@@ -2345,14 +2345,14 @@ components:
                 docString:
                   content: 'Total: 28.00'
                   mediaType: text
-            examples: []
+            examples: [ ]
           - id: 0b2d4f6b-8c9e-4a1d-8f5b-7e9a1c3d5f04
             kind: RULE
             keyword: Rule
             name: Vouchers
             description: ''
             line: 19
-            tags: []
+            tags: [ ]
             children:
               - id: b4d6f8a0-2c3e-4a7b-9d1f-3e5a7b9d1f22
                 kind: SCENARIO_OUTLINE
@@ -2360,7 +2360,7 @@ components:
                 name: Pay with a voucher
                 description: ''
                 line: 21
-                tags: []
+                tags: [ ]
                 steps:
                   - id: 9b1d3f5b-7c8e-4a0d-8f4b-6e8a0c2d4f05
                     keyword: When
@@ -2403,7 +2403,7 @@ components:
                     name: Expired vouchers
                     description: ''
                     line: 31
-                    tags: []
+                    tags: [ ]
                     header:
                       - code
                       - result

@@ -78,7 +78,9 @@ public final class CiSample {
     private CiSample() {
     }
 
-    /** A fresh, changeable tree of the sample. */
+    /**
+     * A fresh, changeable tree of the sample.
+     */
     public static ArrayNode tree() {
         return (ArrayNode) MAPPER.readTree(JSON);
     }

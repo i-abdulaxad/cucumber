@@ -138,9 +138,9 @@ class QaLogLeakageTest {
             String resultId = JsonPath.read(body(Runs.read(mockMvc, DAN, CHECKOUT, "/" + runId + "/results")),
                     "$.items[0].id");
             assertThat(mockMvc.perform(put(Plans.runs(CHECKOUT) + "/" + runId + "/results/" + resultId)
-                    .header(HttpHeaders.AUTHORIZATION, HAL.bearer()).header("X-Request-Id", "qa-r-77")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"status\":\"FAILED\",\"comment\":\"QaComment99 secret\"}")).andReturn()
+                            .header(HttpHeaders.AUTHORIZATION, HAL.bearer()).header("X-Request-Id", "qa-r-77")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"FAILED\",\"comment\":\"QaComment99 secret\"}")).andReturn()
                     .getResponse().getStatus()).isEqualTo(200);
             assertThat(Runs.record(mockMvc, HAL, CHECKOUT, UUID.fromString(runId), UUID.fromString(resultId),
                     "{\"status\":\"BROKEN\",\"comment\":\"QaComment99 again\"}").getResponse().getStatus())

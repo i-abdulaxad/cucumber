@@ -23,7 +23,9 @@ public final class ProblemAssertions {
     private ProblemAssertions() {
     }
 
-    /** Asserts the Problem and returns its parsed body for further checks. */
+    /**
+     * Asserts the Problem and returns its parsed body for further checks.
+     */
     public static DocumentContext assertProblem(MvcResult result, int status, String code, String instance)
             throws UnsupportedEncodingException {
         assertThat(result.getResponse().getStatus()).as("status").isEqualTo(status);

@@ -310,7 +310,7 @@ servers:
   - url: http://localhost:8081
     description: Direct to auth-service (local development; Swagger UI and `/v3/api-docs` only here).
 security:
-  - bearerAuth: []
+  - bearerAuth: [ ]
 tags:
   - name: Accounts
     description: Registration and login (US-2).
@@ -346,7 +346,7 @@ paths:
         normalised (trimmed, lower-cased) before it is stored, so `Ana@Example.COM` and `ana@example.com` are the same
         account (AC-2.2). The response never contains the password or its hash. Registration does not log the user in;
         call `POST /api/auth/login` next.
-      security: []
+      security: [ ]
       parameters:
         - $ref: '#/components/parameters/XRequestId'
       requestBody:
@@ -416,7 +416,7 @@ paths:
 
         No account can have a password longer than 72 UTF-8 bytes (the BCrypt limit), so a longer login password is
         always 401 `INVALID_CREDENTIALS`, with the same `detail` and no validation error (AC-2.10).
-      security: []
+      security: [ ]
       parameters:
         - $ref: '#/components/parameters/XRequestId'
       requestBody:
@@ -515,7 +515,7 @@ paths:
 
         Security: public (`security: []`), but an `Authorization: Bearer` token is read when present and valid, and
         it decides which of the two flows above applies.
-      security: []
+      security: [ ]
       parameters:
         - name: token
           in: path
@@ -1785,7 +1785,7 @@ paths:
 
         **Stability:** fields are only ever added; a breaking change needs a new path.
       security:
-        - serviceKey: []
+        - serviceKey: [ ]
       servers:
         - url: http://localhost:8081
           description: Direct to auth-service. Not routed by the gateway.
@@ -1846,7 +1846,7 @@ paths:
       description: |
         Public, on the service port only (AC-3.7); not routed by the gateway. Generated from the code by springdoc
         and **not** the contract: this file is.
-      security: []
+      security: [ ]
       servers:
         - url: http://localhost:8081
       responses:

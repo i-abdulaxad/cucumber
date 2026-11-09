@@ -139,7 +139,7 @@ class BearerAuthenticationTest {
     void aValidTokenForAUserThatNoLongerExistsIsRejected() throws Exception {
         // When
         MvcResult result = mockMvc.perform(get(ORGS)
-                .header(HttpHeaders.AUTHORIZATION, bearer(TestJwt.valid(AcmeFixture.UNKNOWN_ID, "gone@example.com"))))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(TestJwt.valid(AcmeFixture.UNKNOWN_ID, "gone@example.com"))))
                 .andReturn();
 
         // Then
@@ -180,7 +180,9 @@ class BearerAuthenticationTest {
         assertThat(requestLog).doesNotContainPattern("(?m)^\\S+\\s+ERROR\\s").doesNotContain("\tat ");
     }
 
-    /** An anonymous request gets 401 before reaching Spring MVC; an authenticated one reaches it and gets 200. */
+    /**
+     * An anonymous request gets 401 before reaching Spring MVC; an authenticated one reaches it and gets 200.
+     */
     private static void assertAuthenticated(MvcResult result) throws Exception {
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         assertThat(result.getResponse().getHeader(HttpHeaders.WWW_AUTHENTICATE)).isNull();

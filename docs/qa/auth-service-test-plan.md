@@ -1,36 +1,51 @@
 # Test plan: auth-service (phase 1)
 
-- Feature: `auth-service`. Spec `docs/specs/auth-service.md`, phase 1 "Accepted with follow-ups", last updated 2026-10-12, 8 stories, **72 ACs** (P0 22, P1 39, P2 11). The fix round (D13, T16–T21) added AC-1.9, AC-2.10, AC-2.11, AC-5.11, AC-5.12, AC-6.10 and AC-7.8; the original 65 are unchanged.
-- Contracts: `docs/api/auth-service.openapi.yaml` 1.1.0 (C1, C3; 1.0.0 at first verification), `docs/api/api-gateway.openapi.yaml` 0.2.1 (X1 notes). JWT contract C2 unchanged.
+- Feature: `auth-service`. Spec `docs/specs/auth-service.md`, phase 1 "Accepted with follow-ups", last updated
+  2026-10-12, 8 stories, **72 ACs** (P0 22, P1 39, P2 11). The fix round (D13, T16–T21) added AC-1.9, AC-2.10, AC-2.11,
+  AC-5.11, AC-5.12, AC-6.10 and AC-7.8; the original 65 are unchanged.
+- Contracts: `docs/api/auth-service.openapi.yaml` 1.1.0 (C1, C3; 1.0.0 at first verification),
+  `docs/api/api-gateway.openapi.yaml` 0.2.1 (X1 notes). JWT contract C2 unchanged.
 - ERD: `docs/erd/cucumber.dbml`, `TableGroup auth_service` (as-built).
-- Code under test: commit `32eee07` plus the uncommitted auth-service phase 1 working tree (T1–T15, then the fix round T16–T21). Run instructions: `auth-service/README.md`.
-- Author: qa, 2026-10-12 (updated the same day for the fix round, section 3a). Results: `docs/qa/auth-service-report.md`.
+- Code under test: commit `32eee07` plus the uncommitted auth-service phase 1 working tree (T1–T15, then the fix round
+  T16–T21). Run instructions: `auth-service/README.md`.
+- Author: qa, 2026-10-12 (updated the same day for the fix round, section 3a). Results:
+  `docs/qa/auth-service-report.md`.
 
 ## 1. Scope
 
 In scope:
-- All 72 ACs of US-1 to US-8, including the D11 decisions Q2–Q6 and the D13 decisions (fix round) (accept body schema, ignored body of a logged-in caller, revoking an expired invitation, the loser of a double accept, error precedence).
-- Adversarial checks of D2 (error format), D3 (authorization), D4 (user status), D7 (public operations), D11 (organization rules) and D12 (email normalisation): forged tokens, public-operation bypass, the full role × operation matrix, cross-organization access and IDOR, invitation-token abuse, concurrency, input edge cases, error shape, leakage.
-- The NFRs that can be observed: seat limit and single-use tokens under concurrency, no secrets in logs, INFO business log lines with ids only, the informational p95 latency.
+
+- All 72 ACs of US-1 to US-8, including the D11 decisions Q2–Q6 and the D13 decisions (fix round) (accept body schema,
+  ignored body of a logged-in caller, revoking an expired invitation, the loser of a double accept, error precedence).
+- Adversarial checks of D2 (error format), D3 (authorization), D4 (user status), D7 (public operations), D11 (
+  organization rules) and D12 (email normalisation): forged tokens, public-operation bypass, the full role × operation
+  matrix, cross-organization access and IDOR, invitation-token abuse, concurrency, input edge cases, error shape,
+  leakage.
+- The NFRs that can be observed: seat limit and single-use tokens under concurrency, no secrets in logs, INFO business
+  log lines with ids only, the informational p95 latency.
 - ERD conformance: the Hibernate DDL against the `auth_service` group.
 - Regression: the accepted gateway suite (`api-gateway`, 411 tests, 4 skipped under its D10).
 - A manual end-to-end run through the gateway (T15's steps plus error bodies).
 
 Out of scope:
-- The spec's "Out of scope" list, including the ERD defects routed to phase 2 (`auth-service-projects`) and phase 4 (`auth-service-persistence`). They are not reported as bugs.
-- Project API, `ProjectGuard`, `ProjectRoleService` (phase 2); email verification, refresh tokens, rate limiting (phase 3); PostgreSQL behaviour (phase 4).
-- Gateway behaviour listed under the spec's "Known issues in other services" (gateway-first 401, gateway errors without `code`).
+
+- The spec's "Out of scope" list, including the ERD defects routed to phase 2 (`auth-service-projects`) and phase 4 (
+  `auth-service-persistence`). They are not reported as bugs.
+- Project API, `ProjectGuard`, `ProjectRoleService` (phase 2); email verification, refresh tokens, rate limiting (phase
+  3); PostgreSQL behaviour (phase 4).
+- Gateway behaviour listed under the spec's "Known issues in other services" (gateway-first 401, gateway errors without
+  `code`).
 
 Test levels:
 
-| Level | Where | Tooling |
-|---|---|---|
-| Acceptance / API (full context) | `auth-service/src/test/java/com/example/authservice/{controller,exception,security,configuration}` (backend-swe) and `.../qa/` (qa) | `@AuthServiceIntegrationTest` (`@SpringBootTest` + MockMvc, real security chain, H2), `AcmeFixture`, `ApiCalls`, `TestJwt`, `ProblemAssertions` |
-| Unit | `enums`, `security`, `service/impl`, `dto/request`, `exception` (backend-swe) | JUnit 6, Mockito, AssertJ |
-| Startup | `configuration/JwtSecretStartupTest`, `OrganizationPropertiesStartupTest` (own H2 URLs, G3) | `SpringApplicationBuilder` |
-| Schema (ERD) | `qa/QaSchemaTest` | `JdbcTemplate` on `INFORMATION_SCHEMA` of the shared context |
-| Mutation check (qa, evidence only) | scratch copy under `/tmp`, deleted afterwards | one defect per run, full suite, failing classes recorded |
-| Manual end to end | both services with `--spring.profiles.active=dev`, gateway 8080, auth-service 8081 | `curl` |
+| Level                              | Where                                                                                                                               | Tooling                                                                                                                                         |
+|------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Acceptance / API (full context)    | `auth-service/src/test/java/com/example/authservice/{controller,exception,security,configuration}` (backend-swe) and `.../qa/` (qa) | `@AuthServiceIntegrationTest` (`@SpringBootTest` + MockMvc, real security chain, H2), `AcmeFixture`, `ApiCalls`, `TestJwt`, `ProblemAssertions` |
+| Unit                               | `enums`, `security`, `service/impl`, `dto/request`, `exception` (backend-swe)                                                       | JUnit 6, Mockito, AssertJ                                                                                                                       |
+| Startup                            | `configuration/JwtSecretStartupTest`, `OrganizationPropertiesStartupTest` (own H2 URLs, G3)                                         | `SpringApplicationBuilder`                                                                                                                      |
+| Schema (ERD)                       | `qa/QaSchemaTest`                                                                                                                   | `JdbcTemplate` on `INFORMATION_SCHEMA` of the shared context                                                                                    |
+| Mutation check (qa, evidence only) | scratch copy under `/tmp`, deleted afterwards                                                                                       | one defect per run, full suite, failing classes recorded                                                                                        |
+| Manual end to end                  | both services with `--spring.profiles.active=dev`, gateway 8080, auth-service 8081                                                  | `curl`                                                                                                                                          |
 
 No new dependency, no `src/test/resources`, no change outside `qa/**` and `docs/qa/**`.
 
@@ -38,198 +53,213 @@ No new dependency, no `src/test/resources`, no change outside `qa/**` and `docs/
 
 The ACs are precise and testable as written (explicit statuses, codes, bodies, fixtures and seeding). Findings:
 
-| # | Finding | Proposal |
-|---|---|---|
-| TF-1 | "Every error auth-service produces is a Problem" (D2) has no AC for requests that never reach Spring MVC: firewall rejections (`;`, `/./`, `%2e`, `//`), `TRACE`, direct `GET /error`, Tomcat's encoded-slash rejection. | Add an AC, or state which of these may keep the container/Boot format. Tested by qa; see BUG-auth-service-1. |
-| TF-2 | D2 defines `instance` as the request path. For the accept operation the path contains the acceptance token, so every accept error echoes the token in `instance` (to the caller that sent it). The NFR "never logged, never listed" is met; the spec doesn't say whether an echo in an error body is acceptable. | Decide: keep (it is the caller's own input) or redact the token segment in `instance`. |
-| TF-3 | "Wrong enum value → MALFORMED_REQUEST" doesn't name numeric values; Jackson maps `0`–`3` to roles by declaration order (D3 says the order is never used). | Confirm that numbers are wrong values (the contract already says "any other value is 400"). See BUG-auth-service-2. |
-| TF-4 | D12 says "lower-cased", with no Unicode rule: NFC and NFD spellings of `élodie@` are two accounts, `İ` lower-cases to `i̇` (with a combining dot), the Kelvin sign `K` becomes ASCII `k`. | State "lower-case with `Locale.ROOT`, no Unicode normalisation" for phase 1, or add NFC normalisation to phase 3. |
-| TF-5 | "Not blank" names (D11, E17) don't say whether Unicode spaces count: a name of only no-break and zero-width spaces is accepted; a name containing U+0000 is accepted (it will fail on PostgreSQL in phase 4). | Define "blank" and allowed characters, or defer to phase 4. |
-| TF-6 | AC-2.2's code under a race: two simultaneous registrations of one email give the loser 409 `CONFLICT`, not `EMAIL_ALREADY_REGISTERED`. | Confirm the AC applies to concurrent requests. See BUG-auth-service-3. |
-| TF-7 | backend-swe's open questions: (1) should revoking respect the role ceiling? D11's "Invite, list pending invitations, revoke, change roles, remove others: at least ADMIN, within the ceiling" can be read either way; (2) is the single `errors` entry with `field: acceptInvitationRequest` acceptable for an anonymous accept with no body? | pm decides (evidence in the report). |
-| TF-8 (fix round) | Contract 1.1.0 says of `OrganizationRole`: "Only these exact strings are accepted." Jackson trims ASCII whitespace from enum names, so `" MEMBER"`, `"MEMBER "`, `"\tMEMBER"` and `"MEMBER\n"` are accepted as `MEMBER`. This predates the fix round (it is the same with T17's key off). | Decide whether the contract wording or the behaviour changes. See BUG-auth-service-6. |
+| #                | Finding                                                                                                                                                                                                                                                                                                                                       | Proposal                                                                                                            |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| TF-1             | "Every error auth-service produces is a Problem" (D2) has no AC for requests that never reach Spring MVC: firewall rejections (`;`, `/./`, `%2e`, `//`), `TRACE`, direct `GET /error`, Tomcat's encoded-slash rejection.                                                                                                                      | Add an AC, or state which of these may keep the container/Boot format. Tested by qa; see BUG-auth-service-1.        |
+| TF-2             | D2 defines `instance` as the request path. For the accept operation the path contains the acceptance token, so every accept error echoes the token in `instance` (to the caller that sent it). The NFR "never logged, never listed" is met; the spec doesn't say whether an echo in an error body is acceptable.                              | Decide: keep (it is the caller's own input) or redact the token segment in `instance`.                              |
+| TF-3             | "Wrong enum value → MALFORMED_REQUEST" doesn't name numeric values; Jackson maps `0`–`3` to roles by declaration order (D3 says the order is never used).                                                                                                                                                                                     | Confirm that numbers are wrong values (the contract already says "any other value is 400"). See BUG-auth-service-2. |
+| TF-4             | D12 says "lower-cased", with no Unicode rule: NFC and NFD spellings of `élodie@` are two accounts, `İ` lower-cases to `i̇` (with a combining dot), the Kelvin sign `K` becomes ASCII `k`.                                                                                                                                                     | State "lower-case with `Locale.ROOT`, no Unicode normalisation" for phase 1, or add NFC normalisation to phase 3.   |
+| TF-5             | "Not blank" names (D11, E17) don't say whether Unicode spaces count: a name of only no-break and zero-width spaces is accepted; a name containing U+0000 is accepted (it will fail on PostgreSQL in phase 4).                                                                                                                                 | Define "blank" and allowed characters, or defer to phase 4.                                                         |
+| TF-6             | AC-2.2's code under a race: two simultaneous registrations of one email give the loser 409 `CONFLICT`, not `EMAIL_ALREADY_REGISTERED`.                                                                                                                                                                                                        | Confirm the AC applies to concurrent requests. See BUG-auth-service-3.                                              |
+| TF-7             | backend-swe's open questions: (1) should revoking respect the role ceiling? D11's "Invite, list pending invitations, revoke, change roles, remove others: at least ADMIN, within the ceiling" can be read either way; (2) is the single `errors` entry with `field: acceptInvitationRequest` acceptable for an anonymous accept with no body? | pm decides (evidence in the report).                                                                                |
+| TF-8 (fix round) | Contract 1.1.0 says of `OrganizationRole`: "Only these exact strings are accepted." Jackson trims ASCII whitespace from enum names, so `" MEMBER"`, `"MEMBER "`, `"\tMEMBER"` and `"MEMBER\n"` are accepted as `MEMBER`. This predates the fix round (it is the same with T17's key off).                                                     | Decide whether the contract wording or the behaviour changes. See BUG-auth-service-6.                               |
 
-Status after acceptance (2026-10-12): TF-2 (Q3), TF-3, TF-6 and TF-7 were decided in D13; TF-1 is FU-1, TF-4 is FU-2, and TF-5 is FU-3. TF-8 is new and open.
+Status after acceptance (2026-10-12): TF-2 (Q3), TF-3, TF-6 and TF-7 were decided in D13; TF-1 is FU-1, TF-4 is FU-2,
+and TF-5 is FU-3. TF-8 is new and open.
 
 ## 3. Test cases
 
-Priority follows the AC (P0, P1, P2); qa-only checks are marked "qa". "BE" is backend-swe's test, "QA" is qa's. Every listed test is automated unless the level says manual.
+Priority follows the AC (P0, P1, P2); qa-only checks are marked "qa". "BE" is backend-swe's test, "QA" is qa's. Every
+listed test is automated unless the level says manual.
 
 ### US-1 Consistent, safe error responses
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-1.1 | AC-1.1 | API | none | `POST /api/auth/register` `{"email":"not-an-email","password":"short","fullName":""}` | Problem 400 `VALIDATION_FAILED`, one `errors` entry each for email, password, fullName; no user | P0 |
-| TC-1.2 | AC-1.2 | API | none | `POST` each public path with `{"email":` | Problem 400 `MALFORMED_REQUEST` | P0 |
-| TC-1.2q | AC-1.2 | API (qa) | Eve's token | `POST /api/orgs` with ``, `null`, `[]`, `{`, wrong types, 5 000-deep arrays, 3 000-deep objects, invalid UTF-8 | Problem 400 `MALFORMED_REQUEST`, no 500 | P0 |
-| TC-1.3 | AC-1.3 | API | organization lookup mocked to throw a message with SQL/host | `GET /api/orgs` | Problem 500 `INTERNAL_ERROR`, no internals, exactly one ERROR log entry | P0 |
-| TC-1.3q | AC-1.3 | manual (qa) | org row locked by another transaction for longer than H2's lock timeout | `POST /api/orgs/{acme}/invitations` | First round: Problem 500 without internals (evidence for known deviation 1). **Superseded by D13/AC-1.9**: now 409 `CONFLICT`, see TC-1.9a. | P0 |
-| TC-1.4 | AC-1.4 | API | Acme | `GET /api/orgs/{acme}/no-such-thing` | Problem 404 `NOT_FOUND` | P1 |
-| TC-1.5 | AC-1.5 | API | Acme | `DELETE /api/orgs`, `PUT /api/orgs/{acme}` | Problem 405 `METHOD_NOT_ALLOWED` | P1 |
-| TC-1.6 | AC-1.6 | API | none / Ana | `text/plain`, `application/xml`, form, no Content-Type on all six body operations; `Accept: application/xml` | Problem 415 `UNSUPPORTED_MEDIA_TYPE`; 406 `NOT_ACCEPTABLE` | P1 |
-| TC-1.7 | AC-1.7 | API | Acme | duplicate registration with `X-Request-Id` `rid-123`, `bad id!`, none; qa: one request per D2 code (23) with a valid ID | `requestId` only when valid; never an `X-Request-Id` header | P2 |
-| TC-1.8 | AC-1.8 | API | Acme | login with `Origin`; qa: 23 error answers with `Origin` | no `Access-Control-*` header | P2 |
-| TC-1.9 | (D2) | manual (qa) | services running | firewall-rejected paths, `TRACE`, `GET /error`, `%2F` on 8081 and through 8080 | Problem with a `code` (TF-1) | qa |
+| ID      | AC     | Level       | Preconditions and data                                                  | Steps                                                                                                                   | Expected                                                                                                                                    | Priority |
+|---------|--------|-------------|-------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| TC-1.1  | AC-1.1 | API         | none                                                                    | `POST /api/auth/register` `{"email":"not-an-email","password":"short","fullName":""}`                                   | Problem 400 `VALIDATION_FAILED`, one `errors` entry each for email, password, fullName; no user                                             | P0       |
+| TC-1.2  | AC-1.2 | API         | none                                                                    | `POST` each public path with `{"email":`                                                                                | Problem 400 `MALFORMED_REQUEST`                                                                                                             | P0       |
+| TC-1.2q | AC-1.2 | API (qa)    | Eve's token                                                             | `POST /api/orgs` with ``, `null`, `[]`, `{`, wrong types, 5 000-deep arrays, 3 000-deep objects, invalid UTF-8          | Problem 400 `MALFORMED_REQUEST`, no 500                                                                                                     | P0       |
+| TC-1.3  | AC-1.3 | API         | organization lookup mocked to throw a message with SQL/host             | `GET /api/orgs`                                                                                                         | Problem 500 `INTERNAL_ERROR`, no internals, exactly one ERROR log entry                                                                     | P0       |
+| TC-1.3q | AC-1.3 | manual (qa) | org row locked by another transaction for longer than H2's lock timeout | `POST /api/orgs/{acme}/invitations`                                                                                     | First round: Problem 500 without internals (evidence for known deviation 1). **Superseded by D13/AC-1.9**: now 409 `CONFLICT`, see TC-1.9a. | P0       |
+| TC-1.4  | AC-1.4 | API         | Acme                                                                    | `GET /api/orgs/{acme}/no-such-thing`                                                                                    | Problem 404 `NOT_FOUND`                                                                                                                     | P1       |
+| TC-1.5  | AC-1.5 | API         | Acme                                                                    | `DELETE /api/orgs`, `PUT /api/orgs/{acme}`                                                                              | Problem 405 `METHOD_NOT_ALLOWED`                                                                                                            | P1       |
+| TC-1.6  | AC-1.6 | API         | none / Ana                                                              | `text/plain`, `application/xml`, form, no Content-Type on all six body operations; `Accept: application/xml`            | Problem 415 `UNSUPPORTED_MEDIA_TYPE`; 406 `NOT_ACCEPTABLE`                                                                                  | P1       |
+| TC-1.7  | AC-1.7 | API         | Acme                                                                    | duplicate registration with `X-Request-Id` `rid-123`, `bad id!`, none; qa: one request per D2 code (23) with a valid ID | `requestId` only when valid; never an `X-Request-Id` header                                                                                 | P2       |
+| TC-1.8  | AC-1.8 | API         | Acme                                                                    | login with `Origin`; qa: 23 error answers with `Origin`                                                                 | no `Access-Control-*` header                                                                                                                | P2       |
+| TC-1.9  | (D2)   | manual (qa) | services running                                                        | firewall-rejected paths, `TRACE`, `GET /error`, `%2F` on 8081 and through 8080                                          | Problem with a `code` (TF-1)                                                                                                                | qa       |
 
 ### US-2 Register and log in
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-2.1 | AC-2.1 | API | none | register `Fay@Example.com` | 201, normalised email, PENDING_VERIFICATION, no password member; qa: `id`, `status`, `mfaEnabled`, `passwordHash` in the body are ignored | P0 |
-| TC-2.2 | AC-2.2 | API | Acme | register `ana@example.com`, `Ana@Example.COM`; qa: `ÉLODIE@Example.com` then `Élodie@`; 5 simultaneous registrations in mixed letter case | 409 `EMAIL_ALREADY_REGISTERED`, one user; race: one 201, the others 409 `EMAIL_ALREADY_REGISTERED` (narrowed in the fix round, D13 Q6), never 500 | P0 |
-| TC-2.3 | AC-2.3 | API + unit | Acme | login Ana | HS512, verifies with the secret, claims sub/email/mfa/orgs, exp−iat = 86 400 | P0 |
-| TC-2.4 | AC-2.4 | API | Acme | wrong password, unknown email; qa: 200 000-character password, password + suffix | 401 `INVALID_CREDENTIALS`, identical detail, `WWW-Authenticate: Bearer` | P0 |
-| TC-2.5 | AC-2.5 | API | Acme | login `ANA@example.com` | 200, sub = Ana | P1 |
-| TC-2.6 | AC-2.6 | API | Cai seeded SUSPENDED | login with right and wrong password | identical 401 bodies | P1 |
-| TC-2.7 | AC-2.7 | API | Eve PENDING_VERIFICATION | login | 200, `orgs` [] | P1 |
-| TC-2.8 | AC-2.8 | API | Acme | login with `Bearer not-a-jwt`, expired token | 200 | P1 |
-| TC-2.9 | AC-2.9 | API + unit | none | 73 ASCII password, 101-char name, 255-char email; qa: 72-byte multi-byte passwords (24 €, 18 emoji, 72 ASCII) register and log in, 75/76/74-byte ones are 400; 100-char name and 254-char email accepted | 400 `VALIDATION_FAILED` with the field / 201 | P1 |
+| ID     | AC     | Level      | Preconditions and data   | Steps                                                                                                                                                                                                    | Expected                                                                                                                                          | Priority |
+|--------|--------|------------|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| TC-2.1 | AC-2.1 | API        | none                     | register `Fay@Example.com`                                                                                                                                                                               | 201, normalised email, PENDING_VERIFICATION, no password member; qa: `id`, `status`, `mfaEnabled`, `passwordHash` in the body are ignored         | P0       |
+| TC-2.2 | AC-2.2 | API        | Acme                     | register `ana@example.com`, `Ana@Example.COM`; qa: `ÉLODIE@Example.com` then `Élodie@`; 5 simultaneous registrations in mixed letter case                                                                | 409 `EMAIL_ALREADY_REGISTERED`, one user; race: one 201, the others 409 `EMAIL_ALREADY_REGISTERED` (narrowed in the fix round, D13 Q6), never 500 | P0       |
+| TC-2.3 | AC-2.3 | API + unit | Acme                     | login Ana                                                                                                                                                                                                | HS512, verifies with the secret, claims sub/email/mfa/orgs, exp−iat = 86 400                                                                      | P0       |
+| TC-2.4 | AC-2.4 | API        | Acme                     | wrong password, unknown email; qa: 200 000-character password, password + suffix                                                                                                                         | 401 `INVALID_CREDENTIALS`, identical detail, `WWW-Authenticate: Bearer`                                                                           | P0       |
+| TC-2.5 | AC-2.5 | API        | Acme                     | login `ANA@example.com`                                                                                                                                                                                  | 200, sub = Ana                                                                                                                                    | P1       |
+| TC-2.6 | AC-2.6 | API        | Cai seeded SUSPENDED     | login with right and wrong password                                                                                                                                                                      | identical 401 bodies                                                                                                                              | P1       |
+| TC-2.7 | AC-2.7 | API        | Eve PENDING_VERIFICATION | login                                                                                                                                                                                                    | 200, `orgs` []                                                                                                                                    | P1       |
+| TC-2.8 | AC-2.8 | API        | Acme                     | login with `Bearer not-a-jwt`, expired token                                                                                                                                                             | 200                                                                                                                                               | P1       |
+| TC-2.9 | AC-2.9 | API + unit | none                     | 73 ASCII password, 101-char name, 255-char email; qa: 72-byte multi-byte passwords (24 €, 18 emoji, 72 ASCII) register and log in, 75/76/74-byte ones are 400; 100-char name and 254-char email accepted | 400 `VALIDATION_FAILED` with the field / 201                                                                                                      | P1       |
 
 ### US-3 Authenticate requests (direct calls)
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-3.1 | AC-3.1 | API + unit | Acme | 11 spec rows; qa: 25 more (HS384, `alg` None/NONE/none-with-signature, `alg` array, unknown `crit`, `b64:false`, unknown `zip`, `exp` string/missing, `sub` number/array, payload array/text, header not JSON, nbf future, 5 parts, truncated signature, 100 KB, scheme spacing variants, `Token`, `Bearer Bearer`), token in query string | Problem 401 `UNAUTHENTICATED`, `WWW-Authenticate: Bearer`, no ERROR log or stack trace | P0 |
-| TC-3.2 | AC-3.2 | API | Acme | valid token | 200 | P0 |
-| TC-3.3 | AC-3.3 | API | Acme | `bearer`, `BEARER`, `bEaReR` | 200 | P1 |
-| TC-3.4 | AC-3.4 | API | Cai logged in, then SUSPENDED | `GET /api/orgs`; qa: Cai's token on accept (treated as anonymous) | 401; qa: 400 / 409, no membership | P1 |
-| TC-3.5 | AC-3.5 | API | token for `{unknown id}`; qa: user deleted after login; user deleted and email re-registered | `GET /api/orgs` | 401 | P1 |
-| TC-3.6 | AC-3.6 | API | none | 8 spec rows; qa: 29 method/path variants of the three public operations and of protected paths, 8 firewall-rejected paths, TRACE, query-string tricks | never served anonymously (401 Problem or firewall 400), no user created | P0 |
-| TC-3.7 | AC-3.7 | API + manual | none | `GET /v3/api-docs`; qa: `/v3/api-docs/../../api/orgs` | 200; the prefix opens nothing else | P2 |
-| TC-3.8 | AC-3.8 | API | none | tampered token; qa: full-flow log capture | token not in the log, no ERROR/stack | P2 |
-| TC-3.9 | AC-3.9 | startup + unit | own H2 URL | start without dev with unset/non-Base64/32-byte secret | startup fails naming `app.jwtSecret`, never the value | P2 |
+| ID     | AC     | Level          | Preconditions and data                                                                       | Steps                                                                                                                                                                                                                                                                                                                                      | Expected                                                                               | Priority |
+|--------|--------|----------------|----------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------|
+| TC-3.1 | AC-3.1 | API + unit     | Acme                                                                                         | 11 spec rows; qa: 25 more (HS384, `alg` None/NONE/none-with-signature, `alg` array, unknown `crit`, `b64:false`, unknown `zip`, `exp` string/missing, `sub` number/array, payload array/text, header not JSON, nbf future, 5 parts, truncated signature, 100 KB, scheme spacing variants, `Token`, `Bearer Bearer`), token in query string | Problem 401 `UNAUTHENTICATED`, `WWW-Authenticate: Bearer`, no ERROR log or stack trace | P0       |
+| TC-3.2 | AC-3.2 | API            | Acme                                                                                         | valid token                                                                                                                                                                                                                                                                                                                                | 200                                                                                    | P0       |
+| TC-3.3 | AC-3.3 | API            | Acme                                                                                         | `bearer`, `BEARER`, `bEaReR`                                                                                                                                                                                                                                                                                                               | 200                                                                                    | P1       |
+| TC-3.4 | AC-3.4 | API            | Cai logged in, then SUSPENDED                                                                | `GET /api/orgs`; qa: Cai's token on accept (treated as anonymous)                                                                                                                                                                                                                                                                          | 401; qa: 400 / 409, no membership                                                      | P1       |
+| TC-3.5 | AC-3.5 | API            | token for `{unknown id}`; qa: user deleted after login; user deleted and email re-registered | `GET /api/orgs`                                                                                                                                                                                                                                                                                                                            | 401                                                                                    | P1       |
+| TC-3.6 | AC-3.6 | API            | none                                                                                         | 8 spec rows; qa: 29 method/path variants of the three public operations and of protected paths, 8 firewall-rejected paths, TRACE, query-string tricks                                                                                                                                                                                      | never served anonymously (401 Problem or firewall 400), no user created                | P0       |
+| TC-3.7 | AC-3.7 | API + manual   | none                                                                                         | `GET /v3/api-docs`; qa: `/v3/api-docs/../../api/orgs`                                                                                                                                                                                                                                                                                      | 200; the prefix opens nothing else                                                     | P2       |
+| TC-3.8 | AC-3.8 | API            | none                                                                                         | tampered token; qa: full-flow log capture                                                                                                                                                                                                                                                                                                  | token not in the log, no ERROR/stack                                                   | P2       |
+| TC-3.9 | AC-3.9 | startup + unit | own H2 URL                                                                                   | start without dev with unset/non-Base64/32-byte secret                                                                                                                                                                                                                                                                                     | startup fails naming `app.jwtSecret`, never the value                                  | P2       |
 
 ### US-4 Organizations
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-4.1 | AC-4.1 | API + manual | Acme | Eve creates "Globex QA"; qa: body with `plan`, `seatLimit`, `id`, `myRole` | 201, FREE, 5, OWNER, relative Location, members = Eve; server-owned fields ignored | P0 |
-| TC-4.2 | AC-4.2 | API | Acme | `{}`, `""`, `"   "`, 101 chars; qa: 100 chars | 400 `VALIDATION_FAILED` on `name`, Eve has no org / 201 | P0 |
-| TC-4.3 | AC-4.3 | API | Initech seeded | Ana lists | 2 orgs by name with roles | P0 |
-| TC-4.4 | AC-4.4 | API | Acme | Eve lists | `[]` | P0 |
-| TC-4.5 | AC-4.5 | API | Acme; qa: Initech (Eve OWNER, Gus MEMBER) | 5 users view Acme; qa: Initech's owner on 7 Acme operations, Acme's admin on 7 Initech operations, `X-User-Id` spoof | members 200 with role, others 403 | P1 |
-| TC-4.6 | AC-4.6 | API | Acme | unknown id, `not-a-uuid`; qa: malformed UUIDs in invitation/member/org paths | 403 / 400 `MALFORMED_REQUEST` | P1 |
-| TC-4.7 | AC-4.7 | API + manual | Eve's token before creating | create, then list with the same token | "Globex QA" OWNER | P1 |
+| ID     | AC     | Level        | Preconditions and data                    | Steps                                                                                                                | Expected                                                                           | Priority |
+|--------|--------|--------------|-------------------------------------------|----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|----------|
+| TC-4.1 | AC-4.1 | API + manual | Acme                                      | Eve creates "Globex QA"; qa: body with `plan`, `seatLimit`, `id`, `myRole`                                           | 201, FREE, 5, OWNER, relative Location, members = Eve; server-owned fields ignored | P0       |
+| TC-4.2 | AC-4.2 | API          | Acme                                      | `{}`, `""`, `"   "`, 101 chars; qa: 100 chars                                                                        | 400 `VALIDATION_FAILED` on `name`, Eve has no org / 201                            | P0       |
+| TC-4.3 | AC-4.3 | API          | Initech seeded                            | Ana lists                                                                                                            | 2 orgs by name with roles                                                          | P0       |
+| TC-4.4 | AC-4.4 | API          | Acme                                      | Eve lists                                                                                                            | `[]`                                                                               | P0       |
+| TC-4.5 | AC-4.5 | API          | Acme; qa: Initech (Eve OWNER, Gus MEMBER) | 5 users view Acme; qa: Initech's owner on 7 Acme operations, Acme's admin on 7 Initech operations, `X-User-Id` spoof | members 200 with role, others 403                                                  | P1       |
+| TC-4.6 | AC-4.6 | API          | Acme                                      | unknown id, `not-a-uuid`; qa: malformed UUIDs in invitation/member/org paths                                         | 403 / 400 `MALFORMED_REQUEST`                                                      | P1       |
+| TC-4.7 | AC-4.7 | API + manual | Eve's token before creating               | create, then list with the same token                                                                                | "Globex QA" OWNER                                                                  | P1       |
 
 ### US-5 Invitations
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-5.1 | AC-5.1 | API + manual | Acme | Ben invites `Fay@Example.com`; qa: 31 tokens; body with `token`, `status`, `expiresAt` | 201, 7-day expiry, token 32 URL-safe chars (24 bytes), unique, not logged; server-owned fields ignored | P0 |
-| TC-5.2 | AC-5.2 | API | Acme | 9 spec rows; qa: 5 actors × 4 roles (20) | per D11: Ana all 201; Ben OWNER 422, others 201; Cai/Dan/Eve 403; nothing stored on errors | P0 |
-| TC-5.3 | AC-5.3 | API | Fay pending | invite Gus; qa: 8 simultaneous invites for the last seat (×3); accept vs invite on a full org (×5) | 409 `SEAT_LIMIT_REACHED`; exactly one created; never above 5 | P0 |
-| TC-5.4 | AC-5.4 | API | expired invitation seeded | invite Fay | 201 | P1 |
-| TC-5.5 | AC-5.5 | API | Acme | invite `Cai@Example.com`; qa: `CAI@EXAMPLE.COM`, `cai@Example.Com` | 409 `ALREADY_MEMBER` | P1 |
-| TC-5.6 | AC-5.6 | API | Fay pending | Ana invites Fay | 409 `INVITATION_PENDING` | P1 |
-| TC-5.7 | AC-5.7 | API | Acme | bad email, missing role, `SUPERUSER`; numeric roles are now TC-5.11 | 400 codes, no invitation | P0 |
-| TC-5.8 | AC-5.8 | API | Fay pending + expired seeded | 5 actors list | Ana/Ben: only Fay, no token; others 403 | P1 |
-| TC-5.9 | AC-5.9 | API | Fay invited | Ben revokes, lists, accept T | 204, `[]`, 410 `INVITATION_REVOKED` | P1 |
-| TC-5.10 | AC-5.10 | API | Fay invited, Initech with J | 4 spec rows; qa: 5 roles revoke; Initech owner revokes Acme's I through Initech's path | 403 / 404 / 409; qa: Ana and Ben 204, others 403; IDOR 404 | P1 |
+| ID      | AC      | Level        | Preconditions and data       | Steps                                                                                              | Expected                                                                                               | Priority |
+|---------|---------|--------------|------------------------------|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|----------|
+| TC-5.1  | AC-5.1  | API + manual | Acme                         | Ben invites `Fay@Example.com`; qa: 31 tokens; body with `token`, `status`, `expiresAt`             | 201, 7-day expiry, token 32 URL-safe chars (24 bytes), unique, not logged; server-owned fields ignored | P0       |
+| TC-5.2  | AC-5.2  | API          | Acme                         | 9 spec rows; qa: 5 actors × 4 roles (20)                                                           | per D11: Ana all 201; Ben OWNER 422, others 201; Cai/Dan/Eve 403; nothing stored on errors             | P0       |
+| TC-5.3  | AC-5.3  | API          | Fay pending                  | invite Gus; qa: 8 simultaneous invites for the last seat (×3); accept vs invite on a full org (×5) | 409 `SEAT_LIMIT_REACHED`; exactly one created; never above 5                                           | P0       |
+| TC-5.4  | AC-5.4  | API          | expired invitation seeded    | invite Fay                                                                                         | 201                                                                                                    | P1       |
+| TC-5.5  | AC-5.5  | API          | Acme                         | invite `Cai@Example.com`; qa: `CAI@EXAMPLE.COM`, `cai@Example.Com`                                 | 409 `ALREADY_MEMBER`                                                                                   | P1       |
+| TC-5.6  | AC-5.6  | API          | Fay pending                  | Ana invites Fay                                                                                    | 409 `INVITATION_PENDING`                                                                               | P1       |
+| TC-5.7  | AC-5.7  | API          | Acme                         | bad email, missing role, `SUPERUSER`; numeric roles are now TC-5.11                                | 400 codes, no invitation                                                                               | P0       |
+| TC-5.8  | AC-5.8  | API          | Fay pending + expired seeded | 5 actors list                                                                                      | Ana/Ben: only Fay, no token; others 403                                                                | P1       |
+| TC-5.9  | AC-5.9  | API          | Fay invited                  | Ben revokes, lists, accept T                                                                       | 204, `[]`, 410 `INVITATION_REVOKED`                                                                    | P1       |
+| TC-5.10 | AC-5.10 | API          | Fay invited, Initech with J  | 4 spec rows; qa: 5 roles revoke; Initech owner revokes Acme's I through Initech's path             | 403 / 404 / 409; qa: Ana and Ben 204, others 403; IDOR 404                                             | P1       |
 
 ### US-6 Accept an invitation
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-6.1 | AC-6.1 | API + manual | Fay invited | anonymous accept; qa: body with `email`, `role`, `status`, `mfaEnabled`, `orgId` | 201 user + org; Fay can log in; invitation list `[]`; qa: none of the extra fields take effect | P0 |
-| TC-6.2 | AC-6.2 | API | Fay registered | accept with Fay's token, no body | 200 same schema, Fay in member list; no login token or hash in the body | P0 |
-| TC-6.3 | AC-6.3 | API | Fay invited | Eve accepts; qa: each of Ana, Ben, Cai, Dan, Eve | 403 `INVITATION_EMAIL_MISMATCH`, invitation still pending | P0 |
-| TC-6.4 | AC-6.4 | API | 4 states | unknown, expired, revoked, ACCEPTED; qa: replay after accept (anonymous, Fay, Eve), unknown-token shapes, expired while logged in, logged-in vs anonymous race (×5) | 404/410 codes, no user; one membership, no 500 | P0 |
-| TC-6.5 | AC-6.5 | API | Fay registered | anonymous accept; qa: right and wrong password | 409 `EMAIL_ALREADY_REGISTERED`, identical bodies (no password oracle), password unchanged | P1 |
-| TC-6.6 | AC-6.6 | API | Fay invited | no body, short password, missing name; qa: 75-byte password | 400 `VALIDATION_FAILED`, no user | P1 |
-| TC-6.7 | AC-6.7 | API | Cai's invitation seeded | Cai accepts | 409 `ALREADY_MEMBER`, role unchanged | P1 |
-| TC-6.8 | AC-6.8 | API | T expired | failed accept, then register Fay | 201 | P1 |
-| TC-6.9 | AC-6.9 | API | Gus seeded as 5th member; qa: two pending invitations racing for the last seat (×5) | anonymous accept | 409 `SEAT_LIMIT_REACHED`, no user; race: one 201, loser leaves no account | P1 |
+| ID     | AC     | Level        | Preconditions and data                                                              | Steps                                                                                                                                                               | Expected                                                                                       | Priority |
+|--------|--------|--------------|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|----------|
+| TC-6.1 | AC-6.1 | API + manual | Fay invited                                                                         | anonymous accept; qa: body with `email`, `role`, `status`, `mfaEnabled`, `orgId`                                                                                    | 201 user + org; Fay can log in; invitation list `[]`; qa: none of the extra fields take effect | P0       |
+| TC-6.2 | AC-6.2 | API          | Fay registered                                                                      | accept with Fay's token, no body                                                                                                                                    | 200 same schema, Fay in member list; no login token or hash in the body                        | P0       |
+| TC-6.3 | AC-6.3 | API          | Fay invited                                                                         | Eve accepts; qa: each of Ana, Ben, Cai, Dan, Eve                                                                                                                    | 403 `INVITATION_EMAIL_MISMATCH`, invitation still pending                                      | P0       |
+| TC-6.4 | AC-6.4 | API          | 4 states                                                                            | unknown, expired, revoked, ACCEPTED; qa: replay after accept (anonymous, Fay, Eve), unknown-token shapes, expired while logged in, logged-in vs anonymous race (×5) | 404/410 codes, no user; one membership, no 500                                                 | P0       |
+| TC-6.5 | AC-6.5 | API          | Fay registered                                                                      | anonymous accept; qa: right and wrong password                                                                                                                      | 409 `EMAIL_ALREADY_REGISTERED`, identical bodies (no password oracle), password unchanged      | P1       |
+| TC-6.6 | AC-6.6 | API          | Fay invited                                                                         | no body, short password, missing name; qa: 75-byte password                                                                                                         | 400 `VALIDATION_FAILED`, no user                                                               | P1       |
+| TC-6.7 | AC-6.7 | API          | Cai's invitation seeded                                                             | Cai accepts                                                                                                                                                         | 409 `ALREADY_MEMBER`, role unchanged                                                           | P1       |
+| TC-6.8 | AC-6.8 | API          | T expired                                                                           | failed accept, then register Fay                                                                                                                                    | 201                                                                                            | P1       |
+| TC-6.9 | AC-6.9 | API          | Gus seeded as 5th member; qa: two pending invitations racing for the last seat (×5) | anonymous accept                                                                                                                                                    | 409 `SEAT_LIMIT_REACHED`, no user; race: one 201, loser leaves no account                      | P1       |
 
 ### US-7 Members and roles
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-7.1 | AC-7.1 | API | Acme | Ana, Dan, Eve; qa: Ben, Cai too | members 200 (4, by email, 5 members each, no password); Eve 403 | P1 |
-| TC-7.2 | AC-7.2 | API | Acme | 9 spec rows; qa: 5 actors × 4 targets × 4 roles (80) from the D11/Q6 oracle; two simultaneous changes (×5) | 200 / 403 / 422 per oracle; role unchanged on errors | P1 |
-| TC-7.3 | AC-7.3 | API | Acme | Ana changes herself; qa: every member | 422 `SELF_ROLE_CHANGE` | P1 |
-| TC-7.4 | AC-7.4 | API | Acme | Eve's id, unknown id; qa: Initech owner targets Cai through Initech | 404 `MEMBER_NOT_FOUND`, Cai unchanged | P1 |
-| TC-7.5 | AC-7.5 | API | Acme | `{}`, `GOD` | 400 codes | P1 |
-| TC-7.6 | AC-7.6 | API | Ben's old token | demote, Ben invites; qa: forged `orgs` claim; demotion racing with Ben removing Dan (×5) | 403; Dan removed only if Ben's call ran first | P1 |
-| TC-7.7 | AC-7.7 | API | Acme | set Cai to MEMBER | 200 | P2 |
+| ID     | AC     | Level | Preconditions and data | Steps                                                                                                      | Expected                                                        | Priority |
+|--------|--------|-------|------------------------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|----------|
+| TC-7.1 | AC-7.1 | API   | Acme                   | Ana, Dan, Eve; qa: Ben, Cai too                                                                            | members 200 (4, by email, 5 members each, no password); Eve 403 | P1       |
+| TC-7.2 | AC-7.2 | API   | Acme                   | 9 spec rows; qa: 5 actors × 4 targets × 4 roles (80) from the D11/Q6 oracle; two simultaneous changes (×5) | 200 / 403 / 422 per oracle; role unchanged on errors            | P1       |
+| TC-7.3 | AC-7.3 | API   | Acme                   | Ana changes herself; qa: every member                                                                      | 422 `SELF_ROLE_CHANGE`                                          | P1       |
+| TC-7.4 | AC-7.4 | API   | Acme                   | Eve's id, unknown id; qa: Initech owner targets Cai through Initech                                        | 404 `MEMBER_NOT_FOUND`, Cai unchanged                           | P1       |
+| TC-7.5 | AC-7.5 | API   | Acme                   | `{}`, `GOD`                                                                                                | 400 codes                                                       | P1       |
+| TC-7.6 | AC-7.6 | API   | Ben's old token        | demote, Ben invites; qa: forged `orgs` claim; demotion racing with Ben removing Dan (×5)                   | 403; Dan removed only if Ben's call ran first                   | P1       |
+| TC-7.7 | AC-7.7 | API   | Acme                   | set Cai to MEMBER                                                                                          | 200                                                             | P2       |
 
 ### US-8 Remove or leave
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-8.1 | AC-8.1 | API | Acme | 7 spec rows; qa: 5 actors × 5 targets (25) | 204 / 403 / 404 / 409 / 422 per oracle | P1 |
-| TC-8.2 | AC-8.2 | API + manual | Cai's token | Ben removes Cai, Cai views and lists | 403, `[]` | P1 |
-| TC-8.3 | AC-8.3 | API | Acme | Ben, Cai, Dan leave | 204 | P1 |
-| TC-8.4 | AC-8.4 | API | Acme; Ben OWNER | Ana leaves; qa: owners remove each other (×5); Ana leaves while demoting Ben (×5) | 409 `LAST_OWNER` / 204; at least one owner always | P1 |
-| TC-8.5 | AC-8.5 | API | Acme | remove Eve | 404 | P1 |
-| TC-8.6 | AC-8.6 | API | Gus seeded and removed | invite Fay | 201 | P2 |
+| ID     | AC     | Level        | Preconditions and data | Steps                                                                             | Expected                                          | Priority |
+|--------|--------|--------------|------------------------|-----------------------------------------------------------------------------------|---------------------------------------------------|----------|
+| TC-8.1 | AC-8.1 | API          | Acme                   | 7 spec rows; qa: 5 actors × 5 targets (25)                                        | 204 / 403 / 404 / 409 / 422 per oracle            | P1       |
+| TC-8.2 | AC-8.2 | API + manual | Cai's token            | Ben removes Cai, Cai views and lists                                              | 403, `[]`                                         | P1       |
+| TC-8.3 | AC-8.3 | API          | Acme                   | Ben, Cai, Dan leave                                                               | 204                                               | P1       |
+| TC-8.4 | AC-8.4 | API          | Acme; Ben OWNER        | Ana leaves; qa: owners remove each other (×5); Ana leaves while demoting Ben (×5) | 409 `LAST_OWNER` / 204; at least one owner always | P1       |
+| TC-8.5 | AC-8.5 | API          | Acme                   | remove Eve                                                                        | 404                                               | P1       |
+| TC-8.6 | AC-8.6 | API          | Gus seeded and removed | invite Fay                                                                        | 201                                               | P2       |
 
 ### 3a. Fix round (D13, T16–T21): the 7 new ACs
 
 "BE" is backend-swe's test; "QA" is qa's test in `qa/QaFixRoundTest` unless another class is named.
 
-| ID | AC | Level | Preconditions and data | Steps | Expected | Priority |
-|---|---|---|---|---|---|---|
-| TC-1.9 | AC-1.9 | API (BE) | Acme; a test-only Hibernate statement inspector makes the organization lock throw each of the 4 exceptions; plus one real lock | Ben invites Fay | Problem 409 `CONFLICT`, no invitation, no ERROR entry or stack trace, exactly one handler WARN | P2 |
-| TC-1.9a | AC-1.9 | API (QA, real locks) | Acme; a second JDBC connection holds `SELECT … FOR UPDATE` on the invitation or organization row | revoke (invitation row), anonymous accept (invitation row), anonymous accept (organization row, seat check), role change (organization row) | 409 `CONFLICT`; nothing changed (still PENDING, no account, Dan still READER); no ERROR or stack trace; one handler WARN; Hibernate's WARN shows SQL with `?` only, and no id, token, email or password appears in the request's log | P2 |
-| TC-2.10 | AC-2.10 | API (BE) | `a72@` with 72 × A; `euro72@` with 24 × € | the 3 rows plus a strengthened row 3 (24 × € + X against the 24 × € account) | 200 / 401 `INVALID_CREDENTIALS` with the AC-2.4 detail, `WWW-Authenticate: Bearer`, no `errors` | P2 |
-| TC-2.10q | AC-2.10 | API (QA) | an account with 18 emoji (72 bytes) | 18 emoji + X; exact password; 73 × A for an unknown email | 401 like a wrong password / 200 / the same 401 as a wrong password | P2 |
-| TC-2.11 | AC-2.11 | API (BE, ×5) | empty database | 5 simultaneous registrations of `zed@` | one 201, four 409 `EMAIL_ALREADY_REGISTERED`, one user | P2 |
-| TC-2.11q | AC-2.11 | API (QA, ×3/×5/×5) | `QaConcurrencyTest`: 5 registrations in mixed letter case; Fay invited to Acme and to Initech; Fay invited to Acme | race 5 registrations; race two anonymous acceptances; race a registration and an anonymous acceptance | one winner; every loser 409 `EMAIL_ALREADY_REGISTERED`; one Fay; the losing invitation stays PENDING; no membership for a losing accept | P2 |
-| TC-5.11 | AC-5.11 | API (BE) | Acme | Ana invites with role `0`, `1`, `3`, `"3"` | Problem 400 `MALFORMED_REQUEST`, no invitation | P1 |
-| TC-5.11q | AC-5.11 | API (QA) | Acme | roles `2`, `-1`, `4`, `2.0`, `"0"`, `"01"`, `"-1"`, `" 1"`, `"1.0"`; Ben with `0`; T17 must-not: `"Member"` and `"MEMBER"` | 400 `MALFORMED_REQUEST` (Ben: 400, not 422), no invitation; `"Member"` 400, `"MEMBER"` 201 | P1 |
-| TC-5.12 | AC-5.12 | API (BE) | Ana invites Fay as OWNER (I) | the 2 rows; ADMIN invitation by Ben; D13 order (Cai 403, unknown 404, revoked 409); expired PENDING OWNER invitation | Ben 422 `ROLE_CEILING` and still listed; Ana 204; 204; 403/404/409; 422 and still PENDING | P1 |
-| TC-5.12q | AC-5.12 | API (QA) | invitation seeded by Ana | 5 actors × 4 invitation roles (20); Ben on ACCEPTED, REVOKED and EXPIRED OWNER invitations; Ben on Initech's OWNER invitation through Acme's path | per the matrix in section 4; 409 `INVITATION_NOT_PENDING` before the ceiling; 404 `INVITATION_NOT_FOUND` before the ceiling; status unchanged on errors | P1 |
-| TC-6.10 | AC-6.10 | API (BE) | Ben invites Fay (T) | no body; empty body with `Content-Type: application/json`; `{}` | Problem 400 `VALIDATION_FAILED`, exactly `fullName` and `password`, the same entries as `{}`, no user | P2 |
-| TC-6.10q | AC-6.10 | API (QA) | Fay invited | JSON `null`; `{"fullName":"Fay Lin"}`; whitespace-only body; logged-in Fay with no body; no body with an unknown token | same two entries as `{}` / only `password` / 400 `MALFORMED_REQUEST` (AC-1.2) / 200 and a member (Q3: not validated) / 400 `VALIDATION_FAILED` before 404 (D11 order) | P2 |
-| TC-7.8 | AC-7.8 | API (BE) | Acme | Ana changes Dan to `0`, `1`, `"2"` | Problem 400 `MALFORMED_REQUEST`, Dan still READER | P1 |
-| TC-7.8q | AC-7.8 | API (QA) | Acme | `2`, `3`, `-1`, `4`, `"0"`, `"3"`, `"01"`; `"MEMBER"` control | 400 `MALFORMED_REQUEST`, Dan still READER; `"MEMBER"` 200 | P1 |
-| TC-FR.M | all 7 | scratch mutation | copy of auth-service under `/tmp`, deleted afterwards | 8 mutants that undo or weaken each fix (see the report), run against BE and QA suites separately | every mutant killed by each suite | qa |
-| TC-FR.E2E | AC-5.12, AC-5.11, AC-7.8, AC-6.10, AC-2.10 | manual | both services on `dev`, through 8080 | revoke ceiling, numeric roles, no-body accept, 72-byte login | as in the ACs; Problems pass through the gateway unchanged | qa |
+| ID        | AC                                         | Level                | Preconditions and data                                                                                                         | Steps                                                                                                                                             | Expected                                                                                                                                                                                                                             | Priority |
+|-----------|--------------------------------------------|----------------------|--------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| TC-1.9    | AC-1.9                                     | API (BE)             | Acme; a test-only Hibernate statement inspector makes the organization lock throw each of the 4 exceptions; plus one real lock | Ben invites Fay                                                                                                                                   | Problem 409 `CONFLICT`, no invitation, no ERROR entry or stack trace, exactly one handler WARN                                                                                                                                       | P2       |
+| TC-1.9a   | AC-1.9                                     | API (QA, real locks) | Acme; a second JDBC connection holds `SELECT … FOR UPDATE` on the invitation or organization row                               | revoke (invitation row), anonymous accept (invitation row), anonymous accept (organization row, seat check), role change (organization row)       | 409 `CONFLICT`; nothing changed (still PENDING, no account, Dan still READER); no ERROR or stack trace; one handler WARN; Hibernate's WARN shows SQL with `?` only, and no id, token, email or password appears in the request's log | P2       |
+| TC-2.10   | AC-2.10                                    | API (BE)             | `a72@` with 72 × A; `euro72@` with 24 × €                                                                                      | the 3 rows plus a strengthened row 3 (24 × € + X against the 24 × € account)                                                                      | 200 / 401 `INVALID_CREDENTIALS` with the AC-2.4 detail, `WWW-Authenticate: Bearer`, no `errors`                                                                                                                                      | P2       |
+| TC-2.10q  | AC-2.10                                    | API (QA)             | an account with 18 emoji (72 bytes)                                                                                            | 18 emoji + X; exact password; 73 × A for an unknown email                                                                                         | 401 like a wrong password / 200 / the same 401 as a wrong password                                                                                                                                                                   | P2       |
+| TC-2.11   | AC-2.11                                    | API (BE, ×5)         | empty database                                                                                                                 | 5 simultaneous registrations of `zed@`                                                                                                            | one 201, four 409 `EMAIL_ALREADY_REGISTERED`, one user                                                                                                                                                                               | P2       |
+| TC-2.11q  | AC-2.11                                    | API (QA, ×3/×5/×5)   | `QaConcurrencyTest`: 5 registrations in mixed letter case; Fay invited to Acme and to Initech; Fay invited to Acme             | race 5 registrations; race two anonymous acceptances; race a registration and an anonymous acceptance                                             | one winner; every loser 409 `EMAIL_ALREADY_REGISTERED`; one Fay; the losing invitation stays PENDING; no membership for a losing accept                                                                                              | P2       |
+| TC-5.11   | AC-5.11                                    | API (BE)             | Acme                                                                                                                           | Ana invites with role `0`, `1`, `3`, `"3"`                                                                                                        | Problem 400 `MALFORMED_REQUEST`, no invitation                                                                                                                                                                                       | P1       |
+| TC-5.11q  | AC-5.11                                    | API (QA)             | Acme                                                                                                                           | roles `2`, `-1`, `4`, `2.0`, `"0"`, `"01"`, `"-1"`, `" 1"`, `"1.0"`; Ben with `0`; T17 must-not: `"Member"` and `"MEMBER"`                        | 400 `MALFORMED_REQUEST` (Ben: 400, not 422), no invitation; `"Member"` 400, `"MEMBER"` 201                                                                                                                                           | P1       |
+| TC-5.12   | AC-5.12                                    | API (BE)             | Ana invites Fay as OWNER (I)                                                                                                   | the 2 rows; ADMIN invitation by Ben; D13 order (Cai 403, unknown 404, revoked 409); expired PENDING OWNER invitation                              | Ben 422 `ROLE_CEILING` and still listed; Ana 204; 204; 403/404/409; 422 and still PENDING                                                                                                                                            | P1       |
+| TC-5.12q  | AC-5.12                                    | API (QA)             | invitation seeded by Ana                                                                                                       | 5 actors × 4 invitation roles (20); Ben on ACCEPTED, REVOKED and EXPIRED OWNER invitations; Ben on Initech's OWNER invitation through Acme's path | per the matrix in section 4; 409 `INVITATION_NOT_PENDING` before the ceiling; 404 `INVITATION_NOT_FOUND` before the ceiling; status unchanged on errors                                                                              | P1       |
+| TC-6.10   | AC-6.10                                    | API (BE)             | Ben invites Fay (T)                                                                                                            | no body; empty body with `Content-Type: application/json`; `{}`                                                                                   | Problem 400 `VALIDATION_FAILED`, exactly `fullName` and `password`, the same entries as `{}`, no user                                                                                                                                | P2       |
+| TC-6.10q  | AC-6.10                                    | API (QA)             | Fay invited                                                                                                                    | JSON `null`; `{"fullName":"Fay Lin"}`; whitespace-only body; logged-in Fay with no body; no body with an unknown token                            | same two entries as `{}` / only `password` / 400 `MALFORMED_REQUEST` (AC-1.2) / 200 and a member (Q3: not validated) / 400 `VALIDATION_FAILED` before 404 (D11 order)                                                                | P2       |
+| TC-7.8    | AC-7.8                                     | API (BE)             | Acme                                                                                                                           | Ana changes Dan to `0`, `1`, `"2"`                                                                                                                | Problem 400 `MALFORMED_REQUEST`, Dan still READER                                                                                                                                                                                    | P1       |
+| TC-7.8q   | AC-7.8                                     | API (QA)             | Acme                                                                                                                           | `2`, `3`, `-1`, `4`, `"0"`, `"3"`, `"01"`; `"MEMBER"` control                                                                                     | 400 `MALFORMED_REQUEST`, Dan still READER; `"MEMBER"` 200                                                                                                                                                                            | P1       |
+| TC-FR.M   | all 7                                      | scratch mutation     | copy of auth-service under `/tmp`, deleted afterwards                                                                          | 8 mutants that undo or weaken each fix (see the report), run against BE and QA suites separately                                                  | every mutant killed by each suite                                                                                                                                                                                                    | qa       |
+| TC-FR.E2E | AC-5.12, AC-5.11, AC-7.8, AC-6.10, AC-2.10 | manual               | both services on `dev`, through 8080                                                                                           | revoke ceiling, numeric roles, no-body accept, 72-byte login                                                                                      | as in the ACs; Problems pass through the gateway unchanged                                                                                                                                                                           | qa       |
 
-Regression set for the fix round (spec "Re-verification scope for qa"): AC-1.3, AC-2.2, AC-2.4, AC-2.9, AC-5.7, AC-5.9, AC-5.10, AC-6.6, AC-7.5, the full qa suite, a full `clean build`, the concurrency classes with `--rerun` 3 times, and the gateway build.
+Regression set for the fix round (spec "Re-verification scope for qa"): AC-1.3, AC-2.2, AC-2.4, AC-2.9, AC-5.7, AC-5.9,
+AC-5.10, AC-6.6, AC-7.5, the full qa suite, a full `clean build`, the concurrency classes with `--rerun` 3 times, and
+the gateway build.
 
 ### Cross-cutting (qa)
 
-| ID | Area | Level | Check | Expected |
-|---|---|---|---|---|
-| TC-X.1 | D2 catalogue | API | one request per D2 code (23 codes) | complete Problem, right status/code, only contract members, `requestId`, no CORS/`X-Request-Id`, `WWW-Authenticate: Bearer` on 401 |
-| TC-X.2 | Leakage | API | full flow including failures, log captured | no password, hash, access token, acceptance token, secret or `Bearer ` in the log; INFO business lines have no emails; no secret in responses |
-| TC-X.3 | ERD | schema | `INFORMATION_SCHEMA` vs `cucumber.dbml` | 46 columns (type, length, nullability), 5 enums, 4 unique constraints, 12 foreign keys identical |
-| TC-X.4 | Gateway regression | build | `cd api-gateway && ./gradlew clean build` | 411 tests, 0 failed, 4 skipped (D10) as accepted |
-| TC-X.5 | End to end | manual | T15 steps through 8080, plus replay, duplicate, forbidden and bad-token errors | statuses as specified; Problems pass through unchanged with `requestId` |
-| TC-X.6 | Flakiness | build | concurrency classes run 3 times with `--rerun` | identical results |
-| TC-X.7 | Mutation | scratch | 14 single-defect mutants of security and business rules | each killed by at least one suite |
+| ID     | Area               | Level   | Check                                                                          | Expected                                                                                                                                      |
+|--------|--------------------|---------|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| TC-X.1 | D2 catalogue       | API     | one request per D2 code (23 codes)                                             | complete Problem, right status/code, only contract members, `requestId`, no CORS/`X-Request-Id`, `WWW-Authenticate: Bearer` on 401            |
+| TC-X.2 | Leakage            | API     | full flow including failures, log captured                                     | no password, hash, access token, acceptance token, secret or `Bearer ` in the log; INFO business lines have no emails; no secret in responses |
+| TC-X.3 | ERD                | schema  | `INFORMATION_SCHEMA` vs `cucumber.dbml`                                        | 46 columns (type, length, nullability), 5 enums, 4 unique constraints, 12 foreign keys identical                                              |
+| TC-X.4 | Gateway regression | build   | `cd api-gateway && ./gradlew clean build`                                      | 411 tests, 0 failed, 4 skipped (D10) as accepted                                                                                              |
+| TC-X.5 | End to end         | manual  | T15 steps through 8080, plus replay, duplicate, forbidden and bad-token errors | statuses as specified; Problems pass through unchanged with `requestId`                                                                       |
+| TC-X.6 | Flakiness          | build   | concurrency classes run 3 times with `--rerun`                                 | identical results                                                                                                                             |
+| TC-X.7 | Mutation           | scratch | 14 single-defect mutants of security and business rules                        | each killed by at least one suite                                                                                                             |
 
 ## 4. Role and permission matrix (Acme fixture; D3, D11)
 
-Legend: ✓ allowed; 403 `FORBIDDEN`; 422c `ROLE_CEILING`; 422s `SELF_ROLE_CHANGE`; 409o `LAST_OWNER`; 404m `MEMBER_NOT_FOUND`.
+Legend: ✓ allowed; 403 `FORBIDDEN`; 422c `ROLE_CEILING`; 422s `SELF_ROLE_CHANGE`; 409o `LAST_OWNER`; 404m
+`MEMBER_NOT_FOUND`.
 
-| Operation | Ana OWNER | Ben ADMIN | Cai MEMBER | Dan READER | Eve non-member |
-|---|---|---|---|---|---|
-| View org, list members | ✓ | ✓ | ✓ | ✓ | 403 |
-| Invite as OWNER | ✓ | 422c | 403 | 403 | 403 |
-| Invite as ADMIN / MEMBER / READER | ✓ | ✓ | 403 | 403 | 403 |
-| List invitations | ✓ | ✓ | 403 | 403 | 403 |
-| Revoke an invitation of role R (D13, AC-5.12) | ✓ | ✓ if R ≤ ADMIN, else 422c | 403 | 403 | 403 |
-| Change someone's role to R | ✓ | ✓ if target and R ≤ ADMIN, else 422c | 403 | 403 | 403 |
-| Change own role | 422s | 422s | 422s | 422s | 403 |
-| Remove someone else | ✓ (404m non-member) | ✓ if target ≤ ADMIN, else 422c (404m non-member) | 403 | 403 | 403 |
-| Leave | 409o if last owner, else ✓ | ✓ | ✓ | ✓ | 403 |
-| Accept an invitation | only if the invitation's email is the account's (else `INVITATION_EMAIL_MISMATCH`) | same | same | same | same |
+| Operation                                     | Ana OWNER                                                                          | Ben ADMIN                                        | Cai MEMBER | Dan READER | Eve non-member |
+|-----------------------------------------------|------------------------------------------------------------------------------------|--------------------------------------------------|------------|------------|----------------|
+| View org, list members                        | ✓                                                                                  | ✓                                                | ✓          | ✓          | 403            |
+| Invite as OWNER                               | ✓                                                                                  | 422c                                             | 403        | 403        | 403            |
+| Invite as ADMIN / MEMBER / READER             | ✓                                                                                  | ✓                                                | 403        | 403        | 403            |
+| List invitations                              | ✓                                                                                  | ✓                                                | 403        | 403        | 403            |
+| Revoke an invitation of role R (D13, AC-5.12) | ✓                                                                                  | ✓ if R ≤ ADMIN, else 422c                        | 403        | 403        | 403            |
+| Change someone's role to R                    | ✓                                                                                  | ✓ if target and R ≤ ADMIN, else 422c             | 403        | 403        | 403            |
+| Change own role                               | 422s                                                                               | 422s                                             | 422s       | 422s       | 403            |
+| Remove someone else                           | ✓ (404m non-member)                                                                | ✓ if target ≤ ADMIN, else 422c (404m non-member) | 403        | 403        | 403            |
+| Leave                                         | 409o if last owner, else ✓                                                         | ✓                                                | ✓          | ✓          | 403            |
+| Accept an invitation                          | only if the invitation's email is the account's (else `INVITATION_EMAIL_MISMATCH`) | same                                             | same       | same       | same           |
 
-Cross-organization: a role in another organization gives nothing (403 on all seven org operations); ids of another organization's invitations or members through one's own organization path are 404.
+Cross-organization: a role in another organization gives nothing (403 on all seven org operations); ids of another
+organization's invitations or members through one's own organization path are 404.
 
 ## 5. Test data, environment and tooling
 
-- Data: the spec's Acme fixture (`AcmeFixture.seed()` in `@BeforeEach`), plus seeded Initech, Gus, expired/accepted/revoked invitations and over-limit pending invitations (states the API can't produce). Matrices use valid HS512 tokens minted with the TEST-ONLY secret (`TestJwt.valid`), which the service treats exactly like login tokens because every request loads the user and roles from the database (D3).
-- Environment: one shared Spring context (`authdb`); no qa test starts or closes its own context (G3). Manual run: `--spring.profiles.active=dev` for both services; scratch files under `/tmp`, deleted afterwards.
+- Data: the spec's Acme fixture (`AcmeFixture.seed()` in `@BeforeEach`), plus seeded Initech, Gus,
+  expired/accepted/revoked invitations and over-limit pending invitations (states the API can't produce). Matrices use
+  valid HS512 tokens minted with the TEST-ONLY secret (`TestJwt.valid`), which the service treats exactly like login
+  tokens because every request loads the user and roles from the database (D3).
+- Environment: one shared Spring context (`authdb`); no qa test starts or closes its own context (G3). Manual run:
+  `--spring.profiles.active=dev` for both services; scratch files under `/tmp`, deleted afterwards.
 - Tooling proposals awaiting approval: none. Everything above uses the existing classpath.
 
 ## 6. Risks and items not covered
 
 - H2 only: locking, unique-constraint and enum behaviour on PostgreSQL is phase 4.
-- Concurrency tests are probabilistic: they repeat (3–5 times per run) and were re-run 3 times, but can't prove the absence of a race; the locking design was also reviewed in code.
-- Timing-based token enumeration was measured informally (unknown vs revoked token, 200 requests each); with 192-bit tokens it is not a practical attack and is not automated.
-- Lock timeouts (AC-1.9) are now automated with real row locks held by a second JDBC connection (TC-1.9a). They wait for H2's lock timeout (about 2 s each), so the four tests add about 8 s. PostgreSQL's lock errors and SQLStates differ (phase 4).
-- The registration race (AC-2.11) depends on H2's unique-index wait behaviour; on PostgreSQL the loser also waits for the winner's commit, but this isn't verified until phase 4.
+- Concurrency tests are probabilistic: they repeat (3–5 times per run) and were re-run 3 times, but can't prove the
+  absence of a race; the locking design was also reviewed in code.
+- Timing-based token enumeration was measured informally (unknown vs revoked token, 200 requests each); with 192-bit
+  tokens it is not a practical attack and is not automated.
+- Lock timeouts (AC-1.9) are now automated with real row locks held by a second JDBC connection (TC-1.9a). They wait for
+  H2's lock timeout (about 2 s each), so the four tests add about 8 s. PostgreSQL's lock errors and SQLStates differ (
+  phase 4).
+- The registration race (AC-2.11) depends on H2's unique-index wait behaviour; on PostgreSQL the loser also waits for
+  the winner's commit, but this isn't verified until phase 4.
 - Through the gateway, 401 cases are answered by the gateway (Known issue 1), so US-3 is verified directly on 8081.

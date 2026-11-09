@@ -203,7 +203,7 @@ class QaCiUploadTest {
         assertProblem(mockMvc.perform(post(URI.create(Uploads.PATH)).contentType(MediaType.TEXT_PLAIN)
                 .content("x")).andReturn(), 401, "UPLOAD_TOKEN_INVALID");
         assertProblem(mockMvc.perform(post(URI.create(Uploads.PATH)).header(HttpHeaders.AUTHORIZATION, "Bearer " + t1)
-                .header(HttpHeaders.CONTENT_LENGTH, "30000000").contentType(MediaType.TEXT_PLAIN).content("x"))
+                        .header(HttpHeaders.CONTENT_LENGTH, "30000000").contentType(MediaType.TEXT_PLAIN).content("x"))
                 .andReturn(), 415, "UNSUPPORTED_MEDIA_TYPE");
         assertProblem(mockMvc.perform(post(URI.create(Uploads.PATH + "?commit=xyz"))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + t1).header(HttpHeaders.CONTENT_LENGTH, "30000000")
@@ -348,7 +348,7 @@ class QaCiUploadTest {
         assertProblem(mockMvc.perform(get(tokens).header(HttpHeaders.AUTHORIZATION, "Bearer " + t1)).andReturn(),
                 401, "UNAUTHENTICATED");
         assertProblem(mockMvc.perform(post(tokens).header(HttpHeaders.AUTHORIZATION, "Bearer " + t1)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"x\"}")).andReturn(), 401,
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"x\"}")).andReturn(), 401,
                 "UNAUTHENTICATED");
         assertThat(stub.received()).isEmpty();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM upload_tokens", Integer.class)).isEqualTo(1);

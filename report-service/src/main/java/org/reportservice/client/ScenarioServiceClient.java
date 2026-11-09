@@ -51,25 +51,35 @@ public class ScenarioServiceClient {
         this.jsonMapper = jsonMapper;
     }
 
-    /** An active feature, as the list shows it. */
+    /**
+     * An active feature, as the list shows it.
+     */
     public record Feature(UUID id, String path, String name, int currentVersion) {
     }
 
-    /** A step of a test case: keyword, text, and its table or doc string content (or null). */
+    /**
+     * A step of a test case: keyword, text, and its table or doc string content (or null).
+     */
     public record Step(String keyword, String text, List<List<String>> dataTable, String docString) {
     }
 
-    /** A test case of a feature's current version. */
+    /**
+     * A test case of a feature's current version.
+     */
     public record TestCase(UUID id, UUID scenarioId, UUID exampleRowId, String name, List<String> tags, int line,
                            List<Step> steps) {
     }
 
-    /** The project's active features. */
+    /**
+     * The project's active features.
+     */
     public List<Feature> activeFeatures(UUID projectId, String token) {
         return list(get("/api/projects/{projectId}/features", token, projectId), this::feature);
     }
 
-    /** The test cases of a feature's current version, in text order. */
+    /**
+     * The test cases of a feature's current version, in text order.
+     */
     public List<TestCase> testCases(UUID projectId, UUID featureId, String token) {
         return list(get("/api/projects/{projectId}/features/{featureId}/test-cases", token, projectId, featureId),
                 this::testCase);

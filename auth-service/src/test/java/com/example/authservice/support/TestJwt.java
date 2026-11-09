@@ -37,12 +37,16 @@ public final class TestJwt {
     private TestJwt() {
     }
 
-    /** HS512 with the shared secret, the given {@code sub} and email, exp 1 hour from now. */
+    /**
+     * HS512 with the shared secret, the given {@code sub} and email, exp 1 hour from now.
+     */
     public static String valid(UUID userId, String email) {
         return withSubject(userId.toString(), email);
     }
 
-    /** HS512 with the shared secret and the given {@code sub}, exp 1 hour from now. */
+    /**
+     * HS512 with the shared secret and the given {@code sub}, exp 1 hour from now.
+     */
     public static String withSubject(String subject, String email) {
         return claims(email, Instant.now().plus(ONE_HOUR)).subject(subject)
                 .signWith(KEY, Jwts.SIG.HS512).compact();
@@ -67,14 +71,18 @@ public final class TestJwt {
                 .signWith(KEY, Jwts.SIG.HS256).compact();
     }
 
-    /** The claims of a valid token with header {@code alg: none} and no signature. */
+    /**
+     * The claims of a valid token with header {@code alg: none} and no signature.
+     */
     public static String unsigned(UUID userId, String email) {
         String[] parts = valid(userId, email).split("\\.");
         String header = BASE64_URL.encodeToString("{\"alg\":\"none\"}".getBytes(StandardCharsets.UTF_8));
         return header + "." + parts[1] + ".";
     }
 
-    /** A valid token whose {@code sub} was replaced after signing; the original signature is kept. */
+    /**
+     * A valid token whose {@code sub} was replaced after signing; the original signature is kept.
+     */
     public static String withAlteredSubject(UUID userId, String email, UUID newSubject) {
         String[] parts = valid(userId, email).split("\\.");
         String payload = new String(BASE64_URL_DECODER.decode(parts[1]), StandardCharsets.UTF_8);
@@ -82,7 +90,9 @@ public final class TestJwt {
         return parts[0] + "." + BASE64_URL.encodeToString(altered.getBytes(StandardCharsets.UTF_8)) + "." + parts[2];
     }
 
-    /** The shared signing key, for tests that verify issued tokens. */
+    /**
+     * The shared signing key, for tests that verify issued tokens.
+     */
     public static SecretKey key() {
         return KEY;
     }

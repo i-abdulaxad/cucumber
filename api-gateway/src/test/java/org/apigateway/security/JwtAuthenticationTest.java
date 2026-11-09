@@ -201,7 +201,7 @@ class JwtAuthenticationTest extends GatewayIntegrationTest {
     @MethodSource("unsafeSubjects")
     @Tag("AC-2.10")
     void aSignedTokenWhoseSubjectIsUnsafeForHeadersOrLogsIsRejected(int n, String description, String subject,
-                                                                   String injected, CapturedOutput output) {
+                                                                    String injected, CapturedOutput output) {
         // Given
         String requestId = "sub-" + n;
 

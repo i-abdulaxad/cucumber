@@ -41,7 +41,9 @@ public class CucumberJsonReader {
             "passed", ExecutionStatus.PASSED, "failed", ExecutionStatus.FAILED, "skipped", ExecutionStatus.SKIPPED,
             "pending", ExecutionStatus.PENDING, "undefined", ExecutionStatus.UNDEFINED,
             "ambiguous", ExecutionStatus.AMBIGUOUS);
-    /** Cucumber's precedence, worst first (D9). */
+    /**
+     * Cucumber's precedence, worst first (D9).
+     */
     private static final List<ExecutionStatus> WORST_FIRST = List.of(ExecutionStatus.FAILED,
             ExecutionStatus.AMBIGUOUS, ExecutionStatus.UNDEFINED, ExecutionStatus.PENDING, ExecutionStatus.SKIPPED,
             ExecutionStatus.PASSED);
@@ -50,7 +52,9 @@ public class CucumberJsonReader {
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .build();
 
-    /** The test cases of the body, or {@link CucumberJsonException}. */
+    /**
+     * The test cases of the body, or {@link CucumberJsonException}.
+     */
     public List<IngestedTestCase> read(byte[] body) {
         JsonNode root;
         try {
@@ -75,7 +79,9 @@ public class CucumberJsonReader {
         return cases;
     }
 
-    /** One read of one body: the problems found so far. */
+    /**
+     * One read of one body: the problems found so far.
+     */
     private static final class Reading {
 
         private final List<JsonProblem> problems = new ArrayList<>();
@@ -374,7 +380,9 @@ public class CucumberJsonReader {
             return value == null ? fallback : text(value, at + "." + member);
         }
 
-        /** A read string: a JSON string without U+0000 or a lone surrogate. */
+        /**
+         * A read string: a JSON string without U+0000 or a lone surrogate.
+         */
         private String text(JsonNode value, String at) {
             if (value == null || !value.isString()) {
                 problem(at, "Must be a string");

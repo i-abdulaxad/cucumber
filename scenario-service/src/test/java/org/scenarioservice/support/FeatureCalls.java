@@ -42,7 +42,9 @@ public final class FeatureCalls {
                 .content(json(body)));
     }
 
-    /** Creates a feature and returns its id; fails unless the answer is 201. */
+    /**
+     * Creates a feature and returns its id; fails unless the answer is 201.
+     */
     public static UUID created(MockMvc mockMvc, User user, UUID projectId, String path, String source)
             throws Exception {
         MvcResult result = create(mockMvc, user, projectId, path, source);
@@ -71,7 +73,9 @@ public final class FeatureCalls {
         return mockMvc.perform(request.header(HttpHeaders.AUTHORIZATION, user.bearer())).andReturn();
     }
 
-    /** An ordered map from alternating names and values. */
+    /**
+     * An ordered map from alternating names and values.
+     */
     public static Map<String, Object> fields(Object... namesAndValues) {
         Map<String, Object> fields = new LinkedHashMap<>();
         for (int i = 0; i < namesAndValues.length; i += 2) {
@@ -119,7 +123,9 @@ public final class FeatureCalls {
         return escaped.append('"').toString();
     }
 
-    /** A JSON value written as is, for example {@code 1.5} or {@code "1"}. */
+    /**
+     * A JSON value written as is, for example {@code 1.5} or {@code "1"}.
+     */
     public record Raw(String json) {
     }
 }

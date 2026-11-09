@@ -23,14 +23,18 @@ public class UploadTokenCodec {
 
     private final SecureRandom random = new SecureRandom();
 
-    /** A new token text. */
+    /**
+     * A new token text.
+     */
     public String newToken() {
         byte[] bytes = new byte[RANDOM_BYTES];
         random.nextBytes(bytes);
         return PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    /** The lower-case SHA-256 hex of the full token text. */
+    /**
+     * The lower-case SHA-256 hex of the full token text.
+     */
     public String hash(String token) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
@@ -40,7 +44,9 @@ public class UploadTokenCodec {
         }
     }
 
-    /** The first 12 characters, shown in lists. */
+    /**
+     * The first 12 characters, shown in lists.
+     */
     public String prefix(String token) {
         return token.substring(0, SHOWN_PREFIX_LENGTH);
     }

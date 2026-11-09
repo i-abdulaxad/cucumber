@@ -48,7 +48,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class QaDatabaseRulesTest {
 
     private static final String EMOJI = "\uD83D\uDE00";
-    /** U+10400 DESERET CAPITAL LETTER LONG I: a supplementary letter (two UTF-16 units, one code point). */
+    /**
+     * U+10400 DESERET CAPITAL LETTER LONG I: a supplementary letter (two UTF-16 units, one code point).
+     */
     private static final String DESERET = "\uD801\uDC00";
 
     @Autowired
@@ -354,7 +356,9 @@ class QaDatabaseRulesTest {
         void run(Connection connection) throws SQLException;
     }
 
-    /** Runs the statements in one transaction and rolls it back; returns the exception they failed with, or null. */
+    /**
+     * Runs the statements in one transaction and rolls it back; returns the exception they failed with, or null.
+     */
     private SQLException rolledBack(Sql sql) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);

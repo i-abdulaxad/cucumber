@@ -23,7 +23,9 @@ public class StrictParameterBinding {
         binder.registerCustomEditor(UUID.class, new LowerCaseUuidEditor());
     }
 
-    /** 8-4-4-4-12 lower-case hexadecimal digits. */
+    /**
+     * 8-4-4-4-12 lower-case hexadecimal digits.
+     */
     static final class LowerCaseUuidEditor extends PropertyEditorSupport {
 
         private static final Pattern CANONICAL_LOWER_CASE =

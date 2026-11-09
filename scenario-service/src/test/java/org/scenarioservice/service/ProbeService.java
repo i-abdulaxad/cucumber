@@ -19,7 +19,9 @@ public class ProbeService {
 
     private static final Logger log = LoggerFactory.getLogger(ProbeService.class);
 
-    /** Fails the way the named database failure would reach the advice from a real use case. */
+    /**
+     * Fails the way the named database failure would reach the advice from a real use case.
+     */
     public void fail(String kind) {
         switch (kind) {
             case "unique" -> throw new DataIntegrityViolationException(
@@ -31,7 +33,9 @@ public class ProbeService {
         }
     }
 
-    /** A transactional use case that logs when its transaction commits, to show where the aspect sits (T4). */
+    /**
+     * A transactional use case that logs when its transaction commits, to show where the aspect sits (T4).
+     */
     @Transactional
     public boolean transactional() {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
